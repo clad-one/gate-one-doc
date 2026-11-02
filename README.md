@@ -80,6 +80,9 @@ Binaries are **not** committed: they are attached to a tagged release.
 
 ## Hosting
 
+Set `baseURL` in `hugo.toml` to the production origin before deploying;
+the default is a placeholder (`https://gate-one.example.com/`).
+
 The output is fully static. Cloudflare Pages, GitHub Pages, Netlify,
 GitLab Pages or any HTTPS static host works. `static/_headers` carries
 the security headers for hosts that support that format (Cloudflare
