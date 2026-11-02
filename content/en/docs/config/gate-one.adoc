@@ -1,0 +1,1887 @@
+---
+title: Gate One configuration
+linkTitle: Gate One
+weight: 10
+---
+
+= Gate One configuration
+:toc: left
+:toclevels: 3
+:icons: font
+
+Generated from `schemas/api-routes.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+
+The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (certificates, keys, plugin artefacts, WAL directories) are resolved from the configuration file.
+
+[[config-root]]
+== Fields
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-securityHeaders]] `securityHeaders`
+| <<config-securityHeaders,object>>
+| no
+| Platform-wide response hardening, emitted by the gateway on EVERY response it serves (proxied or generated: health, stats, 401/403, MCP metadata, PWA assets, CSP collector). Declaring the block applies the secure defaults; each field can be tightened or disabled. Referrer-Policy is only set when the response does not already carry one (a proxified app's stricter policy wins). Absent = nothing (an install whose edge proxy already sets them can opt out).
+
+| [[field-license]] `license`
+| <<config-license,object>>
+| no
+| Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluation/personal mode: the gateway keeps serving; the user badge shows a notice. The private signing key NEVER ships (only publicKey is embedded).
+
+| [[field-authProvider]] `authProvider`
+| <<config-authProvider,object>>
+| no
+| Authentication provider. `dev` is the embedded loopback-only IdP used for onboarding/tests; `http` is any external service implementing the Gate One auth contract (auth-bridge is the reference implementation; a non-conforming service needs an adapter); `oidc` is the native Relying Party (discovery, code+PKCE, JWKS, session, logout, MCP resource server). Absent = legacy oidc + auth-bridge translation, so existing configs are unchanged.
+
+| [[field-authProviders]] `authProviders`
+| array of value
+| no
+| Named authentication providers for per-route binding. Mutually exclusive with the legacy singular authProvider. Each item uses the same fields as authProvider plus id/cookieName; a route selects one with auth.provider.
+
+| [[field-defaultAuthProvider]] `defaultAuthProvider`
+| string
+| no
+| Provider id used by routes that do not set auth.provider. Required when more than one authProviders entry is declared.
+
+| [[field-defaultAppUrl]] `defaultAppUrl`
+| string
+| no
+| Absolute http(s) URL where a bare visit to the login host root is redirected (302), preserving the query string. Email verification links (Firebase mode=verifyEmail&oobCode, Keycloak account links) land on https://login.<domain>/ and must reach the application that handles the code. Absent = the login host root stays 404.
+
+| [[field-oidc]] `oidc`
+| <<config-oidc,object>>
+| no
+| LEGACY platform IdP block. When authProvider is absent, it is translated into an http provider (auth-bridge) at load; existing configs keep working. New configurations should use authProvider.
+
+| [[field-tokenBroker]] `tokenBroker`
+| <<config-tokenBroker,object>>
+| no
+| Internal per-user credential broker. Required only when a route declares upstream.delegated. The shared secret is read from the named environment variable at load (never from this file) and is never logged.
+
+| [[field-mcpDefaults]] `mcpDefaults`
+| <<config-mcpDefaults,object>>
+| no
+| Optional defaults shared by every MCP access unit.
+
+| [[field-mcpSets]] `mcpSets`
+| object
+| no
+| Named groups of MCP services exposed with their own access rights (resource/scope/identity) and per-member tool filters. A member endpoint is set.host + set.endpoint + member.path.
+
+| [[field-usage]] `usage`
+| <<config-usage,object>>
+| no
+| Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. Events are produced only for the subscribed types; a full durable share is answered with a targeted 503 (health/readyz/auth-probe exempt).
+
+| [[field-routes]] `routes`
+| array of <<config-routes,object>>
+| yes
+| Routes served by this gateway. Order is not significant: the most specific host/path match wins.
+
+|===
+
+[[config-securityHeaders]]
+=== securityHeaders
+
+Platform-wide response hardening, emitted by the gateway on EVERY response it serves (proxied or generated: health, stats, 401/403, MCP metadata, PWA assets, CSP collector). Declaring the block applies the secure defaults; each field can be tightened or disabled. Referrer-Policy is only set when the response does not already carry one (a proxified app's stricter policy wins). Absent = nothing (an install whose edge proxy already sets them can opt out).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-securityHeaders-hstsMaxAge]] `hstsMaxAge`
+| integer
+| no
+| Strict-Transport-Security max-age, in seconds. Absent = 15552000 (180 days); 0 = header omitted (e.g. a host that must stay reachable in plain HTTP). Keep includeSubDomains/preload off until every subdomain is HTTPS-only: with preload the choice becomes permanent in browsers. Minimum: 0. Maximum: 63072000.
+
+| [[field-securityHeaders-hstsIncludeSubDomains]] `hstsIncludeSubDomains`
+| boolean
+| no
+| Append includeSubDomains. Default false.
+
+| [[field-securityHeaders-hstsPreload]] `hstsPreload`
+| boolean
+| no
+| Append preload. Requires hstsIncludeSubDomains (refused at load otherwise). Default false.
+
+| [[field-securityHeaders-nosniff]] `nosniff`
+| boolean
+| no
+| X-Content-Type-Options: nosniff. Default true.
+
+| [[field-securityHeaders-referrerPolicy]] `referrerPolicy`
+| string (one of: ``, `no-referrer`, `no-referrer-when-downgrade`, `origin`, `origin-when-cross-origin`, `same-origin`, `strict-origin`, `strict-origin-when-cross-origin`, `unsafe-url`)
+| no
+| Referrer-Policy value. Absent = strict-origin-when-cross-origin; empty string = header omitted.
+
+|===
+
+[[config-license]]
+=== license
+
+Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluation/personal mode: the gateway keeps serving; the user badge shows a notice. The private signing key NEVER ships (only publicKey is embedded).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-license-token]] `token`
+| string
+| no
+| Signed licence token: v1.<base64url(JSON claims)>.<base64url(signature)>.
+
+| [[field-license-tokenFile]] `tokenFile`
+| string
+| no
+| Path to a file holding the token (mounted secret, easy renewal: replace the file + SIGHUP). Overridden by GATE_ONE_LICENSE_TOKEN; falls back to `token` when unreadable.
+
+| [[field-license-publicKey]] `publicKey`
+| string
+| no
+| Ed25519 public key, base64 (raw 32 bytes). Public by design, safe to commit. Legacy single-key form (tokens without kid).
+
+| [[field-license-publicKeys]] `publicKeys`
+| object
+| no
+| kid → Ed25519 public key (base64). Several keys can be valid at once during a rotation; tokens carry their signed kid. An unknown kid is rejected.
+
+| [[field-license-url]] `url`
+| string
+| no
+| Registration/pricing URL shown by the badge.
+
+|===
+
+[[config-authProvider]]
+=== authProvider
+
+Authentication provider. `dev` is the embedded loopback-only IdP used for onboarding/tests; `http` is any external service implementing the Gate One auth contract (auth-bridge is the reference implementation; a non-conforming service needs an adapter); `oidc` is the native Relying Party (discovery, code+PKCE, JWKS, session, logout, MCP resource server). Absent = legacy oidc + auth-bridge translation, so existing configs are unchanged.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-type]] `type`
+| string (one of: `dev`, `http`, `oidc`, `jwt`)
+| no
+| Provider implementation. Default: dev when a dev block is present, oidc when clientId is present, jwt when jwksUrl is present, http otherwise.
+
+| [[field-authProvider-id]] `id`
+| string
+| no
+| Unique provider id when declared in authProviders. The legacy authProvider block is normalized to id "default".
+
+| [[field-authProvider-cookieName]] `cookieName`
+| string
+| no
+| Session cookie name for type oidc. Empty = gate_one_session for the default provider, a provider-scoped name for additional providers.
+
+| [[field-authProvider-baseUrl]] `baseUrl`
+| string
+| no
+| Service root for type http (default http://auth-bridge:3000, or AUTH_BRIDGE_URL).
+
+| [[field-authProvider-loginBaseUrl]] `loginBaseUrl`
+| string
+| no
+| Public origin of the login service. For dev it hosts the embedded login page, e.g. http://login.demo.localhost:3000 (no path/query).
+
+| [[field-authProvider-loginUrl]] `loginUrl`
+| string
+| no
+| Full login page URL. Defaults to loginBaseUrl + /login, then (type http) the legacy oidc.loginUrl, then baseUrl + /login.
+
+| [[field-authProvider-issuer]] `issuer`
+| string
+| no
+| OIDC issuer advertised in MCP protected-resource metadata. Defaults to the legacy oidc.issuer, or loginBaseUrl + /dev for dev.
+
+| [[field-authProvider-cookieDomain]] `cookieDomain`
+| string
+| no
+| Shared parent domain of the session cookie (dev), e.g. demo.localhost. Required for dev.
+
+| [[field-authProvider-verifyUrl]] `verifyUrl`
+| string
+| no
+| Identity verification endpoint (type http). Default baseUrl + /auth.
+
+| [[field-authProvider-mcpVerifyUrl]] `mcpVerifyUrl`
+| string
+| no
+| MCP bearer verification endpoint (type http). Default baseUrl + /auth/mcp.
+
+| [[field-authProvider-healthUrl]] `healthUrl`
+| string
+| no
+| Readiness endpoint (type http). Default baseUrl + /health.
+
+| [[field-authProvider-headers]] `headers`
+| <<config-authProvider-headers,object>>
+| no
+| Maps the identity response headers of an external provider (type http). Empty = auth-bridge defaults.
+
+| [[field-authProvider-clientId]] `clientId`
+| string
+| no
+| OIDC client ID (type oidc). The client must be registered at the IdP with the redirect URI below.
+
+| [[field-authProvider-clientSecretEnv]] `clientSecretEnv`
+| string
+| no
+| Environment variable holding the OIDC client secret (type oidc). Absent/empty = public client (PKCE only). Never put the secret in this file.
+
+| [[field-authProvider-scopes]] `scopes`
+| array of string
+| no
+| OIDC scopes requested at the authorization endpoint. Default: openid, profile, email.
+
+| [[field-authProvider-redirectUrl]] `redirectUrl`
+| string
+| no
+| OIDC callback URL registered at the IdP. Default: loginBaseUrl + /auth/callback.
+
+| [[field-authProvider-roleClaims]] `roleClaims`
+| array of string
+| no
+| Dot paths in the ID token whose values become roles (default: realm_access.roles, resource_access.<clientId>.roles, groups).
+
+| [[field-authProvider-scopesClaim]] `scopesClaim`
+| string
+| no
+| Claim holding the granted scopes (default scope; scp is always also read).
+
+| [[field-authProvider-mcpAudience]] `mcpAudience`
+| string
+| no
+| MCP access-token audience policy. Empty = scope-only (compatible default). A literal value requires that value in aud. "auto" requires the endpoint's own protected-resource identifier (recommended, and used with Keycloak audience mappers).
+
+| [[field-authProvider-jwksUrl]] `jwksUrl`
+| string
+| no
+| JWKS endpoint for type jwt. Required for jwt; the provider never hosts a login page.
+
+| [[field-authProvider-audience]] `audience`
+| string
+| no
+| Expected audience for type jwt (empty = no audience check, or the MCP resource when VerifyMCP is used).
+
+| [[field-authProvider-algorithms]] `algorithms`
+| array of string
+| no
+| Accepted JWT signing algorithms. Default: the algorithms advertised by the JWKS/issuer.
+
+| [[field-authProvider-header]] `header`
+| string
+| no
+| Bearer header name for type jwt. Default Authorization.
+
+| [[field-authProvider-cacheTtlSeconds]] `cacheTtlSeconds`
+| integer
+| no
+| JWKS cache TTL for type jwt. Default 300. Minimum: 0.
+
+| [[field-authProvider-sessionTtlSeconds]] `sessionTtlSeconds`
+| integer
+| no
+| OIDC RP session lifetime. Default 3600 (1h): a short TTL bounds revocation when no shared store is used. The refresh/reauth flow renews it. Minimum: 1.
+
+| [[field-authProvider-links]] `links`
+| <<config-authProvider-links,object>>
+| no
+| Links owned by the authentication connector, displayed in the user badge. account is the IdP's own account console: NO OIDC standard, so the URL is explicit (Keycloak /realms/<realm>/account/, Entra myaccount.microsoft.com, Google myaccount.google.com, Okta /enduser/settings…).
+
+| [[field-authProvider-sessionKeyEnv]] `sessionKeyEnv`
+| string
+| no
+| Environment variable holding the RP cookie signing key (base64/random string, hashed to 32 bytes). Empty = the key is generated and persisted in the bbolt store. Required for multi-instance (shared key).
+
+| [[field-authProvider-sessionStore]] `sessionStore`
+| <<config-authProvider-sessionStore,object>>
+| no
+| RP-side revocation store (back-channel logout, RP logout). Default: bbolt at ./gate-one-state.db, relative to the config file. bbolt is single-writer: a second Gate One instance on the same file is refused. Redis is the shared, multi-instance backend and makes revocation visible on the next request on every instance.
+
+| [[field-authProvider-backchannelLogout]] `backchannelLogout`
+| boolean
+| no
+| OIDC Back-Channel Logout. Absent = auto: enabled when the IdP discovery advertises backchannel_logout_supported. false disables it. Register <loginBaseUrl>/backchannel-logout at the IdP.
+
+| [[field-authProvider-legacyTokenCookies]] `legacyTokenCookies`
+| boolean
+| no
+| Migration bridge: also set auth-bridge's access_token/refresh_token/id_token cookies on cookieDomain, so auth-bridge's token-broker proxy routes (/connections, /connect, /oauth) resolve the same session when both share the login host. Default false. The native session cookie remains authoritative for Gate One.
+
+| [[field-authProvider-backchannelForwardUrl]] `backchannelForwardUrl`
+| string
+| no
+| Migration bridge: after a valid local back-channel revocation, POST the same logout_token to this auth-bridge /backchannel-logout URL so its persistent sid list stays in sync for /auth and /connections. Best effort.
+
+| [[field-authProvider-revocationTtlSeconds]] `revocationTtlSeconds`
+| integer
+| no
+| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the broker), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
+
+| [[field-authProvider-dev]] `dev`
+| <<config-authProvider-dev,object>>
+| no
+| Embedded development IdP. Loopback-only; never production.
+
+|===
+
+[[config-authProvider-headers]]
+==== authProvider.headers
+
+Maps the identity response headers of an external provider (type http). Empty = auth-bridge defaults.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-headers-userId]] `userId`
+| string
+| no
+| Default X-User-Id.
+
+| [[field-authProvider-headers-username]] `username`
+| string
+| no
+| Default X-Username.
+
+| [[field-authProvider-headers-email]] `email`
+| string
+| no
+| Default X-Email.
+
+| [[field-authProvider-headers-roles]] `roles`
+| string
+| no
+| Default X-Roles (comma-separated).
+
+| [[field-authProvider-headers-scopes]] `scopes`
+| string
+| no
+| Default X-Scopes (comma-separated).
+
+| [[field-authProvider-headers-claims]] `claims`
+| string
+| no
+| Default X-Claims (base64 JSON).
+
+|===
+
+[[config-authProvider-links]]
+==== authProvider.links
+
+Links owned by the authentication connector, displayed in the user badge. account is the IdP's own account console: NO OIDC standard, so the URL is explicit (Keycloak /realms/<realm>/account/, Entra myaccount.microsoft.com, Google myaccount.google.com, Okta /enduser/settings…).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-links-account]] `account`
+| <<config-authProvider-links-account,object>>
+| no
+| A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+|===
+
+[[config-authProvider-links-account]]
+===== authProvider.links.account
+
+A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-links-account-label]] `label`
+| string
+| no
+| Displayed text. Optional for the connector links (default Account/Services); required for userBadge.links. Maximum length: 64.
+
+| [[field-authProvider-links-account-url]] `url`
+| string
+| yes
+| http(s) absolute URL or local absolute path (/...). Maximum length: 2048.
+
+| [[field-authProvider-links-account-target]] `target`
+| string (one of: `_blank`, `_self`)
+| no
+| Link target. Default _blank.
+
+|===
+
+[[config-authProvider-sessionStore]]
+==== authProvider.sessionStore
+
+RP-side revocation store (back-channel logout, RP logout). Default: bbolt at ./gate-one-state.db, relative to the config file. bbolt is single-writer: a second Gate One instance on the same file is refused. Redis is the shared, multi-instance backend and makes revocation visible on the next request on every instance.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-sessionStore-type]] `type`
+| string (one of: `bolt`, `redis`)
+| no
+| bolt (default, single instance) or redis (shared, multi-instance, immediate revocation).
+
+| [[field-authProvider-sessionStore-path]] `path`
+| string
+| no
+| bbolt file path. Default ./gate-one-state.db (relative to the config file).
+
+| [[field-authProvider-sessionStore-url]] `url`
+| string
+| no
+| Redis URL for type redis (redis:// or rediss://). Mutually exclusive with sentinel mode.
+
+| [[field-authProvider-sessionStore-sentinelAddrs]] `sentinelAddrs`
+| array of string
+| no
+| Redis Sentinel addresses (host:port). Required with masterName.
+
+| [[field-authProvider-sessionStore-masterName]] `masterName`
+| string
+| no
+| Redis Sentinel master name. Requires sentinelAddrs.
+
+| [[field-authProvider-sessionStore-sentinelUsername]] `sentinelUsername`
+| string
+| no
+| ACL user used to authenticate to the Sentinels themselves (sentinel mode only). Separate from username, which is the Redis data user.
+
+| [[field-authProvider-sessionStore-sentinelPasswordEnv]] `sentinelPasswordEnv`
+| string
+| no
+| Environment variable holding the Sentinel password (sentinel mode only). Never put the password in this file.
+
+| [[field-authProvider-sessionStore-tls]] `tls`
+| boolean
+| no
+| Use TLS in sentinel mode (Sentinels and the discovered master). In URL mode use a rediss:// URL instead.
+
+| [[field-authProvider-sessionStore-tlsCaFile]] `tlsCaFile`
+| string
+| no
+| PEM CA bundle for the Sentinel TLS connections. Requires tls=true; empty = system roots.
+
+| [[field-authProvider-sessionStore-tlsServerName]] `tlsServerName`
+| string
+| no
+| TLS server name override (useful when the Sentinels are addressed by IP). Requires tls=true.
+
+| [[field-authProvider-sessionStore-username]] `username`
+| string
+| no
+| Redis ACL username.
+
+| [[field-authProvider-sessionStore-passwordEnv]] `passwordEnv`
+| string
+| no
+| Environment variable holding the Redis password. Never put the password in this file.
+
+| [[field-authProvider-sessionStore-db]] `db`
+| integer
+| no
+| Redis logical database. Default 0. Minimum: 0.
+
+| [[field-authProvider-sessionStore-prefix]] `prefix`
+| string
+| no
+| Shared revocation key prefix. Default cladone:auth:v1:. Must match the broker's redis.authPrefix.
+
+| [[field-authProvider-sessionStore-dialTimeoutMs]] `dialTimeoutMs`
+| integer
+| no
+| Redis dial timeout in milliseconds. Default 500. Minimum: 0.
+
+| [[field-authProvider-sessionStore-readTimeoutMs]] `readTimeoutMs`
+| integer
+| no
+| Redis read timeout in milliseconds. Default 300. Minimum: 0.
+
+| [[field-authProvider-sessionStore-writeTimeoutMs]] `writeTimeoutMs`
+| integer
+| no
+| Redis write timeout in milliseconds. Default 300. Minimum: 0.
+
+| [[field-authProvider-sessionStore-poolSize]] `poolSize`
+| integer
+| no
+| Redis connection pool size. Default 64. Minimum: 0.
+
+|===
+
+[[config-authProvider-dev]]
+==== authProvider.dev
+
+Embedded development IdP. Loopback-only; never production.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-dev-users]] `users`
+| array of <<config-authProvider-dev-users,object>>
+| no
+| Development users exposed by the embedded login form. Loopback only.
+
+| [[field-authProvider-dev-sessionTtlSeconds]] `sessionTtlSeconds`
+| integer
+| no
+| Session lifetime. Default 43200 (12h). Minimum: 1.
+
+|===
+
+[[config-authProvider-dev-users]]
+===== authProvider.dev.users
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-authProvider-dev-users-username]] `username`
+| string
+| yes
+| Login name for the development user.
+
+| [[field-authProvider-dev-users-password]] `password`
+| string
+| yes
+| Plaintext, dev only.
+
+| [[field-authProvider-dev-users-roles]] `roles`
+| array of string
+| no
+| Roles granted to this development user.
+
+| [[field-authProvider-dev-users-scopes]] `scopes`
+| array of string
+| no
+| OAuth scopes granted to this development user.
+
+| [[field-authProvider-dev-users-claims]] `claims`
+| object
+| no
+| Additional claims returned for this development user (string values).
+
+| [[field-authProvider-dev-users-mcpToken]] `mcpToken`
+| string
+| no
+| Bearer accepted by MCP routes. Default dev-<username>.
+
+|===
+
+[[config-oidc]]
+=== oidc
+
+LEGACY platform IdP block. When authProvider is absent, it is translated into an http provider (auth-bridge) at load; existing configs keep working. New configurations should use authProvider.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-oidc-loginUrl]] `loginUrl`
+| string
+| no
+| Platform login page (e.g. "https://login.example.com/login"). Used by the server-side redirect of frontend routes and by the guard script (per-route authGuard.loginUrl takes precedence).
+
+| [[field-oidc-issuer]] `issuer`
+| string
+| no
+| OIDC issuer (e.g. "https://auth.example.com/realms/example") — announced as the authorization_server of the MCP OAuth metadata.
+
+|===
+
+[[config-tokenBroker]]
+=== tokenBroker
+
+Internal per-user credential broker. Required only when a route declares upstream.delegated. The shared secret is read from the named environment variable at load (never from this file) and is never logged.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tokenBroker-url]] `url`
+| string
+| no
+| Broker base URL (default http://token-broker:4000, the Docker internal service name). Never expose it through Traefik.
+
+| [[field-tokenBroker-secretEnv]] `secretEnv`
+| string
+| no
+| Environment variable holding the X-Broker-Secret shared secret (default TOKEN_BROKER_SHARED_SECRET).
+
+| [[field-tokenBroker-links]] `links`
+| <<config-tokenBroker-links,object>>
+| no
+| Links owned by the token broker, displayed in the user badge. services is the connections page (auth-bridge proxies it today): it is rendered only when an exposed route declares upstream.delegated (computed by the gateway).
+
+|===
+
+[[config-tokenBroker-links]]
+==== tokenBroker.links
+
+Links owned by the token broker, displayed in the user badge. services is the connections page (auth-bridge proxies it today): it is rendered only when an exposed route declares upstream.delegated (computed by the gateway).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tokenBroker-links-services]] `services`
+| <<config-tokenBroker-links-services,object>>
+| no
+| A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+|===
+
+[[config-tokenBroker-links-services]]
+===== tokenBroker.links.services
+
+A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tokenBroker-links-services-label]] `label`
+| string
+| no
+| Displayed text. Optional for the connector links (default Account/Services); required for userBadge.links. Maximum length: 64.
+
+| [[field-tokenBroker-links-services-url]] `url`
+| string
+| yes
+| http(s) absolute URL or local absolute path (/...). Maximum length: 2048.
+
+| [[field-tokenBroker-links-services-target]] `target`
+| string (one of: `_blank`, `_self`)
+| no
+| Link target. Default _blank.
+
+|===
+
+[[config-mcpDefaults]]
+=== mcpDefaults
+
+Optional defaults shared by every MCP access unit.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-mcpDefaults-scope]] `scope`
+| string
+| no
+| Default MCP scope when a service/set declares none.
+
+|===
+
+[[config-usage]]
+=== usage
+
+Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. Events are produced only for the subscribed types; a full durable share is answered with a targeted 503 (health/readyz/auth-probe exempt).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-dir]] `dir`
+| string
+| no
+| WAL directory (one subdirectory per event type). Relative paths are resolved from the config file. Default ./gate-one-usage.
+
+| [[field-usage-nodeId]] `nodeId`
+| string
+| no
+| Instance identifier written in every event. Default: hostname.
+
+| [[field-usage-subjectSecretEnv]] `subjectSecretEnv`
+| string
+| no
+| Environment variable holding the HMAC key deriving the opaque subjectId. Required.
+
+| [[field-usage-pluginSecretEnv]] `pluginSecretEnv`
+| string
+| no
+| Environment variable holding the HMAC key signing host->plugin assertions. Required.
+
+| [[field-usage-budgetBytes]] `budgetBytes`
+| integer
+| no
+| Node WAL budget in bytes, split across the type shares. Default 52428800 (50 MiB). Minimum: 1.
+
+| [[field-usage-trustStore]] `trustStore`
+| string
+| no
+| Path of the signed plugin trust store (JSON: keys, allowedNames, allowedDependencies, revokedDigests, allowAuth, coreVersion). Required when a plugin declares a signed manifest. Relative paths are resolved from the config file.
+
+| [[field-usage-types]] `types`
+| object
+| no
+| Durable event type -> WAL policy. A plugin can only subscribe to a configured type.
+
+| [[field-usage-plugins]] `plugins`
+| array of <<config-usage-plugins,object>>
+| no
+| Out-of-process event consumers (HTTP/JSON), each with its own subscription or signed manifest.
+
+|===
+
+[[config-usage-plugins]]
+==== usage.plugins
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-plugins-name]] `name`
+| string
+| yes
+| Unique plugin name (assertion audience). Minimum length: 1.
+
+| [[field-usage-plugins-url]] `url`
+| string
+| yes
+| Absolute http(s) base URL. /health and /events are appended.
+
+| [[field-usage-plugins-manifest]] `manifest`
+| string
+| no
+| Path of the signed plugin manifest. When set, the manifest is authoritative for the event subscription and the licence feature; artifact is required and usage.trustStore must be configured.
+
+| [[field-usage-plugins-artifact]] `artifact`
+| string
+| no
+| Path of the signed plugin artefact (binary/container). Required with manifest; its digest is verified against the manifest.
+
+| [[field-usage-plugins-types]] `types`
+| array of string (one of: `request`, `auth`, `error`, `billing`, `audit`)
+| no
+| Subscribed event types when no signed manifest is used; each must be configured in usage.types.
+
+| [[field-usage-plugins-filters]] `filters`
+| <<config-usage-plugins-filters,object>>
+| no
+| Narrow the subscription by route, tenant, method, status class or sample rate.
+
+| [[field-usage-plugins-maxLagBytes]] `maxLagBytes`
+| integer
+| no
+| Allowed subscriber lag. Beyond it, onMaxLag applies. Minimum: 0.
+
+| [[field-usage-plugins-onMaxLag]] `onMaxLag`
+| string (one of: `block`, `drop`)
+| no
+| block (default): 503 until catch-up; drop: move the cursor to the lag limit and let eviction proceed.
+
+| [[field-usage-plugins-licenseFeature]] `licenseFeature`
+| string
+| no
+| Required signed-licence feature; the plugin is refused without it.
+
+|===
+
+[[config-usage-plugins-filters]]
+===== usage.plugins.filters
+
+Narrow the subscription by route, tenant, method, status class or sample rate.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-plugins-filters-routes]] `routes`
+| array of string
+| no
+| Route patterns to include, for example /api/*. Empty = all routes.
+
+| [[field-usage-plugins-filters-tenants]] `tenants`
+| array of string
+| no
+| Tenant or auth-provider ids to include. Empty = all tenants.
+
+| [[field-usage-plugins-filters-methods]] `methods`
+| array of string
+| no
+| HTTP methods to include. Empty = all methods.
+
+| [[field-usage-plugins-filters-statusClasses]] `statusClasses`
+| array of string
+| no
+| HTTP status classes to include (1xx..5xx). Empty = all classes.
+
+| [[field-usage-plugins-filters-sampleRate]] `sampleRate`
+| number
+| no
+| Sampling rate for matching events, 0..1. Default 1.0. Minimum: 0. Maximum: 1.
+
+|===
+
+[[config-routes]]
+=== routes
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-host]] `host`
+| string
+| yes
+| Host of the route (routed by Host). Named capture {name}: one DNS label, expanded AT LOAD into one concrete route per allow-listed label of the wildcard block (bounded, fail-closed anti-SSRF).
+
+| [[field-routes-wildcard]] `wildcard`
+| object
+| no
+| Named host/backend expansion — one route, N sites. Keys = capture names ({name} in host and backend), values = the ALLOW-LISTS of DNS labels they may take (a-z0-9, hyphens, no dots). The route expands at load into one concrete route per label; a label outside the lists has no route (fail-closed: the backend is never attacker-derived). With rewriteBody enabled, the expansion also compiles the cross-route map: an origin of another variant (e.g. es.wikipedia.org in the English edition) is rewritten to that sibling's public host; ambiguous alias mappings are left alone, and route-local except prefixes do not apply to siblings.
+
+| [[field-routes-path]] `path`
+| string
+| yes
+| Prefix; "/*" = wildcard (whole host).
+
+| [[field-routes-stripPrefix]] `stripPrefix`
+| string
+| no
+| Exact PUBLIC path prefix removed from the request before it reaches the backend. Path only (no query, fragment or wildcard), matched on segment boundaries and normalized at load (trailing slash removed; root "/" forbidden). Example: path "/api/*", stripPrefix "/api", backend "http://api:8080/v1" turns /api/foo into /v1/foo. The backend also receives X-Forwarded-Prefix when the ingress did not set one. Response paths are rewritten symmetrically: Location, Content-Location, Refresh/Link headers, Set-Cookie Path, and HTML URL attributes (href/src/action/srcset/poster, style url(), meta refresh) are brought back under /api; relative references and other origins are left untouched. Script strings and CSS @import are out of scope. Maximum length: 256.
+
+| [[field-routes-backend]] `backend`
+| string
+| yes
+| Backend base URL (http/https) that serves the route.
+
+| [[field-routes-inject]] `inject`
+| string
+| no
+| Path of the route's custom injection bundle (JSON), relative to the config file. The bundle declares HTML/JS/CSS insertions by named target ("head" = after <head>/meta charset, "body-end" = before </body>) with per-page targeting (when = path prefix) and data-* attribute patches applied client-side by the guard. Inline content or file: (relative to the bundle, read at load — a faulty bundle refuses startup). Its formal grammar is inject-bundle.schema.json. See the doc's § upstream.inject.
+
+| [[field-routes-upstream]] `upstream`
+| <<config-routes-upstream,object>>
+| no
+| Join to a backend outside the internal network (proxified external site — e.g. Cloudflare Pages/Workers). Absent = unchanged historical behavior: public Host preserved, client headers passed as-is.
+
+| [[field-routes-frontend]] `frontend`
+| boolean
+| no
+| Page route: auth failure → 302 to the login (API routes get a JSON 401); eligible for the guard script and the pwa policy.
+
+| [[field-routes-autoHead]] `autoHead`
+| boolean
+| no
+| HEAD requests are served as GET, body removed.
+
+| [[field-routes-auth]] `auth`
+| <<config-routes-auth,object>>
+| no
+| Authentication policy. Empty ({}) = authentication ALWAYS required. auth.when holds TECHNICAL conditions (method/query/header/body) deciding when authentication is required: one object (AND of its conditions) or an array (OR of ANDs — required if ANY element matches); absent/empty = always required. auth.identity holds IDENTITY conditions (roles/scopes/claims/user), checked after successful authentication (403 otherwise) and only on requests that were actually authenticated.
+
+| [[field-routes-rateLimit]] `rateLimit`
+| <<config-routes-rateLimit,object>>
+| no
+| Rate limiting: fixed window per identity (authenticated user, else real IP via X-Forwarded-For), per route. Full window = 429 + Retry-After (seconds). Periods: second\|minute\|hour\|day.
+
+| [[field-routes-quota]] `quota`
+| <<config-routes-quota,object>>
+| no
+| Cumulative quota: same mechanics as rateLimit with a longer window in practice (day). Full window = 429 + Retry-After.
+
+| [[field-routes-openapi]] `openapi`
+| <<config-routes-openapi,object>>
+| no
+| OpenAPI document used to derive REST operations and MCP tools for this route.
+
+| [[field-routes-mcp]] `mcp`
+| <<config-routes-mcp,object>>
+| no
+| Expose a route as an MCP service: protected-resource identifier, scope, tools and metadata.
+
+| [[field-routes-pwa]] `pwa`
+| <<config-routes-pwa,object>>
+| no
+| PWA shell, manifest, icons and service-worker cache policy for a frontend route.
+
+| [[field-routes-csp]] `csp`
+| <<config-routes-csp,object>>
+| no
+| Content-Security-Policy emitted (or amended) by the gateway — the only component able to generate a per-response nonce and write it into the HTML it already rewrites (guard, PWA, custom injections). By default the origin's policy is NEVER removed or weakened: the gateway's policy is added as a SECOND header (browsers enforce all of them, so the effective rule is the strictest) and the hashes of the gateway's own injected script and guard stylesheet are APPENDED to the origin's script-src / style-src (script-src-elem > script-src > default-src, style-src-elem > style-src > default-src). Set own=true to remove the origin policy explicitly and let the gateway own it (opt-in, logged, requires mode nonce/hash and reportOnly=false). Applied to HTML responses only.
+
+| [[field-routes-userBadge]] `userBadge`
+| <<config-routes-userBadge,object>>
+| no
+| User badge injected by the guard script once authenticated: collapsed on the top edge (one line = username), expanded on hover/keyboard focus — chosen claims + logout button (OIDC end_session + cookie clearing). Absent = no badge.
+
+| [[field-routes-uiGate]] `uiGate`
+| array of <<config-routes-uiGate,object>>
+| no
+| UI gating by config (CSS selectors) — embedded in the injected guard script. Only for non-modifiable fronts; an element's data-gtw-* markup wins over the rules.
+
+| [[field-routes-authGuard]] `authGuard`
+| <<config-routes-authGuard,object>>
+| no
+| 401 guard script (login without reloading: tab + replay + banner + declarative gating). Active by default on frontend routes; no-op elsewhere. The guard intercepts the 401 (login) and, when authGuard.forbidden.banner is set, the gateway's OWN identity 403; a 403 coming from the backend is never concerned.
+
+|===
+
+[[config-routes-upstream]]
+==== routes.upstream
+
+Join to a backend outside the internal network (proxified external site — e.g. Cloudflare Pages/Workers). Absent = unchanged historical behavior: public Host preserved, client headers passed as-is.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-upstream-host]] `host`
+| boolean
+| no
+| true = the Host header sent to the backend is that of the backend's origin (required for an external site that routes by Host, e.g. Cloudflare — otherwise the request arrives with the public host and the origin does not recognize it). Absent/false = public Host passed as-is (internal backends). TLS/SNI always targets the backend's origin.
+
+| [[field-routes-upstream-hostOverride]] `hostOverride`
+| string
+| no
+| Explicit value of the Host header sent to the backend, when it must differ from both the public host and the backend's origin (rare). Precedence over host.
+
+| [[field-routes-upstream-headers]] `headers`
+| object
+| no
+| Static request headers set toward the backend (Set: overwrite any value the client may have sent). Uses: get through an origin basic auth ("Authorization": "Basic ${MYSITE_BASIC_AUTH}") or the Cloudflare Access service tokens (CF-Access-Client-Id / CF-Access-Client-Secret). Values with ${VAR} interpolation from the container environment — missing variable = fatal error at load (never a silent empty credential); empty value = header removed from the request. Values are never logged.
+
+| [[field-routes-upstream-rewriteRedirects]] `rewriteRedirects`
+| boolean
+| no
+| true = ABSOLUTE Locations targeting the backend's origin are rewritten to the public host (https scheme, path/query preserved) — otherwise the browser would leave the proxy at the target site's first absolute redirect (e.g. 301 of the trailing slash). Relative Locations and those targeting other origins (e.g. a Cloudflare Access team domain) pass intact. Default: false.
+
+| [[field-routes-upstream-responseHeaders]] `responseHeaders`
+| <<config-routes-upstream-responseHeaders,object>>
+| no
+| Adjustment of the backend's RESPONSE headers before sending to the browser — typically remove an origin Content-Security-Policy that would block the injected guard script, or set a deployment header. Prefer csp.merge (hashes) or csp.own (explicit removal, logged) for CSP: removing the origin's CSP here is a blunt, unlogged operation and loses the origin's protections.
+
+| [[field-routes-upstream-rewriteBody]] `rewriteBody`
+| <<config-routes-upstream-rewriteBody,object>>
+| no
+| Rewriting of the HTML body (200 text/html only, STREAMING — O(1) memory): the origin's absolute URLs cited in the pages ("https://origin/…", "http://origin/…", "//origin/…") are rewritten to the route's public host, so the browser stays in the proxy. Any explicit port is part of the rewritten prefix and is lost (target served on the standard port). The path, query and fragment follow as-is. Routes expanded from one wildcard automatically rewrite sibling editions toward their public hosts. `targets` and `followRoutes` add explicit cross-route mappings (bare hosts only: the request's scheme and port are inherited). At runtime (fetch/XHR/sendBeacon launched by the site), the client SW served on /__gate-one_pwa/sw.js applies the same policy — it is auto-registered by the guard script, served pre-authentication. One same policy (origins × exceptions × targets) is implemented three times (Go engine, client SW, script patch) — parity tested. Default: absent (no body rewriting).
+
+| [[field-routes-upstream-rewriteCookies]] `rewriteCookies`
+| <<config-routes-upstream-rewriteCookies,object>>
+| no
+| Translation of the Set-Cookie set by the origin: a Domain attribute targeting its own namespace ("Domain=original…domain.dev") would be rejected by the browser from the public host — the cookie would be silently lost. Active: a Domain targeting the origin host (equal or parent) is rewritten to the public host in "rewrite" mode (the sharing scope — host + subdomains — is transposed as-is), or the attribute is removed in "strip" mode (host-only on the public host). Other cookies pass intact (surgery of the Domain attribute only: Path/Secure/HttpOnly/SameSite/Expires come out byte-exact). Auth protection: an origin Set-Cookie bearing a name reserved for the gateway session (access_token, refresh_token, id_token, session) is removed with a warning — set on the same public host, it would overwrite the session cookies. Default: absent (no cookie rewriting).
+
+| [[field-routes-upstream-stripCookies]] `stripCookies`
+| string (one of: `all`, `none`)
+| no
+| REQUEST-side cookie filtering toward the backend. The gateway session cookies (access_token, refresh_token, id_token, session) carry Domain=<parent domain> (COOKIE_DOMAIN, e.g. .cladone.com): the browser presents them to EVERY public host, so without this filter a proxified third-party site receives the user's tokens on every request. "all" = every cookie removed except the names in keep (the proxified app's own cookies); "none" = historical behavior, everything forwarded. Default: "all" as soon as an upstream policy is declared (fail-closed).
+
+| [[field-routes-upstream-keep]] `keep`
+| array of string
+| no
+| Cookie names preserved when stripCookies is "all" (typically the proxified application's own session). Names reserved for the gateway session (access_token, refresh_token, id_token, session) are refused at load: they must never reach an external origin.
+
+| [[field-routes-upstream-browserCache]] `browserCache`
+| <<config-routes-upstream-browserCache,object>>
+| no
+| HTTP-cache orientation to the BROWSER for assets the origin serves with no Cache-Control (and no Last-Modified either: without these two headers the browser has no heuristic cache — every re-view re-fetches or revalidates each asset, one full round-trip each). Only 200 responses of content-type image/*, Cache-Control absent only: the origin's own declarations pass untouched. Sent as "private, max-age=…" — private: resources under authentication stay out of any shared cache; the origin's ETag remains for revalidation after expiry. Default: absent (headers preserved as-is).
+
+| [[field-routes-upstream-delegated]] `delegated`
+| <<config-routes-upstream-delegated,object>>
+| no
+| Per-user credentials supplied by the token broker for the authenticated caller. Requires route.auth (the broker needs an authenticated user id). A missing connection produces a 401/409 with a connect_url (or a redirect for frontend routes), never a request without credentials. The same policy applies to REST tool calls produced by an MCP route.
+
+|===
+
+[[config-routes-upstream-responseHeaders]]
+===== routes.upstream.responseHeaders
+
+Adjustment of the backend's RESPONSE headers before sending to the browser — typically remove an origin Content-Security-Policy that would block the injected guard script, or set a deployment header. Prefer csp.merge (hashes) or csp.own (explicit removal, logged) for CSP: removing the origin's CSP here is a blunt, unlogged operation and loses the origin's protections.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-upstream-responseHeaders-set]] `set`
+| object
+| no
+| Headers added/overwritten on the response; values with ${VAR} interpolation (container environment); empty value = header removed (never transmitted empty).
+
+| [[field-routes-upstream-responseHeaders-remove]] `remove`
+| array of string
+| no
+| Header names removed from the response (e.g. Content-Security-Policy).
+
+|===
+
+[[config-routes-upstream-rewriteBody]]
+===== routes.upstream.rewriteBody
+
+Rewriting of the HTML body (200 text/html only, STREAMING — O(1) memory): the origin's absolute URLs cited in the pages ("https://origin/…", "http://origin/…", "//origin/…") are rewritten to the route's public host, so the browser stays in the proxy. Any explicit port is part of the rewritten prefix and is lost (target served on the standard port). The path, query and fragment follow as-is. Routes expanded from one wildcard automatically rewrite sibling editions toward their public hosts. `targets` and `followRoutes` add explicit cross-route mappings (bare hosts only: the request's scheme and port are inherited). At runtime (fetch/XHR/sendBeacon launched by the site), the client SW served on /__gate-one_pwa/sw.js applies the same policy — it is auto-registered by the guard script, served pre-authentication. One same policy (origins × exceptions × targets) is implemented three times (Go engine, client SW, script patch) — parity tested. Default: absent (no body rewriting).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-upstream-rewriteBody-enabled]] `enabled`
+| boolean
+| no
+| true = engine active (the block is present to stay declarative; absent = disabled).
+
+| [[field-routes-upstream-rewriteBody-except]] `except`
+| array of value
+| no
+| Exceptions by path prefix: string entry ("/reading/…") = these URLs stay at the ORIGIN (out-of-proxy reading link); object entry {path, to} = rewritten to an ALTERNATIVE public base. Longest prefix wins. '/…' prefix mandatory, '?'/'#' forbidden, 256 bytes max; 'to' = absolute http(s) URL, trailing slashes trimmed.
+
+| [[field-routes-upstream-rewriteBody-targets]] `targets`
+| object
+| no
+| Explicit cross-route mappings: backend origin host -> public route host. Bare hosts only (no scheme, port, path or wildcard); the key must be an origin of a declared route and the value the public host of a declared route. The request's scheme and port are inherited. Automatic wildcard siblings are added before these entries; a conflicting mapping is refused at load.
+
+| [[field-routes-upstream-rewriteBody-followRoutes]] `followRoutes`
+| array of string
+| no
+| Selectors over declared routes BY PUBLIC HOST (exact host or '*.suffix'; a bare '*' is refused). Each selected route's backend origins are rewritten to its public host. Resolved after wildcard expansion; an unmatched selector, a self-only match or an ambiguous origin is refused at load.
+
+|===
+
+[[config-routes-upstream-rewriteCookies]]
+===== routes.upstream.rewriteCookies
+
+Translation of the Set-Cookie set by the origin: a Domain attribute targeting its own namespace ("Domain=original…domain.dev") would be rejected by the browser from the public host — the cookie would be silently lost. Active: a Domain targeting the origin host (equal or parent) is rewritten to the public host in "rewrite" mode (the sharing scope — host + subdomains — is transposed as-is), or the attribute is removed in "strip" mode (host-only on the public host). Other cookies pass intact (surgery of the Domain attribute only: Path/Secure/HttpOnly/SameSite/Expires come out byte-exact). Auth protection: an origin Set-Cookie bearing a name reserved for the gateway session (access_token, refresh_token, id_token, session) is removed with a warning — set on the same public host, it would overwrite the session cookies. Default: absent (no cookie rewriting).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-upstream-rewriteCookies-domain]] `domain`
+| string (one of: `rewrite`, `strip`)
+| yes
+| "rewrite" (recommended) = Domain transposed to the public host; "strip" = Domain attribute removed.
+
+|===
+
+[[config-routes-upstream-browserCache]]
+===== routes.upstream.browserCache
+
+HTTP-cache orientation to the BROWSER for assets the origin serves with no Cache-Control (and no Last-Modified either: without these two headers the browser has no heuristic cache — every re-view re-fetches or revalidates each asset, one full round-trip each). Only 200 responses of content-type image/*, Cache-Control absent only: the origin's own declarations pass untouched. Sent as "private, max-age=…" — private: resources under authentication stay out of any shared cache; the origin's ETag remains for revalidation after expiry. Default: absent (headers preserved as-is).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-upstream-browserCache-imagesMaxAgeSeconds]] `imagesMaxAgeSeconds`
+| integer
+| yes
+| Freshness duration (seconds) granted to the images (content-type image/*). E.g. 604800 = a week; 31536000 = a year (only if these files are immutable: the image names followed here are the capture timestamps, not content hashes — prefer a moderate duration if the app can re-edite a photo). Minimum: 1.
+
+|===
+
+[[config-routes-upstream-delegated]]
+===== routes.upstream.delegated
+
+Per-user credentials supplied by the token broker for the authenticated caller. Requires route.auth (the broker needs an authenticated user id). A missing connection produces a 401/409 with a connect_url (or a redirect for frontend routes), never a request without credentials. The same policy applies to REST tool calls produced by an MCP route.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-upstream-delegated-provider]] `provider`
+| string
+| yes
+| Broker provider name (e.g. github). Validated against GET /providers at startup; Gate One never stores the provider's client secret. Pattern: `^[a-z0-9][a-z0-9_-]{0,63}$`.
+
+| [[field-routes-upstream-delegated-header]] `header`
+| string
+| no
+| Backend request header receiving the access token. Default Authorization. Host, Cookie, X-User-*, X-Forwarded-* and X-Gate-One-* names are refused.
+
+| [[field-routes-upstream-delegated-prefix]] `prefix`
+| string
+| no
+| Value prepended to the access token. Default "Bearer ". An explicit empty string sends the raw token.
+
+|===
+
+[[config-routes-auth]]
+==== routes.auth
+
+Authentication policy. Empty ({}) = authentication ALWAYS required. auth.when holds TECHNICAL conditions (method/query/header/body) deciding when authentication is required: one object (AND of its conditions) or an array (OR of ANDs — required if ANY element matches); absent/empty = always required. auth.identity holds IDENTITY conditions (roles/scopes/claims/user), checked after successful authentication (403 otherwise) and only on requests that were actually authenticated.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-auth-provider]] `provider`
+| string
+| no
+| ID of the authProviders entry used to verify this route. Empty = defaultAuthProvider. The binding is static and compiled at load; a request cannot choose another provider.
+
+| [[field-routes-auth-when]] `when`
+| value
+| no
+| Technical conditions deciding WHEN authentication is required. Empty = always. One object = AND; an array = OR of ANDs.
+
+| [[field-routes-auth-identity]] `identity`
+| <<config-routes-auth-identity,object>>
+| no
+| Identity policy conditions, evaluated AFTER authentication on the verified token (failure = 403 forbidden). All conditions combine with AND.
+
+|===
+
+[[config-routes-auth-identity]]
+===== routes.auth.identity
+
+Identity policy conditions, evaluated AFTER authentication on the verified token (failure = 403 forbidden). All conditions combine with AND.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-auth-identity-roles]] `roles`
+| array of string
+| no
+| Required Keycloak roles (realm roles + flattened client roles, see auth-bridge's X-Roles). AND between them. Example of a fixed name: offline_access (realm role granted to every user via default-roles-<realm>).
+
+| [[field-routes-auth-identity-scopes]] `scopes`
+| array of string
+| no
+| Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
+
+| [[field-routes-auth-identity-claims]] `claims`
+| object
+| no
+| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+
+| [[field-routes-auth-identity-user]] `user`
+| string
+| no
+| Exact username required (preferred_username).
+
+|===
+
+[[config-routes-rateLimit]]
+==== routes.rateLimit
+
+Rate limiting: fixed window per identity (authenticated user, else real IP via X-Forwarded-For), per route. Full window = 429 + Retry-After (seconds). Periods: second|minute|hour|day.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-rateLimit-requests]] `requests`
+| integer
+| yes
+| Maximum number of requests in the period.
+
+| [[field-routes-rateLimit-period]] `period`
+| string
+| yes
+| Rate-limit period: second, minute, hour or day.
+
+| [[field-routes-rateLimit-when]] `when`
+| <<config-routes-rateLimit-when,object>>
+| no
+| Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two families: technical (method/query/header/body — evaluated BEFORE authentication) and identity (roles/scopes/claims/user — evaluated AFTER authentication on the verified token). All conditions combine with AND. NB: the authentication policy (auth) does NOT use this type: auth.when takes technical conditions only, auth.identity takes identity conditions only.
+
+|===
+
+[[config-routes-rateLimit-when]]
+===== routes.rateLimit.when
+
+Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two families: technical (method/query/header/body — evaluated BEFORE authentication) and identity (roles/scopes/claims/user — evaluated AFTER authentication on the verified token). All conditions combine with AND. NB: the authentication policy (auth) does NOT use this type: auth.when takes technical conditions only, auth.identity takes identity conditions only.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-rateLimit-when-method]] `method`
+| string
+| no
+| Exact HTTP method (e.g. "POST").
+
+| [[field-routes-rateLimit-when-query]] `query`
+| object
+| no
+| Exact equality of URL parameters.
+
+| [[field-routes-rateLimit-when-header]] `header`
+| object
+| no
+| Exact equality of headers. Caution: a header is forgeable by the client — never put an authorization there (use roles instead).
+
+| [[field-routes-rateLimit-when-body]] `body`
+| object
+| no
+| Exact equality of fields of the parsed JSON body (flattened one level).
+
+| [[field-routes-rateLimit-when-roles]] `roles`
+| array of string
+| no
+| Required Keycloak roles (realm roles + flattened client roles, see auth-bridge's X-Roles). AND between them. Example of a fixed name: offline_access (realm role granted to every user via default-roles-<realm>).
+
+| [[field-routes-rateLimit-when-scopes]] `scopes`
+| array of string
+| no
+| Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
+
+| [[field-routes-rateLimit-when-claims]] `claims`
+| object
+| no
+| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+
+| [[field-routes-rateLimit-when-user]] `user`
+| string
+| no
+| Exact username required (preferred_username).
+
+|===
+
+[[config-routes-quota]]
+==== routes.quota
+
+Cumulative quota: same mechanics as rateLimit with a longer window in practice (day). Full window = 429 + Retry-After.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-quota-limit]] `limit`
+| integer
+| yes
+| Maximum billable units in the period.
+
+| [[field-routes-quota-period]] `period`
+| string
+| yes
+| Quota period: second, minute, hour or day.
+
+| [[field-routes-quota-when]] `when`
+| <<config-routes-quota-when,object>>
+| no
+| Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two families: technical (method/query/header/body — evaluated BEFORE authentication) and identity (roles/scopes/claims/user — evaluated AFTER authentication on the verified token). All conditions combine with AND. NB: the authentication policy (auth) does NOT use this type: auth.when takes technical conditions only, auth.identity takes identity conditions only.
+
+|===
+
+[[config-routes-quota-when]]
+===== routes.quota.when
+
+Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two families: technical (method/query/header/body — evaluated BEFORE authentication) and identity (roles/scopes/claims/user — evaluated AFTER authentication on the verified token). All conditions combine with AND. NB: the authentication policy (auth) does NOT use this type: auth.when takes technical conditions only, auth.identity takes identity conditions only.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-quota-when-method]] `method`
+| string
+| no
+| Exact HTTP method (e.g. "POST").
+
+| [[field-routes-quota-when-query]] `query`
+| object
+| no
+| Exact equality of URL parameters.
+
+| [[field-routes-quota-when-header]] `header`
+| object
+| no
+| Exact equality of headers. Caution: a header is forgeable by the client — never put an authorization there (use roles instead).
+
+| [[field-routes-quota-when-body]] `body`
+| object
+| no
+| Exact equality of fields of the parsed JSON body (flattened one level).
+
+| [[field-routes-quota-when-roles]] `roles`
+| array of string
+| no
+| Required Keycloak roles (realm roles + flattened client roles, see auth-bridge's X-Roles). AND between them. Example of a fixed name: offline_access (realm role granted to every user via default-roles-<realm>).
+
+| [[field-routes-quota-when-scopes]] `scopes`
+| array of string
+| no
+| Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
+
+| [[field-routes-quota-when-claims]] `claims`
+| object
+| no
+| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+
+| [[field-routes-quota-when-user]] `user`
+| string
+| no
+| Exact username required (preferred_username).
+
+|===
+
+[[config-routes-openapi]]
+==== routes.openapi
+
+OpenAPI document used to derive REST operations and MCP tools for this route.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-openapi-url]] `url`
+| string
+| yes
+| OpenAPI 3.x JSON document of the host (absolute URL, or path relative to the route backend). Also the document used to resolve the mcp policy's operations.
+
+| [[field-routes-openapi-public]] `public`
+| boolean
+| no
+| false = the openapi.json is only served authenticated.
+
+|===
+
+[[config-routes-mcp]]
+==== routes.mcp
+
+Expose a route as an MCP service: protected-resource identifier, scope, tools and metadata.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-mcp-enabled]] `enabled`
+| boolean
+| yes
+| Enable the MCP service on this route.
+
+| [[field-routes-mcp-path]] `path`
+| string
+| no
+| Default: /mcp.
+
+| [[field-routes-mcp-name]] `name`
+| string
+| no
+| Service name, referenced by mcpSets members. Empty = the route cannot be a set member.
+
+| [[field-routes-mcp-standalone]] `standalone`
+| boolean
+| no
+| Expose this service on its own endpoint (default true). false = served only through the mcpSets referencing it (the set carries the access rights).
+
+| [[field-routes-mcp-resource]] `resource`
+| string
+| no
+| OAuth protected-resource identifier (audience) of the standalone service. Empty = the endpoint URL. Ignored when the service is reached through a set.
+
+| [[field-routes-mcp-scope]] `scope`
+| string
+| no
+| Keycloak client scope required from MCP clients (bearer `scope` claim), announced in /.well-known/oauth-protected-resource and checked by auth-bridge (internal X-MCP-Scope header). The realm must grant it. Default: mcp-tools.
+
+| [[field-routes-mcp-operations]] `operations`
+| array of <<config-routes-mcp-operations,object>>
+| no
+| REST operations exposed as MCP tools. Empty = no tool (the MCP endpoint still serves metadata and initialization). Mutually exclusive with upstream.
+
+| [[field-routes-mcp-upstream]] `upstream`
+| <<config-routes-mcp-upstream,object>>
+| no
+| Proxy an external MCP server over Streamable HTTP instead of deriving local REST tools. The upstream receives the per-user token of upstream.delegated (or static upstream.headers), never the Gate One bearer. Tool filtering is enforced on both tools/list and tools/call.
+
+|===
+
+[[config-routes-mcp-operations]]
+===== routes.mcp.operations
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-mcp-operations-name]] `name`
+| string
+| yes
+| Tool name exposed to MCP clients (unique per route).
+
+| [[field-routes-mcp-operations-operationId]] `operationId`
+| string
+| yes
+| operationId resolved in the host's OpenAPI document; the tool method, path, parameters and body schema are derived from it. An unresolved operationId refuses the configuration load.
+
+|===
+
+[[config-routes-mcp-upstream]]
+===== routes.mcp.upstream
+
+Proxy an external MCP server over Streamable HTTP instead of deriving local REST tools. The upstream receives the per-user token of upstream.delegated (or static upstream.headers), never the Gate One bearer. Tool filtering is enforced on both tools/list and tools/call.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-mcp-upstream-url]] `url`
+| string
+| no
+| Full upstream Streamable HTTP endpoint. Default: the route backend. The incoming /mcp path is not appended automatically.
+
+| [[field-routes-mcp-upstream-tools]] `tools`
+| <<config-routes-mcp-upstream-tools,object>>
+| no
+| Glob patterns (path.Match syntax) over MCP tool names. Include non-empty = only matching tools are exposed; Exclude always wins. Hidden tools are also refused on tools/call.
+
+|===
+
+[[config-routes-mcp-upstream-tools]]
+====== routes.mcp.upstream.tools
+
+Glob patterns (path.Match syntax) over MCP tool names. Include non-empty = only matching tools are exposed; Exclude always wins. Hidden tools are also refused on tools/call.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-mcp-upstream-tools-include]] `include`
+| array of string
+| no
+| Allow-list patterns (e.g. "list_*", "get_*").
+
+| [[field-routes-mcp-upstream-tools-exclude]] `exclude`
+| array of string
+| no
+| Deny-list patterns (e.g. "delete_*", "*_secret").
+
+|===
+
+[[config-routes-pwa]]
+==== routes.pwa
+
+PWA shell, manifest, icons and service-worker cache policy for a frontend route.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-pwa-enabled]] `enabled`
+| boolean
+| yes
+| Enable the PWA shell on this route.
+
+| [[field-routes-pwa-name]] `name`
+| string
+| no
+| Application name shown in the PWA manifest.
+
+| [[field-routes-pwa-shortName]] `shortName`
+| string
+| no
+| Short application name for the home screen.
+
+| [[field-routes-pwa-themeColor]] `themeColor`
+| string
+| no
+| Theme color for the PWA manifest and browser UI.
+
+| [[field-routes-pwa-icon]] `icon`
+| string
+| no
+| Legacy singular (still read).
+
+| [[field-routes-pwa-icons]] `icons`
+| array of string
+| no
+| Same-host paths referenced by the manifest (Chrome: 192×192 and 512×512 PNG for full install).
+
+| [[field-routes-pwa-apiCache]] `apiCache`
+| <<config-routes-pwa-apiCache,object>>
+| no
+| One service-worker API cache policy (path prefix, method, retention).
+
+| [[field-routes-pwa-apiCaches]] `apiCaches`
+| array of <<config-routes-pwa-apiCaches,object>>
+| no
+| API cache policies for the service worker.
+
+| [[field-routes-pwa-apiGETCache]] `apiGETCache`
+| <<config-routes-pwa-apiGETCache,object>>
+| no
+| Its presence activates the universal GET cache (everything nothing else covers).
+
+| [[field-routes-pwa-networkOnly]] `networkOnly`
+| <<config-routes-pwa-networkOnly,object>>
+| no
+| Its presence activates the "never cached" route (auth exchanges, OAuth callbacks carrying a one-time code…).
+
+| [[field-routes-pwa-assets]] `assets`
+| <<config-routes-pwa-assets,object>>
+| no
+| Strategy of same-origin pages/assets (documents, scripts, styles). Default: staleWhileRevalidate without timeout.
+
+|===
+
+[[config-routes-pwa-apiCache]]
+===== routes.pwa.apiCache
+
+One service-worker API cache policy (path prefix, method, retention).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-pwa-apiCache-path]] `path`
+| string
+| yes
+| Path prefix of the API responses cached by the service worker.
+
+| [[field-routes-pwa-apiCache-method]] `method`
+| string (one of: `POST`, `GET`, `none`)
+| no
+| POST (default) = network-first offline replay of POST/SSE; GET = SWR cache of this exact path; none = full opt-out (never cached, excluded from the apiGETCache catch-all).
+
+| [[field-routes-pwa-apiCache-maxEntries]] `maxEntries`
+| integer
+| no
+| Default 50.
+
+| [[field-routes-pwa-apiCache-maxAgeSeconds]] `maxAgeSeconds`
+| integer
+| no
+| Default 86400 (24 h).
+
+| [[field-routes-pwa-apiCache-maxEntrySizeBytes]] `maxEntrySizeBytes`
+| integer
+| no
+| Default 2 MiB — beyond, streamed but not cached.
+
+| [[field-routes-pwa-apiCache-version]] `version`
+| string
+| no
+| Semantic invalidation of the endpoint's cache (bump it when the backend result changes).
+
+| [[field-routes-pwa-apiCache-idleFinalizeMs]] `idleFinalizeMs`
+| integer
+| no
+| Default 1500 — finalizes the cached response after this SSE silence.
+
+| [[field-routes-pwa-apiCache-networkTimeoutSeconds]] `networkTimeoutSeconds`
+| integer
+| no
+| Default 3 — network delay before the cache fallback (headers only).
+
+| [[field-routes-pwa-apiCache-offlineFastPath]] `offlineFastPath`
+| boolean
+| no
+| Default true: offline, serves the cache directly. false = the network failure (bounded by networkTimeoutSeconds) triggers the fallback — for endpoints where replaying a write would be wrong.
+
+|===
+
+[[config-routes-pwa-apiCaches]]
+===== routes.pwa.apiCaches
+
+One service-worker API cache policy (path prefix, method, retention).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-pwa-apiCaches-path]] `path`
+| string
+| yes
+| Path prefix of the API responses cached by the service worker.
+
+| [[field-routes-pwa-apiCaches-method]] `method`
+| string (one of: `POST`, `GET`, `none`)
+| no
+| POST (default) = network-first offline replay of POST/SSE; GET = SWR cache of this exact path; none = full opt-out (never cached, excluded from the apiGETCache catch-all).
+
+| [[field-routes-pwa-apiCaches-maxEntries]] `maxEntries`
+| integer
+| no
+| Default 50.
+
+| [[field-routes-pwa-apiCaches-maxAgeSeconds]] `maxAgeSeconds`
+| integer
+| no
+| Default 86400 (24 h).
+
+| [[field-routes-pwa-apiCaches-maxEntrySizeBytes]] `maxEntrySizeBytes`
+| integer
+| no
+| Default 2 MiB — beyond, streamed but not cached.
+
+| [[field-routes-pwa-apiCaches-version]] `version`
+| string
+| no
+| Semantic invalidation of the endpoint's cache (bump it when the backend result changes).
+
+| [[field-routes-pwa-apiCaches-idleFinalizeMs]] `idleFinalizeMs`
+| integer
+| no
+| Default 1500 — finalizes the cached response after this SSE silence.
+
+| [[field-routes-pwa-apiCaches-networkTimeoutSeconds]] `networkTimeoutSeconds`
+| integer
+| no
+| Default 3 — network delay before the cache fallback (headers only).
+
+| [[field-routes-pwa-apiCaches-offlineFastPath]] `offlineFastPath`
+| boolean
+| no
+| Default true: offline, serves the cache directly. false = the network failure (bounded by networkTimeoutSeconds) triggers the fallback — for endpoints where replaying a write would be wrong.
+
+|===
+
+[[config-routes-pwa-apiGETCache]]
+===== routes.pwa.apiGETCache
+
+Its presence activates the universal GET cache (everything nothing else covers).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-pwa-apiGETCache-excludes]] `excludes`
+| array of string
+| no
+| Path prefixes never cached by the catch-all.
+
+| [[field-routes-pwa-apiGETCache-excludePatterns]] `excludePatterns`
+| array of string
+| no
+| JS regexes (full URL) never cached — invalid syntax rejected at load.
+
+|===
+
+[[config-routes-pwa-networkOnly]]
+===== routes.pwa.networkOnly
+
+Its presence activates the "never cached" route (auth exchanges, OAuth callbacks carrying a one-time code…).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-pwa-networkOnly-excludePatterns]] `excludePatterns`
+| array of string
+| no
+| JS regexes (full URL) → straight to the network, no cache.
+
+|===
+
+[[config-routes-pwa-assets]]
+===== routes.pwa.assets
+
+Strategy of same-origin pages/assets (documents, scripts, styles). Default: staleWhileRevalidate without timeout.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-pwa-assets-strategy]] `strategy`
+| string
+| no
+| staleWhileRevalidate (default) \| networkFirst \| cacheFirst (case-free, normalized).
+
+| [[field-routes-pwa-assets-networkTimeoutSeconds]] `networkTimeoutSeconds`
+| integer
+| no
+| For networkFirst (default 3).
+
+|===
+
+[[config-routes-csp]]
+==== routes.csp
+
+Content-Security-Policy emitted (or amended) by the gateway — the only component able to generate a per-response nonce and write it into the HTML it already rewrites (guard, PWA, custom injections). By default the origin's policy is NEVER removed or weakened: the gateway's policy is added as a SECOND header (browsers enforce all of them, so the effective rule is the strictest) and the hashes of the gateway's own injected script and guard stylesheet are APPENDED to the origin's script-src / style-src (script-src-elem > script-src > default-src, style-src-elem > style-src > default-src). Set own=true to remove the origin policy explicitly and let the gateway own it (opt-in, logged, requires mode nonce/hash and reportOnly=false). Applied to HTML responses only.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-csp-mode]] `mode`
+| string (one of: `off`, `merge`, `hash`, `nonce`)
+| yes
+| "off" = nothing (the origin's policy passes as-is); "merge" = keep the origin policy and only add the hashes of the gateway's injected scripts (no policy of our own); "hash" = emit our policy with those hashes, no body rewrite; "nonce" = emit our policy with a per-response nonce and stamp the HTML in STREAMING mode (O(1) memory, upstream forced to gzip so the body is plain text).
+
+| [[field-routes-csp-reportOnly]] `reportOnly`
+| boolean
+| no
+| Emit Content-Security-Policy-Report-Only instead of the enforcing header (progressive rollout: violations are collected, nothing is blocked). Requires mode nonce or hash.
+
+| [[field-routes-csp-own]] `own`
+| boolean
+| no
+| The gateway OWNS the policy: the origin's enforced and report-only CSP headers are removed before ours is emitted. Opt-in and logged (never silent). Requires mode nonce or hash and reportOnly=false: removing the origin's enforcing policy to replace it with a report-only one would remove protection without enforcing anything. Use only for a site you control/accept, with a complete policy.
+
+| [[field-routes-csp-reportTo]] `reportTo`
+| string
+| no
+| Local path served by the gateway collecting the violations (report-uri). Default: /__gate-one_csp/report. Bounded ring buffer (256 entries), 16 KiB body limit, 50 reports/second, never authenticated. Pattern: `^/[^\s?#]*$`.
+
+| [[field-routes-csp-stampScripts]] `stampScripts`
+| string (one of: `inline`, `all`)
+| no
+| "inline" (default) = only <script> tags WITHOUT src receive the nonce (external scripts stay governed by the host allow-list); "all" = every <script> tag. Nonce mode only. A tag that already carries a nonce is never rewritten.
+
+| [[field-routes-csp-directives]] `directives`
+| object
+| no
+| Directive name → sources, as one string ("'self' https://x") or an array. The gateway appends the nonce (nonce mode) and the injected scripts' / guard stylesheet's hashes to the effective script-src / style-src, and report-uri when reportTo is set. To let the guard's nonce/hash pass, declare style-src (e.g. "'self'").
+
+|===
+
+[[config-routes-userBadge]]
+==== routes.userBadge
+
+User badge injected by the guard script once authenticated: collapsed on the top edge (one line = username), expanded on hover/keyboard focus — chosen claims + logout button (OIDC end_session + cookie clearing). Absent = no badge.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-userBadge-position]] `position`
+| string (one of: `left`, `right`)
+| no
+| Top edge (default right).
+
+| [[field-routes-userBadge-claims]] `claims`
+| value
+| no
+| What the expanded badge displays as claims: true = every claim of the session, false = none, a list = only these (missing ones omitted).
+
+| [[field-routes-userBadge-roles]] `roles`
+| value
+| no
+| Session roles displayed as chips in the expanded badge: true = every role, false = none, a list = only these (same data as the auth.identity.roles conditions, served by the /__gate-one/auth probe).
+
+| [[field-routes-userBadge-scopes]] `scopes`
+| value
+| no
+| Granted scopes displayed as chips in the expanded badge: true = every scope, false = none, a list = only these.
+
+| [[field-routes-userBadge-logoutLabel]] `logoutLabel`
+| string
+| no
+| Label of the logout button (default Log out).
+
+| [[field-routes-userBadge-links]] `links`
+| array of <<config-routes-userBadge-links,object>>
+| no
+| Application-specific links, appended after the connector links (account, then services when the deployment delegates). Duplicate URLs are dropped (the connector link wins); at most 8 links after merge.
+
+| [[field-routes-userBadge-loginBadge]] `loginBadge`
+| boolean
+| no
+| true = the badge ALSO appears when anonymous, from the very first visit, in invitation mode ("👤 Sign in") — clicked, it opens the login tab: offer sign-in without touching the site's markup. Default false (badge only once authenticated; when anonymous it only appears after a detected session death).
+
+|===
+
+[[config-routes-userBadge-links]]
+===== routes.userBadge.links
+
+A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-userBadge-links-label]] `label`
+| string
+| no
+| Displayed text. Optional for the connector links (default Account/Services); required for userBadge.links. Maximum length: 64.
+
+| [[field-routes-userBadge-links-url]] `url`
+| string
+| yes
+| http(s) absolute URL or local absolute path (/...). Maximum length: 2048.
+
+| [[field-routes-userBadge-links-target]] `target`
+| string (one of: `_blank`, `_self`)
+| no
+| Link target. Default _blank.
+
+|===
+
+[[config-routes-uiGate]]
+==== routes.uiGate
+
+UI gating rule by config — for fronts whose markup cannot be modified (if you control the HTML, prefer the data-gtw-* attributes). The selected element is visible only if the session satisfies the conditions (OR on roles, OR on scopes, AND on claims). PRECEDENCE: an element carrying at least one data-gtw-* attribute ignores uiGate rules; several rules on a same element combine with AND; invalid selector = rule ignored.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-uiGate-selector]] `selector`
+| string
+| yes
+| CSS selector (querySelectorAll) of the targeted elements.
+
+| [[field-routes-uiGate-roles]] `roles`
+| array of string
+| no
+| Visible if AT LEAST ONE of these roles is held.
+
+| [[field-routes-uiGate-scopes]] `scopes`
+| array of string
+| no
+| Visible if AT LEAST ONE of these scopes is granted.
+
+| [[field-routes-uiGate-claims]] `claims`
+| object
+| no
+| All must match ("*" = presence).
+
+| [[field-routes-uiGate-auth]] `auth`
+| string (one of: `after`, `before`)
+| no
+| Turns the selected elements into login triggers: after = native action preserved + invitation tab; before = click neutralized + direct tab. Activation only: deactivations (unchecking, closing details, reset, returning a value control to its OFF value) are never gated. Value controls (select/range/date/…) are gated on change, with their default value as the OFF value (data-gtw-auth-off on the element overrides it).
+
+| [[field-routes-uiGate-hidden]] `hidden`
+| string (one of: `before`, `after`)
+| no
+| Hiding: before = hidden before authentication (any click reaching it is neutralized → banner); after = hidden once authenticated.
+
+|===
+
+[[config-routes-authGuard]]
+==== routes.authGuard
+
+401 guard script (login without reloading: tab + replay + banner + declarative gating). Active by default on frontend routes; no-op elsewhere. The guard intercepts the 401 (login) and, when authGuard.forbidden.banner is set, the gateway's OWN identity 403; a 403 coming from the backend is never concerned.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-authGuard-enabled]] `enabled`
+| boolean
+| no
+| false = opt-out (the front handles its own 401).
+
+| [[field-routes-authGuard-loginUrl]] `loginUrl`
+| string
+| no
+| Default: https://login.cladone.com/login (auth-bridge page).
+
+| [[field-routes-authGuard-forbidden]] `forbidden`
+| <<config-routes-authGuard-forbidden,object>>
+| no
+| Opt-in UX for the gateway's OWN identity 403 (rights refusal — auth.identity not satisfied). A backend 403 is never concerned. Browser navigations get a readable HTML page (or a redirect to pageUrl); fetch()/XHR get the JSON 403 unchanged, plus an optional dismissable banner hinting the front authors to hide the feature.
+
+|===
+
+[[config-routes-authGuard-forbidden]]
+===== routes.authGuard.forbidden
+
+Opt-in UX for the gateway's OWN identity 403 (rights refusal — auth.identity not satisfied). A backend 403 is never concerned. Browser navigations get a readable HTML page (or a redirect to pageUrl); fetch()/XHR get the JSON 403 unchanged, plus an optional dismissable banner hinting the front authors to hide the feature.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-routes-authGuard-forbidden-banner]] `banner`
+| boolean
+| no
+| true = the injected guard script shows a dismissable banner when a fetch() sees the gateway's identity 403. Default false.
+
+| [[field-routes-authGuard-forbidden-pageUrl]] `pageUrl`
+| string
+| no
+| Browser navigations refused on identity are redirected there (302) instead of the built-in HTML page.
+
+| [[field-routes-authGuard-forbidden-message]] `message`
+| string
+| no
+| Overrides the built-in forbidden page's message text.
+
+|===

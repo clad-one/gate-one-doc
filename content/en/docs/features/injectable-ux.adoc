@@ -1,0 +1,154 @@
+---
+title: Injectable UX
+linkTitle: Injectable UX
+weight: 40
+description: A user badge, a login guard, gated controls, a 403 banner and a PWA shell without changing the application.
+---
+
+= Injectable UX
+
+== Useful if you want to…
+
+* show **who is logged in** and a logout button on an application you
+  cannot modify;
+* turn a plain 401 into a login tab that replays the request after
+  login, without a page reload;
+* hide or gate controls by role, scope or claim **client-side**, even
+  when the markup is fixed;
+* add a banner, a stylesheet, a script or a PWA manifest per route;
+* show a readable page or a banner when the gateway itself refuses a
+  request on identity (403), while keeping the JSON 403 for `fetch()`.
+
+The application source does not change. Gate One injects a small guard
+script and, optionally, an operator-provided bundle.
+
+== What can be injected
+
+[cols="1,3",options="header"]
+|===
+| Feature | What it does
+
+| User badge | Collapsed username on the top edge; expands to show chosen
+claims/roles/scopes and a logout button. Configured per route with
+`userBadge`.
+| Guard | Intercepts the gateway's 401, opens the login surface in a tab,
+replays the failed request after login and evaluates UI gating. Active
+on frontend routes; opt out with `authGuard.enabled: false`.
+| UI gating | `data-gtw-*` attributes in the markup, or `uiGate` CSS
+selector rules when the markup cannot change. Roles, scopes, claims,
+`before`/`after` activation and hiding.
+| Inject bundle | HTML/JS/CSS insertions by target (`head`, `body-end`),
+page prefix and order, plus client-side `data-*` patches. Referenced by
+`route.inject`.
+| PWA | Manifest, icons, service worker and API cache policy per route.
+| Forbidden UX | `authGuard.forbidden` adds a dismissable banner on the
+gateway's own identity 403, or redirects browser navigations to a page.
+| CSP | `csp.mode` `off`, `merge`, `hash` or `nonce`; the guard is
+class-only and its runtime style carries the nonce.
+|===
+
+== Example configuration
+
+[source,json]
+----
+{
+  "host": "app.demo.localhost",
+  "path": "/*",
+  "frontend": true,
+  "backend": "http://127.0.0.1:8080",
+  "auth": {},
+  "inject": "bundle.json",
+  "userBadge": {
+    "position": "right",
+    "claims": ["preferred_username", "email"],
+    "roles": ["admin"],
+    "logoutLabel": "Sign out"
+  },
+  "uiGate": [
+    { "selector": ".danger-zone", "roles": ["admin"] },
+    { "selector": ".beta-feature", "hidden": "before" },
+    { "selector": "[data-feature=export]", "auth": "before" }
+  ],
+  "authGuard": { "forbidden": { "banner": true } },
+  "csp": { "mode": "nonce" }
+}
+----
+
+The bundle referenced by `inject`:
+
+[source,json]
+----
+{
+  "injects": [
+    {
+      "name": "announcement",
+      "target": "body-end",
+      "when": "/dashboard",
+      "file": "banner.html"
+    },
+    {
+      "name": "brand-style",
+      "target": "head",
+      "style": ".demo-brand{letter-spacing:.02em}"
+    }
+  ],
+  "patch": [
+    {
+      "selector": "[data-feature=beta]",
+      "attrs": { "data-gtw-auth-hidden": "before" }
+    }
+  ]
+}
+----
+
+Complete files:
+link:/examples/injectable-ux/routes.json[`routes.json`],
+link:/examples/injectable-ux/bundle.json[`bundle.json`].
+
+== Markup or config?
+
+If you control the HTML, prefer the `data-gtw-*` attributes; they are
+explicit and survive selector changes. If you cannot modify the
+application, use `uiGate` rules by selector. **Markup wins:** an element
+carrying a `data-gtw-*` attribute ignores the equivalent `uiGate` rule.
+
+Activation is gated; **deactivation is always free**. Unchecking a box,
+closing a `details`, resetting a form or returning a value control to
+its OFF value never opens a login. This avoids trapping anonymous users
+in an action they cannot complete.
+
+== CSP is the real constraint
+
+The guard uses classes and a nonced runtime `<style>`; it does not need
+`style="…"` attributes. If the application already sends a CSP:
+
+* `csp.mode: "merge"` keeps the origin policy and appends the guard
+  hashes;
+* `csp.mode: "nonce"` emits Gate One's policy and stamps inline scripts;
+* `csp.mode: "hash"` avoids rewriting the body but requires external
+  application scripts;
+* `own: true` removes the origin CSP only in `nonce`/`hash` mode and is
+  opt-in and logged.
+
+Injected content must satisfy the policy. A nonce never applies to a
+`style` attribute.
+
+== Limits
+
+* Injection is a response transform, not a security boundary. The
+  backend must still enforce its own authorization.
+* The guard cannot recover a request that the browser never sent (for
+  example a navigation blocked before the request).
+* A page that replaces its DOM can remove injected elements; the guard
+  re-applies patches on its evaluation cycle, but a full SPA rerender
+  may need an application hook.
+* UI gating hides controls; it does not grant or revoke server-side
+  rights. Combine it with `auth.identity`.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-routes-userBadge[`routes[].userBadge`]
+* link:/docs/config/gate-one/#field-routes-uiGate[`routes[].uiGate`]
+* link:/docs/config/gate-one/#field-routes-inject[`routes[].inject`]
+* link:/docs/config/gate-one/#field-routes-csp[`routes[].csp`]
+* link:/docs/config/gate-one/#field-routes-authGuard[`routes[].authGuard`]

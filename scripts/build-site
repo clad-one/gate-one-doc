@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Build the static product site. Dart Sass comes from sass-embedded;
+# Asciidoctor is an external executable required by Hugo's AsciiDoc
+# renderer.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [ ! -x node_modules/.bin/hugo ]; then
+	echo "build-site: run npm ci first (hugo-extended is missing)" >&2
+	exit 1
+fi
+if [ ! -d node_modules/sass-embedded ]; then
+	echo "build-site: run npm ci first (sass-embedded is missing)" >&2
+	exit 1
+fi
+export PATH="$PWD/node_modules/.bin:$(ruby -e 'puts Gem.user_dir' 2>/dev/null)/bin:$PATH"
+if ! command -v asciidoctor >/dev/null 2>&1; then
+	echo "build-site: asciidoctor is required." >&2
+	echo "  gem install asciidoctor --user-install" >&2
+	echo "  export PATH=\"\$(ruby -e 'puts Gem.user_dir')/bin:\$PATH\"" >&2
+	exit 1
+fi
+npx hugo --minify "$@"
+
+# Hugo ignores underscore-prefixed static files, but Cloudflare Pages and
+# Netlify expect `_headers` at the site root.
+if [ -f static/_headers ]; then
+	cp static/_headers public/_headers
+fi

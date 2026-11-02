@@ -1,0 +1,17 @@
+<div class="row row-cols-1 row-cols-md-2 g-4 my-4">
+{{ range hugo.Data.features }}
+  <div class="col">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="card-title h5"><a href="{{ .url | default (printf "/docs/features/%s/" .slug) | relURL }}">{{ .title }}</a></h2>
+        <p class="card-text"><strong>Useful if you want to:</strong> {{ .usefulIf }}</p>
+        <p class="card-text text-body-secondary">{{ .summary }}</p>
+        <p class="card-text">
+          <a class="btn btn-sm btn-outline-primary" href="{{ printf "/docs/features/%s/" .slug | relURL }}">Feature</a>
+          {{ with .example }}<a class="btn btn-sm btn-outline-secondary" href="{{ . | relURL }}">Example</a>{{ end }}
+        </p>
+      </div>
+    </div>
+  </div>
+{{ end }}
+</div>

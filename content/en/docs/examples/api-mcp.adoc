@@ -1,0 +1,101 @@
+---
+title: APIs and MCP
+linkTitle: APIs and MCP
+weight: 40
+description: A browser provider, a JWT provider and an MCP protected resource.
+---
+
+= APIs and MCP
+
+This example separates the browser session from machine tokens and
+exposes one MCP service with its protected-resource metadata.
+
+== File
+
+link:/examples/protect-api-mcp/routes.json[`examples/protect-api-mcp/routes.json`]
+
+[source,json]
+----
+{
+  "authProviders": [
+    {
+      "id": "acme", "type": "oidc",
+      "issuer": "https://auth.example.com/t/acme",
+      "clientId": "gate-one",
+      "clientSecretEnv": "ACME_OIDC_SECRET",
+      "loginBaseUrl": "https://login.example.com",
+      "cookieDomain": "example.com",
+      "sessionKeyEnv": "ACME_SESSION_KEY"
+    },
+    {
+      "id": "acme-api", "type": "jwt",
+      "issuer": "https://auth.example.com/t/acme",
+      "jwksUrl": "https://auth.example.com/t/acme/jwks.json",
+      "audience": "https://api.example.com"
+    }
+  ],
+  "defaultAuthProvider": "acme",
+  "routes": [
+    {
+      "host": "app.example.com", "path": "/*", "frontend": true,
+      "backend": "http://app:8080", "auth": {}
+    },
+    {
+      "host": "api.example.com", "path": "/v1/*", "backend": "http://api:8080",
+      "auth": {
+        "provider": "acme-api",
+        "identity": { "scopes": ["read:things"] }
+      }
+    },
+    {
+      "host": "mcp.example.com", "path": "/mcp", "backend": "http://mcp:8080",
+      "auth": { "provider": "acme-api" },
+      "mcp": {
+        "enabled": true, "path": "/mcp", "name": "things",
+        "resource": "https://mcp.example.com", "scope": "mcp-tools",
+        "operations": [{ "name": "list_things", "operationId": "listThings" }]
+      }
+    }
+  ]
+}
+----
+
+== Try the API route
+
+[source,bash]
+----
+TOKEN="$(curl -s -X POST https://auth.example.com/t/acme/token \
+  -d grant_type=client_credentials \
+  -d client_id=... -d client_secret=... | jq -r .access_token)"
+
+curl -i https://api.example.com/v1/things \
+  -H "Authorization: Bearer $TOKEN"
+----
+
+A token without `read:things` gets a **403** from the gateway; the
+request never reaches the API. An anonymous call gets a **401**.
+
+== Try the MCP route
+
+[source,bash]
+----
+curl -s https://mcp.example.com/.well-known/oauth-protected-resource | jq
+curl -s https://mcp.example.com/mcp \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+----
+
+The metadata advertises the resource, the scope and the authorization
+server. The token audience must match `resource`.
+
+== Caveats
+
+* A `jwt` provider never hosts a login page and never issues tokens.
+* `auth.when` is technical and evaluated before authentication;
+  `auth.identity` is evaluated after it.
+* The JWT provider validates the token signature and `aud`; it does not
+  validate the upstream IdP directly.
+* `mcp.operations` and `mcp.upstream` are mutually exclusive. Use
+  `upstream` to proxy an existing MCP server instead of declaring REST
+  operations.

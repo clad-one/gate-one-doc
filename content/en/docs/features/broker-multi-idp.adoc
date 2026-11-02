@@ -1,0 +1,164 @@
+---
+title: Multiple identity providers
+linkTitle: Multiple identity providers
+weight: 20
+description: Federate Google, Microsoft, Auth0, Keycloak or local accounts behind one optional OIDC issuer.
+---
+
+= Multiple identity providers
+
+== Useful if you want to…
+
+* accept users from **several upstream identity providers** (Google,
+  Microsoft, Auth0, Keycloak, Okta, …);
+* keep a single issuer and a single login surface for several Gate One
+  routes or tenants;
+* add local accounts without deploying another identity provider;
+* keep Gate One's trust boundary simple: Gate One trusts **only** the
+  broker, never the upstream providers.
+
+The broker (`cladone-auth`) is optional. Without it, Gate One talks
+directly to one OIDC or JWT issuer per provider.
+
+== What the broker is
+
+`cladone-auth` is a small **multi-tenant OIDC issuer**:
+
+* it federates the browser login to one or more upstream OIDC providers;
+* it applies local policy: tenant, roles, audiences, allowed domains,
+  admin emails and group mapping;
+* it re-emits its own **Ed25519-signed** ID/access/refresh tokens;
+* it keeps a broker session cookie on its own host, so several
+  applications in the same browser share one upstream login;
+* it publishes the revocation keyspace that Gate One reads, so a global
+  logout invalidates existing sessions and refresh tokens.
+
+Gate One only needs a normal `type: "oidc"` provider pointing at the
+broker tenant. No authentication plugin is loaded into Gate One
+(AC-AUTH-07).
+
+== Broker configuration
+
+[source,json]
+----
+{
+  "publicUrl": "https://auth.example.com",
+  "listen": ":8081",
+  "redis": {
+    "url": "redis://redis:6379/0",
+    "passwordEnv": "REDIS_PASSWORD",
+    "prefix": "cladone:broker:v1:",
+    "authPrefix": "cladone:auth:v1:"
+  },
+  "tenants": [{
+    "id": "acme",
+    "clientId": "gate-one",
+    "clientSecretEnv": "ACME_BROKER_CLIENT_SECRET",
+    "redirectUris": ["https://login.example.com/auth/callback"],
+    "upstreams": {
+      "google": {
+        "issuer": "https://accounts.google.com",
+        "clientIdEnv": "GOOGLE_CLIENT_ID",
+        "clientSecretEnv": "GOOGLE_CLIENT_SECRET",
+        "hostedDomain": "example.com"
+      },
+      "microsoft": {
+        "issuer": "https://login.microsoftonline.com/common/v2.0",
+        "clientIdEnv": "MICROSOFT_CLIENT_ID",
+        "clientSecretEnv": "MICROSOFT_CLIENT_SECRET",
+        "optional": true
+      }
+    },
+    "defaultRoles": ["user"],
+    "allowedDomains": ["example.com"]
+  }]
+}
+----
+
+The full file is link:/examples/broker-multi-idp/broker.json[`examples/broker-multi-idp/broker.json`].
+
+== Gate One configuration
+
+[source,json]
+----
+{
+  "authProviders": [{
+    "id": "acme",
+    "type": "oidc",
+    "issuer": "https://auth.example.com/t/acme",
+    "clientId": "gate-one",
+    "clientSecretEnv": "ACME_OIDC_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "cookieName": "gate_one_acme_session",
+    "roleClaims": ["roles"],
+    "sessionKeyEnv": "ACME_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "passwordEnv": "REDIS_PASSWORD",
+      "prefix": "cladone:auth:v1:"
+    }
+  }],
+  "defaultAuthProvider": "acme",
+  "routes": [{
+    "host": "app.example.com", "path": "/*", "frontend": true,
+    "backend": "http://app:8080", "auth": { "provider": "acme" }
+  }]
+}
+----
+
+== Flows
+
+.Browser
+----
+browser -> Gate One (no session)
+        -> broker /t/acme/authorize
+        -> upstream IdP
+        -> broker /t/acme/callback
+        -> Gate One /auth/callback
+        -> Gate One session
+----
+
+.Machine / MCP
+----
+client -> broker /t/acme/token (client_credentials)
+       -> access token (aud = resource)
+       -> Gate One Authorization: Bearer
+       -> local JWKS validation
+----
+
+== Local accounts
+
+A tenant may enable `localAccounts` and an `smtp` relay. The broker then
+hosts registration and email verification. This is for small
+deployments and demos; an enterprise directory remains the better
+source of truth.
+
+== Security properties
+
+* Upstream client secrets are read from environment variables
+  (`*Env`); they are never written to the configuration file.
+* Every trust decision is local: Gate One validates the broker's JWKS
+  and audience, not the upstream token.
+* A logout revokes both the browser `sid` and the user `sub`, so every
+  existing session and refresh token is refused after the logout. A new
+  login after the logout is allowed (no user lockout).
+* `optional: true` lets an upstream be shipped before its credentials
+  exist: it is skipped instead of refusing startup.
+
+== Limits
+
+* The broker is an issuer, not a general-purpose authorization server:
+  its policy is tenant/roles/audiences, not per-resource rules. Route
+  rules stay in Gate One.
+* Authentication adapters and broker IdP adapters remain under the Gate
+  One licence; they are not third-party extension plugins.
+* The broker is not required for a single OIDC provider. Prefer direct
+  OIDC when one issuer is enough.
+
+== Configuration reference
+
+* link:/docs/config/broker/[Broker configuration]
+* link:/docs/config/gate-one/#field-authProviders[`authProviders`]
+* link:/docs/config/gate-one/#field-defaultAuthProvider[`defaultAuthProvider`]

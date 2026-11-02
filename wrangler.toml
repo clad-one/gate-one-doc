@@ -1,0 +1,6 @@
+# Cloudflare Pages configuration (optional hosting).
+# Build with `npm run build`, then deploy `public/` with:
+#   wrangler pages deploy public --project-name gate-one-product
+name = "gate-one-product"
+pages_build_output_dir = "public"
+compatibility_date = "2026-11-02"

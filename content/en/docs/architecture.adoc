@@ -1,0 +1,190 @@
+---
+title: Architecture
+linkTitle: Architecture
+weight: 20
+description: How Gate One sits between the browser, the identity provider, the applications and the plugins.
+---
+
+= Architecture
+
+Gate One is a reverse proxy at the edge. It authenticates the request,
+applies route policy, optionally injects UX, then forwards the request
+to the existing application. The application keeps its own URL, stack
+and deployment; it does not need an SDK.
+
+== Request path
+
+[source,text]
+----
+browser / API client
+        |
+        v
++-------------------+        +---------------------+
+| Gate One          | -----> | OIDC / JWT / broker |
+| - route match     |        | identity provider   |
+| - auth + policy   |        +---------------------+
+| - usage admission |
+| - injection       |        +---------------------+
+| - proxy           | -----> | existing application|
++-------------------+        +---------------------+
+        |
+        | subscribed events (HTTP/JSON)
+        v
++-------------------+
+| out-of-process    |
+| plugin            |
++-------------------+
+----
+
+The gateway does five things in order:
+
+. match the route by host and path;
+. reserve durable event space (when a durable type is subscribed);
+. authenticate and check the identity policy;
+. forward the request, or answer 401/403/502/503 itself;
+. emit the subscribed event after the response.
+
+A failure at step 2 is a **503 before authentication**, so an event the
+operator declared durable is not lost. A failure at step 3 never reaches
+the backend.
+
+== Authentication modes
+
+[cols="1,2,2",options="header"]
+|===
+| Mode | Use | External dependency
+
+| `dev` | Onboarding, tests, local demos. A dedicated `login.<domain>`
+host, real alice/bob form, loopback only. | none
+| `http` | Any service implementing the Gate One auth contract;
+auth-bridge is the reference. | auth-bridge or an adapter
+| `oidc` | Native OpenID Connect relying party: discovery, code + PKCE,
+state/nonce, JWKS, signed session, RP-initiated and back-channel logout,
+MCP bearer validation. | an OIDC identity provider
+| `jwt` | Stateless JWKS bearer validation for APIs and MCP. No login
+page, no session cookie. | a JWT issuer with JWKS
+|===
+
+`authProvider` is the single-provider form. `authProviders` +
+`defaultAuthProvider` + `auth.provider` bind one provider per route for
+multi-tenant hosting. Only `oidc` and `jwt` are allowed in the plural
+form; `http` and `dev` remain legacy single-provider modes.
+
+An authentication provider is **not** a plugin. `authProvider.type:
+"plugin"` is rejected. Authentication adapters are brokered: they live in
+the broker and remain under the Gate One licence.
+
+== With or without the broker
+
+The broker is optional.
+
+* **Without the broker**, Gate One talks directly to one OIDC or JWT
+  issuer per provider. This is the simplest production setup.
+* **With the broker** (`cladone-auth`), Gate One trusts one local issuer
+  that federates Google, Microsoft, Auth0, Keycloak or local accounts,
+  applies tenant policy and re-emits Ed25519-signed tokens. Gate One
+  never trusts the upstream token.
+
+The broker adds a second service and a second session (browser SSO on
+the broker host), but it keeps the trust boundary local and makes
+multi-provider and multi-tenant setups uniform. It also publishes the
+revocation keyspace Gate One reads for a global logout.
+
+== Identity and injectable UX
+
+After authentication, Gate One knows an identity: user, roles, scopes,
+claims and an opaque subject id. It can:
+
+* enforce route conditions (`auth.when`, `auth.identity`);
+* add the opaque `X-Gate-One-Subject` header for the backend;
+* inject a user badge, a login guard, gated controls, a forbidden
+  banner, a PWA shell and custom HTML/JS/CSS;
+* emit a strict CSP in `merge`, `hash` or `nonce` mode.
+
+The injected guard is class-based and runs after the gateway has decided
+authentication. It is a UX layer, not an authorization boundary: the
+backend must still enforce its own rights.
+
+== Usage bus and plugins
+
+Usage events are opt-in per type. A plugin declares a subscription in a
+signed manifest; only then are those events produced.
+
+* one WAL per **(node, type)**;
+* one cursor per **(type, subscriber)**;
+* a node budget split into per-type shares;
+* `fsync: always` = zero loss before the response;
+* `window_ms` = group commit;
+* `none` = best effort;
+* `onMaxLag: block` = targeted 503 until the plugin catches up;
+* `onMaxLag: drop` = cursor advances to the lag limit and the plugin is
+  marked degraded.
+
+Events contain no token, cookie, email or username. The user is an
+opaque `subjectId = v1.` + HMAC(issuer, sub). The HMAC secret is held by
+the producer only.
+
+Extensions are out-of-process HTTP/JSON services, verified by an Ed25519
+manifest and a local trust store. There is no compile-time plugin API.
+See link:/docs/plugins/[Plugins] and
+link:/docs/config/plugin-manifest/[the manifest reference].
+
+== Deployment and high availability
+
+A production deployment looks like this:
+
+[source,text]
+----
+              +------------------+
+              | Redis Sentinel   |
+              | session/revoke   |
+              +------------------+
+                       |
+        +--------------+--------------+
+        |                             |
+  +-----------+                 +-----------+
+  | Gate One  |                 | Gate One  |
+  | replica 1 |                 | replica 2 |
+  +-----------+                 +-----------+
+        |                             |
+        +--------------+--------------+
+                       |
+                 application
+----
+
+* **Two replicas** behind a load balancer; no published container port.
+* **Shared state** in Redis (Sentinel + TLS + ACL) with a versioned key
+  prefix. A local bbolt file is valid for a single instance only.
+* **Same session key** on every replica (`sessionKeyEnv`).
+* **Health probes**: `/healthz` (liveness) and `/readyz` (readiness,
+  including providers and usage).
+* **Manual rolling restart**: one replica at a time, 30-second stop
+  grace, in-flight drain. There is no blue/green deployment yet.
+* **WAL per node**: a plugin consumes each node's WAL; `instanceId` and
+  `epoch` make a gap visible after a restart or a migration.
+* **Configuration reload**: `SIGHUP` re-reads and validates the file,
+  then swaps the gateway atomically. An invalid file is refused and the
+  previous configuration stays active.
+* **Fail closed**: Redis unavailable on an authenticated route →
+  `502 authentication_unavailable`; a full durable share → targeted
+  `503 usage_unavailable`; a failed login audit → no session.
+
+== What Gate One is not
+
+* It is not an identity provider (the `dev` provider is for local
+  development only).
+* It is not a token issuer; the broker is a separate optional service.
+* It is not a general-purpose authorization server: policy is per route
+  (technical conditions, roles, scopes, claims), not per resource.
+* It is not a plugin runtime inside the request process: plugins never
+  decide authentication and never sit on the hot path.
+* It does not provide commercial metering in the free/self-hosted
+  edition; usage events are operational.
+
+== Read next
+
+* link:/docs/features/sso-multi-apps/[SSO across your apps]
+* link:/docs/features/broker-multi-idp/[Multiple identity providers]
+* link:/docs/features/protect-api-mcp/[APIs and MCP]
+* link:/docs/features/injectable-ux/[Injectable UX]
+* link:/docs/features/usage-events/[Usage events and plugins]

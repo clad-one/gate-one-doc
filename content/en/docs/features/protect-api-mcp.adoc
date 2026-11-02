@@ -1,0 +1,131 @@
+---
+title: Protect APIs and MCP tools
+linkTitle: APIs and MCP
+weight: 30
+description: Route-level identity rules, JWT validation for APIs and MCP protected-resource metadata.
+---
+
+= Protect APIs and MCP tools
+
+== Useful if you want to…
+
+* expose an API only to authenticated users, with roles, scopes or claim
+  conditions per route;
+* accept machine clients with a bearer JWT, validated locally against a
+  JWKS;
+* expose MCP tools with the OAuth protected-resource metadata clients
+  expect (resource/audience, scope, tool list);
+* keep the browser session and the machine token planes separate.
+
+== Two planes
+
+**Browser session.** Gate One hosts (or delegates) the login page, sets
+an RP session cookie and proxies the request after authentication. Use
+`type: "oidc"` (or `http` for auth-bridge).
+
+**Machine bearer.** A client presents `Authorization: Bearer <JWT>`.
+Gate One validates the signature through the provider's JWKS, then the
+audience and the identity conditions. Use `type: "jwt"`; this provider
+never hosts a login page and never issues a token.
+
+== Route rules
+
+`auth.when` decides **when authentication is required** from technical
+conditions (method, query, header, body). `auth.identity` decides **who
+is allowed** after a successful authentication:
+
+[source,json]
+----
+{
+  "host": "api.example.com",
+  "path": "/v1/*",
+  "backend": "http://api:8080",
+  "auth": {
+    "provider": "acme-api",
+    "when": { "method": ["GET", "POST"] },
+    "identity": {
+      "scopes": ["read:things"],
+      "roles": ["user"]
+    }
+  }
+}
+----
+
+An empty `auth` (`{}`) means authentication is **always** required.
+
+== JWT provider
+
+[source,json]
+----
+{
+  "id": "acme-api",
+  "type": "jwt",
+  "issuer": "https://auth.example.com/t/acme",
+  "jwksUrl": "https://auth.example.com/t/acme/jwks.json",
+  "audience": "https://api.example.com"
+}
+----
+
+`issuer` is advertised in metadata; `jwksUrl` is required; `audience`
+is checked when non-empty. The JWKS is cached (`cacheTtlSeconds`) and
+refreshed on an unknown key.
+
+== MCP
+
+An MCP route declares its protected-resource identity:
+
+[source,json]
+----
+{
+  "host": "mcp.example.com",
+  "path": "/mcp",
+  "backend": "http://mcp:8080",
+  "auth": { "provider": "acme-api" },
+  "mcp": {
+    "enabled": true,
+    "path": "/mcp",
+    "name": "things",
+    "resource": "https://mcp.example.com",
+    "scope": "mcp-tools",
+    "operations": [
+      { "name": "list_things", "operationId": "listThings" }
+    ]
+  }
+}
+----
+
+Gate One then serves:
+
+* `/.well-known/oauth-protected-resource` metadata for the endpoint;
+* authorization checks against the bearer token's `scope` and `aud`;
+* the declared REST operations as MCP tools;
+* optional grouping of several services under one endpoint with
+  `mcpSets` (the set carries the audience, scope and identity).
+
+An external MCP server can also be proxied with `mcp.upstream.url`
+instead of declared operations.
+
+== Complete example
+
+link:/examples/protect-api-mcp/routes.json[`examples/protect-api-mcp/routes.json`]
+shows one browser provider, one JWT provider, an API route with an
+identity condition and an MCP service.
+
+== Operational notes
+
+* A `jwt` provider is stateless: no cookie, no session store, no login
+  host. It is the right choice for machine-to-machine and MCP clients.
+* `auth.when` is evaluated **before** authentication; it cannot inspect
+  the identity. Use `auth.identity` for roles/scopes/claims.
+* The MCP audience check fails closed. If the issuer does not put the
+  resource in `aud`, configure an audience mapper or use
+  `mcpAudience: "auto"` with an issuer that supports it.
+* Token issuance, refresh and client registration are the issuer's job;
+  Gate One only validates.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-routes-auth[`routes[].auth`]
+* link:/docs/config/gate-one/#field-routes-auth-identity[`routes[].auth.identity`]
+* link:/docs/config/gate-one/#field-routes-mcp[`routes[].mcp`]
+* link:/docs/config/gate-one/#field-mcpSets[`mcpSets`]

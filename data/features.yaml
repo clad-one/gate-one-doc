@@ -1,0 +1,79 @@
+- slug: sso-multi-apps
+  title: SSO across your apps
+  linkTitle: SSO across apps
+  weight: 10
+  usefulIf: you want one login for several applications without changing the applications.
+  summary: One OIDC provider, one login host, a shared cookie domain and a shared session store.
+  example: /docs/examples/getting-started/
+  configRefs:
+    - label: issuer
+      url: /docs/config/gate-one/#field-authProvider-issuer
+    - label: cookieDomain
+      url: /docs/config/gate-one/#field-authProvider-cookieDomain
+    - label: sessionKeyEnv
+      url: /docs/config/gate-one/#field-authProvider-sessionKeyEnv
+    - label: sessionStore
+      url: /docs/config/gate-one/#field-authProvider-sessionStore
+  plugin: false
+- slug: broker-multi-idp
+  title: Google, Auth0, Microsoft or local accounts
+  linkTitle: Multiple identity providers
+  weight: 20
+  usefulIf: your users come from several identity providers, or you need local accounts.
+  summary: The optional broker federates upstream IdPs, applies local policy and emits its own Ed25519-signed tokens.
+  example: /docs/examples/broker/
+  configRefs:
+    - label: authProviders
+      url: /docs/config/gate-one/#field-authProviders
+    - label: defaultAuthProvider
+      url: /docs/config/gate-one/#field-defaultAuthProvider
+    - label: broker tenants
+      url: /docs/config/broker/#field-tenants
+  plugin: false
+- slug: protect-api-mcp
+  title: Protect APIs and MCP tools
+  linkTitle: APIs and MCP
+  weight: 30
+  usefulIf: you expose APIs or MCP tools to authenticated users and machine clients.
+  summary: Route-level identity conditions, JWT/JWKS validation for APIs, and MCP protected-resource metadata with audience and scope checks.
+  example: /docs/examples/api-mcp/
+  configRefs:
+    - label: auth.when
+      url: /docs/config/gate-one/#field-routes-auth
+    - label: auth.identity
+      url: /docs/config/gate-one/#field-routes-auth-identity
+    - label: mcp
+      url: /docs/config/gate-one/#field-routes-mcp
+  plugin: false
+- slug: injectable-ux
+  title: Injectable UX
+  linkTitle: Injectable UX
+  weight: 40
+  usefulIf: you cannot modify the frontend but need a user badge, a guard, gated controls or a PWA shell.
+  summary: HTML/JS/CSS injection, declarative UI gating, a 403 banner and a strict CSP — without touching the application source.
+  example: /docs/examples/injectable-ux/
+  configRefs:
+    - label: userBadge
+      url: /docs/config/gate-one/#field-routes-userBadge
+    - label: uiGate
+      url: /docs/config/gate-one/#field-routes-uiGate
+    - label: inject
+      url: /docs/config/gate-one/#field-routes-inject
+    - label: csp
+      url: /docs/config/gate-one/#field-routes-csp
+  plugin: false
+- slug: usage-events
+  title: Usage events and plugins
+  linkTitle: Usage events
+  weight: 50
+  usefulIf: you need metering, audit, observability, or a commercial extension.
+  summary: Durable per-type WAL, signed out-of-process plugins, targeted 503 on backpressure and an opaque subjectId instead of user data.
+  example: /docs/examples/usage-plugin/
+  configRefs:
+    - label: usage.types
+      url: /docs/config/gate-one/#field-usage-types
+    - label: usage.plugins
+      url: /docs/config/gate-one/#field-usage-plugins
+    - label: usage.trustStore
+      url: /docs/config/gate-one/#field-usage-trustStore
+  plugin: true

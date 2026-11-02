@@ -1,0 +1,127 @@
+---
+title: SSO across your apps
+linkTitle: SSO across apps
+weight: 10
+description: One login for several existing applications, without an SDK or a frontend change.
+---
+
+= SSO across your apps
+
+== Useful if you want to…
+
+* give users **one login** for several applications;
+* keep the applications untouched: no SDK, no OIDC library, no frontend patch;
+* share a session between `app.example.com`, `reports.example.com` and similar hosts;
+* revoke a session centrally and have every application refuse it on the next request.
+
+Gate One is a reverse proxy: the application still receives a normal HTTP
+request. It never sees a token unless you ask for one.
+
+== What the user sees
+
+The first visit to any protected host redirects to the login host. After
+the identity provider callback, Gate One sets one session cookie on the
+shared parent domain. Every other Gate One route on that domain accepts
+the same session, so the user does not log in again.
+
+According to the route, the application receives an identity:
+
+* `X-Gate-One-Subject` (opaque, stable per user and issuer) when usage
+  events are enabled;
+* the identity headers configured by the auth provider;
+* the original `Authorization` header only when the route explicitly
+  delegates it.
+
+== Minimal configuration
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://auth.example.com/realms/acme",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "passwordEnv": "REDIS_PASSWORD",
+      "prefix": "cladone:auth:v1:"
+    }
+  },
+  "routes": [
+    {
+      "host": "app.example.com", "path": "/*", "frontend": true,
+      "backend": "http://app:8080", "auth": {}
+    },
+    {
+      "host": "reports.example.com", "path": "/*", "frontend": true,
+      "backend": "http://reports:8080", "auth": {}
+    }
+  ]
+}
+----
+
+The complete file is link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`].
+See also the link:/docs/examples/getting-started/[getting-started example]
+for a local demo with the embedded development identity provider.
+
+== Why Redis
+
+A single instance can keep the session and revocation state in a local
+bbolt file. Several Gate One instances must share the same state **and**
+the same cookie-signing key:
+
+* `sessionKeyEnv` names an environment variable present on every node;
+* `sessionStore.type: "redis"` points every node at the same Redis;
+* Sentinel and TLS are supported for a highly available Redis
+  (`masterName`, `sentinelAddrs`, `tls`, …).
+
+If Redis is unavailable, authenticated routes fail closed with
+`502 authentication_unavailable`. Public routes keep working.
+
+== Logout and revocation
+
+The RP session lifetime is Gate One's own (`sessionTtlSeconds`, one hour
+by default), independent of the identity provider's short ID-token
+lifetime. Logout clears the cookie and records the revocation:
+
+* RP-initiated logout uses the provider's `end_session_endpoint`;
+* back-channel logout is validated and persisted (or stored in Redis);
+* a revoked `sid`/`sub` is refused on the next request, on every node
+  that shares the store.
+
+The revocation TTL defaults to the issuer's advertised refresh-token
+lifetime, or 30 days. It is never shorter than the session TTL.
+
+== Operational notes
+
+* **Same parent domain required.** `cookieDomain` must cover every
+  application host. `app.acme.com` and `app.other.com` cannot share a
+  cookie; use one login per parent domain, or put the applications
+  behind a common hostname.
+* **Manual rolling restart.** Restart one instance at a time; in-flight
+  requests drain for up to 30 seconds. There is no blue/green deployment
+  yet.
+* **Secrets never in the file.** Use `clientSecretEnv`, and keep
+  `sessionKeyEnv` identical on every replica.
+
+== Limits
+
+* Gate One does not create users, passwords or refresh tokens; that is
+  the identity provider's job (or the optional broker's).
+* A route can bind only one authentication provider. Multi-provider
+  hosting uses `authProviders` + `auth.provider` and one provider per
+  route.
+* Applications that need the raw access token must opt in; by default
+  tokens are never forwarded.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-authProvider-issuer[`authProvider.issuer`]
+* link:/docs/config/gate-one/#field-authProvider-cookieDomain[`authProvider.cookieDomain`]
+* link:/docs/config/gate-one/#field-authProvider-sessionKeyEnv[`authProvider.sessionKeyEnv`]
+* link:/docs/config/gate-one/#field-authProvider-sessionStore[`authProvider.sessionStore`]

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Local preview: includes drafts and future-dated pages.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [ ! -x node_modules/.bin/hugo ]; then
+	echo "serve-site: run npm ci first" >&2
+	exit 1
+fi
+export PATH="$PWD/node_modules/.bin:$(ruby -e 'puts Gem.user_dir' 2>/dev/null)/bin:$PATH"
+if ! command -v asciidoctor >/dev/null 2>&1; then
+	echo "serve-site: asciidoctor is required (gem install asciidoctor --user-install)" >&2
+	exit 1
+fi
+exec npx hugo server -D --bind 127.0.0.1 "$@"

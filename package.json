@@ -1,0 +1,27 @@
+{
+  "name": "gate-one-product",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gate One product site (Hugo + Docsy + AsciiDoc)",
+  "scripts": {
+    "build": "./scripts/build-site",
+    "serve": "./scripts/serve-site",
+    "docs": "./scripts/gen-config-docs",
+    "validate": "./scripts/validate-examples",
+    "release": "./scripts/release.sh",
+    "test": "npm run docs && npm run validate && npm run build",
+    "check": "./scripts/check-generated && ./scripts/validate-examples"
+  },
+  "license": "SEE LICENSE IN https://github.com/cladone/gate-one",
+  "devDependencies": {
+    "autoprefixer": "^10.6.2",
+    "hugo-extended": "^0.169.0",
+    "postcss": "^8.5.32",
+    "postcss-cli": "^12.0.0",
+    "sass-embedded": "^1.107.1"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.3.1",
+    "bootstrap": "^5.3.8"
+  }
+}

@@ -1,0 +1,85 @@
+---
+title: Multi-app SSO
+linkTitle: Multi-app SSO
+weight: 20
+description: Two applications, one OIDC provider and a shared cookie domain.
+---
+
+= Multi-app SSO
+
+This example puts two existing applications behind one Gate One provider.
+The user logs in once; both applications accept the same session.
+
+== Files
+
+link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`]
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://auth.example.com/realms/acme",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "passwordEnv": "REDIS_PASSWORD",
+      "prefix": "cladone:auth:v1:"
+    }
+  },
+  "routes": [
+    {
+      "host": "app.example.com", "path": "/*", "frontend": true,
+      "backend": "http://app:8080", "auth": {}
+    },
+    {
+      "host": "reports.example.com", "path": "/*", "frontend": true,
+      "backend": "http://reports:8080", "auth": {}
+    }
+  ]
+}
+----
+
+== Run it
+
+[source,bash]
+----
+export OIDC_CLIENT_SECRET=...
+export OIDC_SESSION_KEY="$(openssl rand -base64 32)"
+export REDIS_PASSWORD=...
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+Register `https://login.example.com/auth/callback` at the identity
+provider. Point DNS (or your test hosts file) for `app.example.com`,
+`reports.example.com` and `login.example.com` at Gate One.
+
+== Why it works
+
+* `cookieDomain: "example.com"` lets both hosts share the session cookie.
+* `sessionKeyEnv` is identical on every replica, so any replica can
+  verify the cookie.
+* Redis shares the session and revocation state; bbolt is single-instance
+  only.
+* The second visit does not redirect to the identity provider.
+
+== Caveats
+
+* The applications must share a parent domain. `app.acme.com` and
+  `app.other.com` cannot share a cookie; use one login per parent domain
+  or a common hostname.
+* A logout revokes the session centrally; every replica sharing Redis
+  refuses it on the next request.
+* The applications can stay public: remove `"auth": {}` from one route.
+  Only that route becomes anonymous.
+
+== Next
+
+If your users come from several identity providers, add the optional
+broker: link:../broker/[Broker federation].

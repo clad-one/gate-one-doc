@@ -1,0 +1,359 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gate-one.example.com/schemas/broker.schema.json",
+  "title": "Cladone Auth broker configuration",
+  "description": "Optional multi-tenant OIDC issuer. The broker federates upstream identity providers, applies local policy and re-emits Ed25519-signed JWTs. Gate One trusts only the broker issuer. Secrets are read from the environment: a *Env field is required when no inline secret is accepted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "publicUrl",
+    "tenants"
+  ],
+  "properties": {
+    "publicUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "External origin of the broker, without a trailing slash (for example https://auth.example.com)."
+    },
+    "listen": {
+      "type": "string",
+      "description": "Default listen address for cmd/cladone-auth (for example :8081)."
+    },
+    "sessionCookieName": {
+      "type": "string",
+      "description": "Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid."
+    },
+    "tenants": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.",
+      "items": {
+        "$ref": "#/definitions/tenant"
+      }
+    },
+    "redis": {
+      "$ref": "#/definitions/redis"
+    },
+    "smtp": {
+      "$ref": "#/definitions/smtp"
+    }
+  },
+  "definitions": {
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "clientId",
+        "redirectUris"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tenant identifier; also the /t/{tenant} path segment and default audience."
+        },
+        "clientId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Gate One OIDC client id registered with this tenant."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "Inline client secret. Prefer clientSecretEnv so the secret never lands in the file.",
+          "writeOnly": true
+        },
+        "clientSecretEnv": {
+          "type": "string",
+          "description": "Environment variable holding the Gate One client secret."
+        },
+        "redirectUris": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Allowed Gate One callback URLs (https, or localhost for tests)."
+        },
+        "postLogoutRedirectUris": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Allowed post-logout targets. Empty = redirectUris."
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Audiences allowed for access tokens. Empty = the tenant id."
+        },
+        "google": {
+          "$ref": "#/definitions/upstream"
+        },
+        "upstreams": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/upstream"
+          },
+          "description": "Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label."
+        },
+        "keyFile": {
+          "type": "string",
+          "description": "Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles."
+        },
+        "keyFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones."
+        },
+        "defaultRoles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Roles granted to every authenticated user."
+        },
+        "allowedDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Allowed upstream hosted/email domains. Empty = no restriction."
+        },
+        "adminEmails": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "email"
+          },
+          "description": "Email addresses granted the admin role."
+        },
+        "groupRoles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "Map an upstream group/claim value to broker roles."
+        },
+        "accessTokenTtlSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Access token lifetime in seconds. Default 600."
+        },
+        "idTokenTtlSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "ID token lifetime in seconds. Default 600."
+        },
+        "refreshTokenTtlSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation."
+        },
+        "sessionTtlSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Broker SSO session lifetime in seconds. Default 43200 (12 hours)."
+        },
+        "localAccounts": {
+          "type": "boolean",
+          "description": "Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp."
+        },
+        "appOrigins": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Allowed application origins for a verification continueUrl."
+        },
+        "registrationSecretEnv": {
+          "type": "string",
+          "description": "Environment variable gating POST /register (server-to-server registration)."
+        }
+      }
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "issuer": {
+          "type": "string",
+          "format": "uri",
+          "description": "Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Upstream OIDC client id. Prefer clientIdEnv."
+        },
+        "clientIdEnv": {
+          "type": "string",
+          "description": "Environment variable holding the upstream client id."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "Inline upstream client secret. Prefer clientSecretEnv.",
+          "writeOnly": true
+        },
+        "clientSecretEnv": {
+          "type": "string",
+          "description": "Environment variable holding the upstream client secret."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Forwarded to the upstream authorize endpoint (for example select_account)."
+        },
+        "hostedDomain": {
+          "type": "string",
+          "description": "Google Workspace hosted domain (hd) restriction."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Upstream scopes. Default openid, profile, email."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Label shown on the identity provider chooser. Default: the upstream key."
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup."
+        }
+      },
+      "description": "Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env."
+    },
+    "redis": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode."
+        },
+        "sentinelAddrs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sentinel addresses (host:port). Required with masterName."
+        },
+        "masterName": {
+          "type": "string",
+          "description": "Redis master name for Sentinel discovery."
+        },
+        "sentinelUsername": {
+          "type": "string",
+          "description": "ACL user for the Sentinel connections (sentinel mode only)."
+        },
+        "sentinelPasswordEnv": {
+          "type": "string",
+          "description": "Environment variable holding the Sentinel password (sentinel mode only)."
+        },
+        "username": {
+          "type": "string",
+          "description": "Redis ACL user."
+        },
+        "passwordEnv": {
+          "type": "string",
+          "description": "Environment variable holding the Redis password."
+        },
+        "db": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Redis database number. Default 0."
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Key prefix for broker state. Default cladone:broker:v1:."
+        },
+        "authPrefix": {
+          "type": "string",
+          "description": "Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:."
+        },
+        "dialTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Dial timeout in milliseconds."
+        },
+        "readTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Read timeout in milliseconds."
+        },
+        "writeTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Write timeout in milliseconds."
+        },
+        "poolSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Connection pool size."
+        },
+        "tls": {
+          "type": "boolean",
+          "description": "Use TLS for the Sentinel and master/replica connections."
+        },
+        "tlsCaFile": {
+          "type": "string",
+          "description": "CA bundle for TLS (system roots by default). Requires tls=true."
+        },
+        "tlsServerName": {
+          "type": "string",
+          "description": "TLS server name, useful when Sentinels are addressed by IP. Requires tls=true."
+        }
+      }
+    },
+    "smtp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "from"
+      ],
+      "description": "Outbound mail relay for local-account verification emails.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "SMTP host."
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "SMTP port. Default 587 (STARTTLS)."
+        },
+        "username": {
+          "type": "string",
+          "description": "SMTP username. Prefer usernameEnv."
+        },
+        "usernameEnv": {
+          "type": "string",
+          "description": "Environment variable holding the SMTP username."
+        },
+        "passwordEnv": {
+          "type": "string",
+          "description": "Environment variable holding the SMTP password."
+        },
+        "from": {
+          "type": "string",
+          "format": "email",
+          "description": "From address for verification emails."
+        }
+      }
+    }
+  }
+}

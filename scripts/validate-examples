@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""Validate every example against its published JSON Schema.
+
+Optionally run the real binaries with -check:
+
+    GATE_ONE_BIN=../gate-one-src/bin/gate-one ./scripts/validate-examples --run-check
+
+External OIDC/JWT/broker examples are schema-validated only: their
+issuers are deliberately unreachable from a build machine.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+EXAMPLES = ROOT / "examples"
+SCHEMAS = ROOT / "schemas"
+
+try:
+    import jsonschema
+    from jsonschema import FormatChecker
+except ModuleNotFoundError:
+    sys.exit(
+        "validate-examples: the jsonschema package is required:\n"
+        "  python3 -m pip install --user jsonschema"
+    )
+
+BY_NAME = {
+    "routes.json": "api-routes.schema.json",
+    "broker.json": "broker.schema.json",
+    "bundle.json": "inject-bundle.schema.json",
+    "trust-store.json": "plugin-trust-store.schema.json",
+}
+
+EXTERNAL_MARKERS = ('"type": "oidc"', '"type": "jwt"', '"authProviders"')
+
+
+def schema_for(path: Path) -> Path:
+    if path.name in BY_NAME:
+        return SCHEMAS / BY_NAME[path.name]
+    if path.name.endswith(".manifest.json"):
+        return SCHEMAS / "plugin-manifest.schema.json"
+    sys.exit(f"validate-examples: no schema mapping for {path.relative_to(ROOT)}")
+
+
+def validate(path: Path) -> dict:
+    schema_path = schema_for(path)
+    schema = json.loads(schema_path.read_text())
+    instance = json.loads(path.read_text())
+    validator = jsonschema.Draft7Validator(
+        schema, format_checker=FormatChecker()
+    )
+    errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.path))
+    if errors:
+        for err in errors:
+            where = "/".join(str(p) for p in err.absolute_path) or "<root>"
+            print(f"FAIL {path.relative_to(ROOT)}: {where}: {err.message}")
+        raise SystemExit(1)
+    return instance
+
+
+def validate_manifest_artefact(path: Path, manifest: dict) -> None:
+    artifact = manifest.get("artifact") or {}
+    rel = artifact.get("digest", "")
+    target = path.parent / path.name.replace(".manifest.json", ".placeholder")
+    if not target.exists():
+        target = path.parent / "audit-echo.placeholder"
+    if not target.exists():
+        print(f"WARN {path.relative_to(ROOT)}: no artefact to verify")
+        return
+    digest = "sha256:" + hashlib.sha256(target.read_bytes()).hexdigest()
+    if digest.lower() != rel.lower():
+        raise SystemExit(
+            f"FAIL {path.relative_to(ROOT)}: artefact digest {digest} != {rel}"
+        )
+    size = artifact.get("size")
+    if size and size != target.stat().st_size:
+        raise SystemExit(
+            f"FAIL {path.relative_to(ROOT)}: artefact size "
+            f"{target.stat().st_size} != {size}"
+        )
+
+
+def validate_trust_store(path: Path, trust: dict) -> None:
+    for kid, encoded in trust.get("keys", {}).items():
+        try:
+            raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        except Exception as exc:  # noqa: BLE001
+            raise SystemExit(f"FAIL {path.relative_to(ROOT)}: key {kid}: {exc}")
+        if len(raw) != 32:
+            raise SystemExit(
+                f"FAIL {path.relative_to(ROOT)}: key {kid} is not a 32-byte "
+                "Ed25519 public key"
+            )
+
+
+def run_gate_one(path: Path) -> None:
+    binary = os.environ.get("GATE_ONE_BIN")
+    if not binary:
+        binary = shutil.which("gate-one")
+    if not binary:
+        print(f"SKIP {path.relative_to(ROOT)}: gate-one binary not found")
+        return
+    text = path.read_text()
+    if any(marker in text for marker in EXTERNAL_MARKERS):
+        print(f"SKIP {path.relative_to(ROOT)}: external issuer (schema only)")
+        return
+    env = os.environ.copy()
+    env.update({
+        "OIDC_CLIENT_SECRET": "check-only",
+        "ACME_OIDC_SECRET": "check-only",
+        "GATE_ONE_SUBJECT_SECRET": "check-only-subject-secret-32-bytes",
+        "GATE_ONE_PLUGIN_SECRET": "0123456789abcdef0123456789abcdef",
+        "OIDC_SESSION_KEY": "check-only-session-key",
+        "ACME_SESSION_KEY": "check-only-session-key",
+    })
+    proc = subprocess.run(
+        [binary, "-check", "-config", str(path)],
+        cwd=path.parent, env=env, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    if proc.returncode != 0:
+        print(f"FAIL {path.relative_to(ROOT)}: gate-one -check\n{proc.stdout}")
+        raise SystemExit(1)
+    print(f"OK   {path.relative_to(ROOT)}: gate-one -check")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--run-check", action="store_true",
+        help="also run gate-one -check on local examples",
+    )
+    args = parser.parse_args()
+
+    files = sorted(EXAMPLES.rglob("*.json"))
+    if not files:
+        sys.exit("validate-examples: no examples found")
+    for path in files:
+        instance = validate(path)
+        if path.name.endswith(".manifest.json"):
+            validate_manifest_artefact(path, instance)
+        if path.name == "trust-store.json":
+            validate_trust_store(path, instance)
+        print(f"OK   {path.relative_to(ROOT)}: {schema_for(path).name}")
+
+    if args.run_check:
+        for path in files:
+            if path.name == "routes.json":
+                run_gate_one(path)
+
+
+if __name__ == "__main__":
+    main()

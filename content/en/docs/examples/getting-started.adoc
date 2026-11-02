@@ -1,0 +1,70 @@
+---
+title: Getting started
+linkTitle: Getting started
+weight: 10
+description: A local demo with the embedded development identity provider.
+---
+
+= Getting started
+
+This example runs entirely on your machine: no identity provider, no
+Redis, no external service. It uses the embedded `dev` provider, which
+is loopback-only and must never be used in production.
+
+== File
+
+link:/examples/getting-started/routes.json[`examples/getting-started/routes.json`]
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "dev",
+    "loginBaseUrl": "http://login.demo.localhost:3000",
+    "cookieDomain": "demo.localhost"
+  },
+  "routes": [{
+    "host": "app.demo.localhost",
+    "path": "/*",
+    "frontend": true,
+    "backend": "http://127.0.0.1:8080",
+    "auth": {},
+    "userBadge": {
+      "position": "right",
+      "claims": ["preferred_username", "email"],
+      "logoutLabel": "Sign out"
+    }
+  }]
+}
+----
+
+== Run it
+
+You need a small HTTP server on port 8080. Any static server works:
+
+[source,bash]
+----
+# terminal 1: the application
+python3 -m http.server 8080
+
+# terminal 2: Gate One
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+The `dev` provider accepts `alice`/`alice` (user) and `bob`/`bob`
+(admin). Open `http://app.demo.localhost:3000`; `.localhost` resolves to
+loopback on modern systems.
+
+== What to look at
+
+* the redirect to the dedicated `login.demo.localhost` host;
+* the shared `demo.localhost` session cookie;
+* the user badge in the top-right corner and its logout button;
+* the `-check` output: routes, auth mode, login URL.
+
+== Next
+
+Replace the `dev` block with a real `oidc` provider
+(link:../multi-app-sso/[multi-app SSO]) and move the session store to
+Redis before running more than one instance.

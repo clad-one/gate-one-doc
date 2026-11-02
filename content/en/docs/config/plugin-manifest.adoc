@@ -1,0 +1,246 @@
+---
+title: Plugin manifest
+linkTitle: Manifest
+weight: 30
+---
+
+= Plugin manifest
+:toc: left
+:toclevels: 3
+:icons: font
+
+Generated from `schemas/plugin-manifest.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+
+The signed manifest shipped with an out-of-process plugin. The operator references it from `usage.plugins[].manifest`; the trust store decides whether the signer and the artefact are trusted.
+
+[[config-root]]
+== Fields
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-schemaVersion]] `schemaVersion`
+| integer (fixed: `1`)
+| yes
+| Manifest schema version. Always 1.
+
+| [[field-kind]] `kind`
+| string (one of: `extension`, `auth`)
+| yes
+| Plugin kind. auth requires the trust store to allow auth modules; extensions cover routes, injection, events and transforms.
+
+| [[field-name]] `name`
+| string
+| yes
+| Reverse-DNS plugin name. Must match a trust store allowedNames entry (exact or glob). Minimum length: 1.
+
+| [[field-version]] `version`
+| string
+| yes
+| Plugin version (semantic version recommended). Minimum length: 1.
+
+| [[field-apiVersion]] `apiVersion`
+| string
+| yes
+| Plugin API version implemented by the artefact (currently v1). Minimum length: 1.
+
+| [[field-hostAPI]] `hostAPI`
+| string
+| yes
+| Host API constraint, for example >=1.0 <2.0 or *. Compared with the trust store coreVersion. Minimum length: 1.
+
+| [[field-publisher]] `publisher`
+| string
+| no
+| Optional publisher identity.
+
+| [[field-keyId]] `keyId`
+| string
+| yes
+| Signing key id; must exist in the trust store keys map. Minimum length: 1.
+
+| [[field-artifact]] `artifact`
+| <<config-artifact,object>>
+| yes
+| The signed artefact (binary, container or OCI reference). Its digest is verified before the plugin is trusted.
+
+| [[field-dependencies]] `dependencies`
+| array of <<config-dependencies,object>>
+| no
+| Other artefacts this plugin depends on. Each digest must be allow-listed in the trust store.
+
+| [[field-capabilities]] `capabilities`
+| array of string (one of: `events`, `handler`, `inject`, `assets`, `guard`, `auth`)
+| no
+| Declared capabilities. An extension cannot declare auth; events requires the events capability.
+
+| [[field-licenseFeature]] `licenseFeature`
+| string
+| no
+| Optional commercial licence feature required to load this plugin. The host refuses the plugin when the feature is absent.
+
+| [[field-events]] `events`
+| <<config-events,object>>
+| no
+| Usage-event subscription. Only these types are produced for this plugin.
+
+| [[field-signature]] `signature`
+| <<config-signature,object>>
+| yes
+| Ed25519 signature over the canonical manifest with signature zeroed, plus the artefact digest.
+
+|===
+
+[[config-artifact]]
+=== artifact
+
+The signed artefact (binary, container or OCI reference). Its digest is verified before the plugin is trusted.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-artifact-type]] `type`
+| string
+| yes
+| Artefact type: binary, container or OCI reference.
+
+| [[field-artifact-digest]] `digest`
+| string
+| yes
+| sha256 digest of the artefact. Verified before the plugin is trusted. Pattern: `^sha256:[a-fA-F0-9]{64}$`.
+
+| [[field-artifact-size]] `size`
+| integer
+| no
+| Optional artefact size in bytes. Verified when non-zero. Minimum: 0.
+
+| [[field-artifact-platform]] `platform`
+| string
+| no
+| Optional platform selector, for example linux/amd64.
+
+|===
+
+[[config-dependencies]]
+=== dependencies
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-dependencies-name]] `name`
+| string
+| yes
+| Dependency name.
+
+| [[field-dependencies-version]] `version`
+| string
+| yes
+| Dependency version.
+
+| [[field-dependencies-digest]] `digest`
+| string
+| yes
+| Dependency artefact digest; must match the trust store allowedDependencies entry. Pattern: `^sha256:[a-fA-F0-9]{64}$`.
+
+| [[field-dependencies-signer]] `signer`
+| string
+| no
+| Optional signer identity.
+
+|===
+
+[[config-events]]
+=== events
+
+Usage-event subscription. Only these types are produced for this plugin.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-events-types]] `types`
+| array of string (one of: `request`, `auth`, `error`, `billing`, `audit`)
+| yes
+| Subscribed event types; each must also be configured in usage.types.
+
+| [[field-events-filters]] `filters`
+| <<config-events-filters,object>>
+| no
+| Narrow the subscription. Empty fields mean all.
+
+| [[field-events-maxLagBytes]] `maxLagBytes`
+| integer
+| no
+| Maximum lag before backpressure applies. Default: the type share. Minimum: 0.
+
+| [[field-events-onMaxLag]] `onMaxLag`
+| string (one of: `block`, `drop`)
+| no
+| Backpressure policy. block answers affected routes with 503 until the plugin catches up; drop advances the cursor to the lag limit and marks the plugin degraded.
+
+|===
+
+[[config-events-filters]]
+==== events.filters
+
+Narrow the subscription. Empty fields mean all.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-events-filters-routes]] `routes`
+| array of string
+| no
+| Route patterns, for example /api/*.
+
+| [[field-events-filters-tenants]] `tenants`
+| array of string
+| no
+| Tenant or provider ids.
+
+| [[field-events-filters-methods]] `methods`
+| array of string
+| no
+| HTTP methods.
+
+| [[field-events-filters-statusClasses]] `statusClasses`
+| array of string (one of: `1xx`, `2xx`, `3xx`, `4xx`, `5xx`)
+| no
+| HTTP status classes.
+
+| [[field-events-filters-sampleRate]] `sampleRate`
+| number
+| no
+| Sampling rate for matching events. Default 1.0. Minimum: 0. Maximum: 1.
+
+|===
+
+[[config-signature]]
+=== signature
+
+Ed25519 signature over the canonical manifest with signature zeroed, plus the artefact digest.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-signature-alg]] `alg`
+| string (fixed: `ed25519`)
+| yes
+| Signature algorithm. Always ed25519.
+
+| [[field-signature-keyId]] `keyId`
+| string
+| yes
+| Must equal the manifest keyId.
+
+| [[field-signature-value]] `value`
+| string
+| yes
+| base64url (unpadded) Ed25519 signature over the canonical manifest plus the artefact digest.
+
+|===

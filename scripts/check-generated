@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# CI guard: the committed configuration reference must match the schemas.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+"$PWD/scripts/gen-config-docs" >/dev/null
+if ! git diff --exit-code -- content/en/docs/config >/dev/null 2>&1; then
+	echo "check-generated: content/en/docs/config is stale" >&2
+	echo "  run npm run docs and commit the result" >&2
+	git diff --stat -- content/en/docs/config >&2
+	exit 1
+fi
+echo "check-generated: configuration reference is up to date"

@@ -1,0 +1,37 @@
+{
+  "authProviders": [
+    {
+      "id": "acme",
+      "type": "oidc",
+      "issuer": "https://auth.example.com/t/acme",
+      "clientId": "gate-one",
+      "clientSecretEnv": "ACME_OIDC_SECRET",
+      "loginBaseUrl": "https://login.example.com",
+      "cookieDomain": "example.com",
+      "cookieName": "gate_one_acme_session",
+      "roleClaims": [
+        "roles"
+      ],
+      "mcpAudience": "https://mcp.example.com",
+      "sessionKeyEnv": "ACME_SESSION_KEY",
+      "sessionStore": {
+        "type": "redis",
+        "url": "redis://redis:6379/0",
+        "passwordEnv": "REDIS_PASSWORD",
+        "prefix": "cladone:auth:v1:"
+      }
+    }
+  ],
+  "defaultAuthProvider": "acme",
+  "routes": [
+    {
+      "host": "app.example.com",
+      "path": "/*",
+      "frontend": true,
+      "backend": "http://app:8080",
+      "auth": {
+        "provider": "acme"
+      }
+    }
+  ]
+}

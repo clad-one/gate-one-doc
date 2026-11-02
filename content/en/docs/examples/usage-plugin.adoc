@@ -1,0 +1,126 @@
+---
+title: Usage plugin
+linkTitle: Usage plugin
+weight: 60
+description: A signed audit plugin, a trust store and a durable WAL.
+---
+
+= Usage plugin
+
+This example runs the `dev` provider and a reference audit plugin. It is
+the complete signed-plugin path: manifest, artefact, trust store, WAL and
+event subscription.
+
+== Files
+
+* link:/examples/usage-events/routes.json[`routes.json`]
+* link:/examples/usage-events/audit.manifest.json[`audit.manifest.json`]
+* link:/examples/usage-events/trust-store.json[`trust-store.json`]
+* link:/examples/usage-events/audit-echo.placeholder[`audit-echo.placeholder`]
+
+== Route and usage block
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "dev",
+    "loginBaseUrl": "http://login.demo.localhost:3000",
+    "cookieDomain": "demo.localhost"
+  },
+  "usage": {
+    "dir": "./usage-wal",
+    "nodeId": "gw-demo-1",
+    "budgetBytes": 52428800,
+    "subjectSecretEnv": "GATE_ONE_SUBJECT_SECRET",
+    "pluginSecretEnv": "GATE_ONE_PLUGIN_SECRET",
+    "trustStore": "trust-store.json",
+    "types": {
+      "auth":  { "shareBytes": 10485760, "fsync": "always" },
+      "error": { "shareBytes": 10485760, "fsync": "window_ms", "windowMs": 250 }
+    },
+    "plugins": [{
+      "name": "com.cladone.audit",
+      "url": "http://127.0.0.1:9100",
+      "manifest": "audit.manifest.json",
+      "artifact": "audit-echo.placeholder"
+    }]
+  },
+  "routes": [{ "host": "app.demo.localhost", "path": "/*", "frontend": true,
+    "backend": "http://127.0.0.1:8080", "auth": {} }]
+}
+----
+
+== Manifest
+
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "kind": "extension",
+  "name": "com.cladone.audit",
+  "version": "1.0.0",
+  "apiVersion": "v1",
+  "hostAPI": ">=1.0 <2.0",
+  "keyId": "example-2026",
+  "artifact": {
+    "type": "binary",
+    "digest": "sha256:…",
+    "size": 84,
+    "platform": "linux/amd64"
+  },
+  "capabilities": ["events"],
+  "events": {
+    "types": ["auth", "error"],
+    "filters": { "statusClasses": ["4xx", "5xx"] },
+    "maxLagBytes": 5000000,
+    "onMaxLag": "block"
+  },
+  "signature": {
+    "alg": "ed25519",
+    "keyId": "example-2026",
+    "value": "base64url…"
+  }
+}
+----
+
+The example manifest is signed with a **disposable example key**. The
+public key is in `trust-store.json`; the private key was discarded. Do
+not trust this key in production: generate your own key pair and sign
+the canonical manifest plus the artefact digest.
+
+== Run it
+
+[source,bash]
+----
+# terminal 1: the reference plugin
+export GATE_ONE_PLUGIN_SECRET="$(openssl rand -hex 32)"
+go run ./cmd/plugin-audit-echo -addr :9100 -name com.cladone.audit
+
+# terminal 2: Gate One
+export GATE_ONE_SUBJECT_SECRET="$(openssl rand -hex 32)"
+export GATE_ONE_PLUGIN_SECRET=...   # same value as the plugin
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+Open the app and log in: the plugin logs the `auth` event. Request an
+unknown protected path to produce an `error` event.
+
+== What to look at
+
+* the startup verification (signature, digest, host API, name allow-list);
+* `usage-wal/auth` and `usage-wal/error`: one WAL per type;
+* `fsync: "always"` on `auth`: a full share returns 503 and no session is
+  created (fail-closed);
+* `X-Gate-One-Subject` on the backend request: opaque, not an email;
+* `SIGHUP` reloads the config and the plugin registration.
+
+== Caveats
+
+* The placeholder artefact is not a runnable binary: it only lets the
+  configuration validate. Use a real signed artefact for a deployment.
+* `request` and `error` cannot use `fsync: "always"`; use `window_ms`.
+* A plugin that stops acknowledging eventually triggers `onMaxLag`.
+* Long-term retention is the plugin's policy; the core only keeps what
+  must be consumed.

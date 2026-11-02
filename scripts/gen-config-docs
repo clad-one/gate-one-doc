@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""Generate the configuration reference from the published JSON Schemas.
+
+Input:  schemas/*.schema.json
+Output: content/en/docs/config/*.adoc
+
+The generator is deterministic: running it twice produces the same
+files. Every documented field must carry a description in the schema;
+the CI target runs this script and fails on a diff.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parent.parent
+SCHEMAS = ROOT / "schemas"
+OUT = ROOT / "content" / "en" / "docs" / "config"
+
+PAGES = [
+    ("api-routes.schema.json", "gate-one.adoc", "Gate One configuration", "Gate One", 10,
+     "The `api-routes.json` file consumed by the `gate-one` binary. "
+     "Relative paths (certificates, keys, plugin artefacts, WAL directories) "
+     "are resolved from the configuration file."),
+    ("broker.schema.json", "broker.adoc", "Broker configuration", "Broker", 20,
+     "The optional `cladone-auth` broker configuration. Secrets are read "
+     "from the environment; a `*Env` field names the variable."),
+    ("plugin-manifest.schema.json", "plugin-manifest.adoc", "Plugin manifest", "Manifest", 30,
+     "The signed manifest shipped with an out-of-process plugin. The "
+     "operator references it from `usage.plugins[].manifest`; the trust "
+     "store decides whether the signer and the artefact are trusted."),
+    ("plugin-trust-store.schema.json", "plugin-trust-store.adoc", "Plugin trust store", "Trust store", 40,
+     "The local allow-list referenced by `usage.trustStore`. It is "
+     "provisioned out-of-band and never fetched from a plugin."),
+    ("usage-event.schema.json", "usage-event.adoc", "Usage event", "Usage event", 50,
+     "The flat event delivered to subscribed out-of-process plugins. "
+     "No token, cookie, raw query string, email or username is present."),
+]
+
+TYPE_NAMES = {
+    "string": "string", "integer": "integer", "number": "number",
+    "boolean": "boolean", "object": "object", "array": "array",
+}
+
+
+def load(path: Path) -> dict[str, Any]:
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        sys.exit(f"gen-config-docs: {path}: {exc}")
+
+
+def resolve(root: dict[str, Any], schema: dict[str, Any]) -> dict[str, Any]:
+    seen = 0
+    while isinstance(schema, dict) and "$ref" in schema:
+        ref = schema["$ref"]
+        if not ref.startswith("#/definitions/"):
+            return schema
+        name = ref[len("#/definitions/"):]
+        schema = root.get("definitions", {}).get(name, {})
+        seen += 1
+        if seen > 20:
+            return {}
+    return schema
+
+
+def slug(path: str) -> str:
+    return "config-" + path.replace(".", "-").replace("[]", "").replace("_", "-")
+
+
+def type_label(root: dict[str, Any], schema: dict[str, Any]) -> str:
+    original = schema
+    schema = resolve(root, schema)
+    if not isinstance(schema, dict):
+        return "value"
+    kind = schema.get("type", "value")
+    if kind == "array":
+        items = schema.get("items", {})
+        return f"array of {type_label(root, items)}"
+    if kind == "object":
+        return "object"
+    label = TYPE_NAMES.get(kind, str(kind))
+    if "const" in schema:
+        label += f" (fixed: `{schema['const']}`)"
+    elif "enum" in schema:
+        values = ", ".join(f"`{v}`" for v in schema["enum"])
+        label += f" (one of: {values})"
+    return label
+
+
+def cell(value: str) -> str:
+    """Make a value safe inside an AsciiDoc table cell."""
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def describe(schema: dict[str, Any]) -> str:
+    bits: list[str] = []
+    desc = (schema.get("description") or "").strip()
+    if desc:
+        bits.append(desc)
+    facts: list[str] = []
+    if "default" in schema:
+        facts.append(f"Default: `{json.dumps(schema['default'])}`.")
+    if "minimum" in schema:
+        facts.append(f"Minimum: {schema['minimum']}.")
+    if "maximum" in schema:
+        facts.append(f"Maximum: {schema['maximum']}.")
+    if "minLength" in schema:
+        facts.append(f"Minimum length: {schema['minLength']}.")
+    if "maxLength" in schema:
+        facts.append(f"Maximum length: {schema['maxLength']}.")
+    if "pattern" in schema:
+        facts.append(f"Pattern: `{schema['pattern']}`.")
+    if schema.get("writeOnly"):
+        facts.append("Write-only; prefer the `*Env` form.")
+    if facts:
+        bits.append(" ".join(facts))
+    return " ".join(bits) or "—"
+
+
+def field_anchor(path: str, name: str) -> str:
+    base = f"{path}.{name}" if path else name
+    return "field-" + slug(base).removeprefix("config-")
+
+
+def table(rows: list[tuple[str, str, str, str, str]]) -> list[str]:
+    lines = [
+        '[cols="2,2,1,5",options="header"]',
+        "|===",
+        "| Field | Type | Required | Description",
+        "",
+    ]
+    for anchor, field, typ, required, desc in rows:
+        lines.append(f"| [[{anchor}]] `{field}`")
+        lines.append(f"| {cell(typ)}")
+        lines.append(f"| {cell(required)}")
+        lines.append(f"| {cell(desc)}")
+        lines.append("")
+    lines.append("|===")
+    lines.append("")
+    return lines
+
+
+def object_section(
+    root: dict[str, Any], path: str, schema: dict[str, Any], level: int,
+    emitted: set[str],
+) -> list[str]:
+    """Emit one object section, then recurse into nested objects."""
+    schema = resolve(root, schema)
+    section_anchor = slug(path) if path else "config-root"
+    heading = f"{'=' * level} {(path or 'Fields').replace('[]', '')}"
+    out = [f"[[{section_anchor}]]", heading, ""]
+    if path:
+        desc = (schema.get("description") or "").strip()
+        if desc:
+            out += [desc, ""]
+    required = set(schema.get("required", []))
+    props = schema.get("properties", {})
+    rows: list[tuple[str, str, str, str, str]] = []
+    nested: list[tuple[str, dict[str, Any]]] = []
+    for name, prop in props.items():
+        if name.startswith("$"):
+            continue
+        resolved = resolve(root, prop)
+        typ = type_label(root, prop)
+        child = None
+        child_path = ""
+        if isinstance(resolved, dict) and resolved.get("type") in ("object", "array"):
+            if resolved.get("type") == "array":
+                item = resolve(root, resolved.get("items", {}))
+                if item.get("type") == "object":
+                    child = resolved.get("items", {})
+            elif resolved.get("properties"):
+                child = prop
+            if child is not None:
+                suffix = "[]" if resolved.get("type") == "array" else ""
+                child_path = (f"{path}.{name}{suffix}" if path
+                              else f"{name}{suffix}")
+                child_anchor = slug(child_path)
+                typ = (f"array of <<{child_anchor},object>>"
+                       if resolved.get("type") == "array"
+                       else f"<<{child_anchor},object>>")
+        rows.append((
+            field_anchor(path, name), name, typ,
+            "yes" if name in required else "no",
+            describe(resolved),
+        ))
+        if child is not None:
+            nested.append((child_path, child))
+    out += table(rows)
+    emitted.add(section_anchor)
+    for child_path, child in nested:
+        if slug(child_path) in emitted:
+            continue
+        out += object_section(root, child_path, child, level + 1, emitted)
+    return out
+
+
+def generate(
+    schema_path: Path, out_path: Path, title: str, link_title: str,
+    weight: int, intro: str,
+) -> None:
+    root = load(schema_path)
+    emitted: set[str] = set()
+    front = [
+        "---",
+        f"title: {title}",
+        f"linkTitle: {link_title}",
+        f"weight: {weight}",
+        "---",
+        "",
+    ]
+    lines = front + [
+        f"= {title}",
+        ":toc: left",
+        ":toclevels: 3",
+        ":icons: font",
+        "",
+        f"Generated from `schemas/{schema_path.name}` by "
+        "`scripts/gen-config-docs`. Do not edit this page: edit the schema "
+        "or the generator.",
+        "",
+        intro,
+        "",
+    ]
+    lines += object_section(root, "", root, 2, emitted)
+    out_path.write_text("\n".join(lines).rstrip() + "\n")
+
+
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    for schema_name, out_name, title, link_title, weight, intro in PAGES:
+        schema_path = SCHEMAS / schema_name
+        if not schema_path.exists():
+            sys.exit(f"gen-config-docs: missing {schema_path}")
+        generate(schema_path, OUT / out_name, title, link_title, weight, intro)
+        print(f"gen-config-docs: wrote {OUT / out_name}")
+
+
+if __name__ == "__main__":
+    main()

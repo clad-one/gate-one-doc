@@ -1,0 +1,370 @@
+---
+title: Broker configuration
+linkTitle: Broker
+weight: 20
+---
+
+= Broker configuration
+:toc: left
+:toclevels: 3
+:icons: font
+
+Generated from `schemas/broker.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+
+The optional `cladone-auth` broker configuration. Secrets are read from the environment; a `*Env` field names the variable.
+
+[[config-root]]
+== Fields
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-publicUrl]] `publicUrl`
+| string
+| yes
+| External origin of the broker, without a trailing slash (for example https://auth.example.com).
+
+| [[field-listen]] `listen`
+| string
+| no
+| Default listen address for cmd/cladone-auth (for example :8081).
+
+| [[field-sessionCookieName]] `sessionCookieName`
+| string
+| no
+| Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+
+| [[field-tenants]] `tenants`
+| array of <<config-tenants,object>>
+| yes
+| Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.
+
+| [[field-redis]] `redis`
+| <<config-redis,object>>
+| no
+| Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+
+| [[field-smtp]] `smtp`
+| <<config-smtp,object>>
+| no
+| Outbound mail relay for local-account verification emails.
+
+|===
+
+[[config-tenants]]
+=== tenants
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-id]] `id`
+| string
+| yes
+| Tenant identifier; also the /t/{tenant} path segment and default audience. Minimum length: 1.
+
+| [[field-tenants-clientId]] `clientId`
+| string
+| yes
+| Gate One OIDC client id registered with this tenant. Minimum length: 1.
+
+| [[field-tenants-clientSecret]] `clientSecret`
+| string
+| no
+| Inline client secret. Prefer clientSecretEnv so the secret never lands in the file. Write-only; prefer the `*Env` form.
+
+| [[field-tenants-clientSecretEnv]] `clientSecretEnv`
+| string
+| no
+| Environment variable holding the Gate One client secret.
+
+| [[field-tenants-redirectUris]] `redirectUris`
+| array of string
+| yes
+| Allowed Gate One callback URLs (https, or localhost for tests).
+
+| [[field-tenants-postLogoutRedirectUris]] `postLogoutRedirectUris`
+| array of string
+| no
+| Allowed post-logout targets. Empty = redirectUris.
+
+| [[field-tenants-audiences]] `audiences`
+| array of string
+| no
+| Audiences allowed for access tokens. Empty = the tenant id.
+
+| [[field-tenants-google]] `google`
+| <<config-tenants-google,object>>
+| no
+| Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+
+| [[field-tenants-upstreams]] `upstreams`
+| object
+| no
+| Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.
+
+| [[field-tenants-keyFile]] `keyFile`
+| string
+| no
+| Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles.
+
+| [[field-tenants-keyFiles]] `keyFiles`
+| array of string
+| no
+| Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones.
+
+| [[field-tenants-defaultRoles]] `defaultRoles`
+| array of string
+| no
+| Roles granted to every authenticated user.
+
+| [[field-tenants-allowedDomains]] `allowedDomains`
+| array of string
+| no
+| Allowed upstream hosted/email domains. Empty = no restriction.
+
+| [[field-tenants-adminEmails]] `adminEmails`
+| array of string
+| no
+| Email addresses granted the admin role.
+
+| [[field-tenants-groupRoles]] `groupRoles`
+| object
+| no
+| Map an upstream group/claim value to broker roles.
+
+| [[field-tenants-accessTokenTtlSeconds]] `accessTokenTtlSeconds`
+| integer
+| no
+| Access token lifetime in seconds. Default 600. Minimum: 1.
+
+| [[field-tenants-idTokenTtlSeconds]] `idTokenTtlSeconds`
+| integer
+| no
+| ID token lifetime in seconds. Default 600. Minimum: 1.
+
+| [[field-tenants-refreshTokenTtlSeconds]] `refreshTokenTtlSeconds`
+| integer
+| no
+| Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation. Minimum: 1.
+
+| [[field-tenants-sessionTtlSeconds]] `sessionTtlSeconds`
+| integer
+| no
+| Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
+
+| [[field-tenants-localAccounts]] `localAccounts`
+| boolean
+| no
+| Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp.
+
+| [[field-tenants-appOrigins]] `appOrigins`
+| array of string
+| no
+| Allowed application origins for a verification continueUrl.
+
+| [[field-tenants-registrationSecretEnv]] `registrationSecretEnv`
+| string
+| no
+| Environment variable gating POST /register (server-to-server registration).
+
+|===
+
+[[config-tenants-google]]
+==== tenants.google
+
+Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-google-issuer]] `issuer`
+| string
+| no
+| Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams.
+
+| [[field-tenants-google-clientId]] `clientId`
+| string
+| no
+| Upstream OIDC client id. Prefer clientIdEnv.
+
+| [[field-tenants-google-clientIdEnv]] `clientIdEnv`
+| string
+| no
+| Environment variable holding the upstream client id.
+
+| [[field-tenants-google-clientSecret]] `clientSecret`
+| string
+| no
+| Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the `*Env` form.
+
+| [[field-tenants-google-clientSecretEnv]] `clientSecretEnv`
+| string
+| no
+| Environment variable holding the upstream client secret.
+
+| [[field-tenants-google-prompt]] `prompt`
+| string
+| no
+| Forwarded to the upstream authorize endpoint (for example select_account).
+
+| [[field-tenants-google-hostedDomain]] `hostedDomain`
+| string
+| no
+| Google Workspace hosted domain (hd) restriction.
+
+| [[field-tenants-google-scopes]] `scopes`
+| array of string
+| no
+| Upstream scopes. Default openid, profile, email.
+
+| [[field-tenants-google-displayName]] `displayName`
+| string
+| no
+| Label shown on the identity provider chooser. Default: the upstream key.
+
+| [[field-tenants-google-optional]] `optional`
+| boolean
+| no
+| Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+
+|===
+
+[[config-redis]]
+=== redis
+
+Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-redis-url]] `url`
+| string
+| no
+| Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode.
+
+| [[field-redis-sentinelAddrs]] `sentinelAddrs`
+| array of string
+| no
+| Sentinel addresses (host:port). Required with masterName.
+
+| [[field-redis-masterName]] `masterName`
+| string
+| no
+| Redis master name for Sentinel discovery.
+
+| [[field-redis-sentinelUsername]] `sentinelUsername`
+| string
+| no
+| ACL user for the Sentinel connections (sentinel mode only).
+
+| [[field-redis-sentinelPasswordEnv]] `sentinelPasswordEnv`
+| string
+| no
+| Environment variable holding the Sentinel password (sentinel mode only).
+
+| [[field-redis-username]] `username`
+| string
+| no
+| Redis ACL user.
+
+| [[field-redis-passwordEnv]] `passwordEnv`
+| string
+| no
+| Environment variable holding the Redis password.
+
+| [[field-redis-db]] `db`
+| integer
+| no
+| Redis database number. Default 0. Minimum: 0.
+
+| [[field-redis-prefix]] `prefix`
+| string
+| no
+| Key prefix for broker state. Default cladone:broker:v1:.
+
+| [[field-redis-authPrefix]] `authPrefix`
+| string
+| no
+| Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.
+
+| [[field-redis-dialTimeoutMs]] `dialTimeoutMs`
+| integer
+| no
+| Dial timeout in milliseconds. Minimum: 1.
+
+| [[field-redis-readTimeoutMs]] `readTimeoutMs`
+| integer
+| no
+| Read timeout in milliseconds. Minimum: 1.
+
+| [[field-redis-writeTimeoutMs]] `writeTimeoutMs`
+| integer
+| no
+| Write timeout in milliseconds. Minimum: 1.
+
+| [[field-redis-poolSize]] `poolSize`
+| integer
+| no
+| Connection pool size. Minimum: 1.
+
+| [[field-redis-tls]] `tls`
+| boolean
+| no
+| Use TLS for the Sentinel and master/replica connections.
+
+| [[field-redis-tlsCaFile]] `tlsCaFile`
+| string
+| no
+| CA bundle for TLS (system roots by default). Requires tls=true.
+
+| [[field-redis-tlsServerName]] `tlsServerName`
+| string
+| no
+| TLS server name, useful when Sentinels are addressed by IP. Requires tls=true.
+
+|===
+
+[[config-smtp]]
+=== smtp
+
+Outbound mail relay for local-account verification emails.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-smtp-host]] `host`
+| string
+| yes
+| SMTP host.
+
+| [[field-smtp-port]] `port`
+| integer
+| no
+| SMTP port. Default 587 (STARTTLS). Minimum: 1. Maximum: 65535.
+
+| [[field-smtp-username]] `username`
+| string
+| no
+| SMTP username. Prefer usernameEnv.
+
+| [[field-smtp-usernameEnv]] `usernameEnv`
+| string
+| no
+| Environment variable holding the SMTP username.
+
+| [[field-smtp-passwordEnv]] `passwordEnv`
+| string
+| no
+| Environment variable holding the SMTP password.
+
+| [[field-smtp-from]] `from`
+| string
+| yes
+| From address for verification emails.
+
+|===

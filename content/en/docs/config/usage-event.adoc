@@ -1,0 +1,123 @@
+---
+title: Usage event
+linkTitle: Usage event
+weight: 50
+---
+
+= Usage event
+:toc: left
+:toclevels: 3
+:icons: font
+
+Generated from `schemas/usage-event.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+
+The flat event delivered to subscribed out-of-process plugins. No token, cookie, raw query string, email or username is present.
+
+[[config-root]]
+== Fields
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-schemaVersion]] `schemaVersion`
+| integer (fixed: `1`)
+| yes
+| Event schema version. Always 1 for this contract.
+
+| [[field-type]] `type`
+| string (one of: `request`, `auth`, `error`, `billing`, `audit`)
+| yes
+| Event family. Only subscribed types are produced.
+
+| [[field-ts]] `ts`
+| string
+| yes
+| Event time, RFC 3339 UTC.
+
+| [[field-instanceId]] `instanceId`
+| string
+| yes
+| Stable Gate One node identifier (one WAL per node and type). Minimum length: 1. Maximum length: 256.
+
+| [[field-epoch]] `epoch`
+| string
+| yes
+| Producer epoch, changed on restart/migration so consumers can detect a gap. Minimum length: 1. Maximum length: 128.
+
+| [[field-tenant]] `tenant`
+| string
+| no
+| Auth provider id or logical tenant; empty for shared/public routes. Maximum length: 128.
+
+| [[field-subjectId]] `subjectId`
+| string
+| no
+| Opaque deployment-scoped user identifier: versioned HMAC. Never an email or a raw IdP sub. Pattern: `^v[0-9]+\.[A-Za-z0-9_-]+$`.
+
+| [[field-route]] `route`
+| string
+| no
+| Normalized route pattern, never the raw URL/query. Maximum length: 512.
+
+| [[field-method]] `method`
+| string
+| no
+| HTTP method for request/error events. Maximum length: 16.
+
+| [[field-status]] `status`
+| integer
+| no
+| HTTP status for request/error events. Minimum: 0. Maximum: 599.
+
+| [[field-durationMs]] `durationMs`
+| integer
+| no
+| Backend or auth duration in milliseconds. Minimum: 0.
+
+| [[field-bytes]] `bytes`
+| integer
+| no
+| Response/request size in bytes, as observed by the gateway. Minimum: 0.
+
+| [[field-authResult]] `authResult`
+| string (one of: `ok`, `anonymous`, `denied`, `unavailable`, `failed`)
+| no
+| Authentication outcome for the request or auth action.
+
+| [[field-action]] `action`
+| string
+| no
+| Auth action: login, login_failed, logout, backchannel_logout, revocation. Maximum length: 64.
+
+| [[field-sessionId]] `sessionId`
+| string
+| no
+| Opaque RP session id for auth events. Maximum length: 128.
+
+| [[field-mcpTool]] `mcpTool`
+| string
+| no
+| MCP tool or operation name, when the event comes from an MCP route. Maximum length: 256.
+
+| [[field-units]] `units`
+| integer
+| no
+| Billable/metered units for billing events. Minimum: 0.
+
+| [[field-unitType]] `unitType`
+| string (one of: `request`, `token`, `byte`, `mcp_call`)
+| no
+| Unit kind for billing events.
+
+| [[field-requestId]] `requestId`
+| string
+| no
+| Gateway request id, for correlation with logs and traces. Maximum length: 128.
+
+| [[field-idempotencyKey]] `idempotencyKey`
+| string
+| no
+| Caller-provided idempotency key, copied only for billing. Maximum length: 128.
+
+|===

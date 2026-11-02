@@ -1,0 +1,74 @@
+baseURL = "https://gate-one.example.com/"
+title = "Gate One"
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+
+[languages]
+  [languages.en]
+    label = "English"
+    contentDir = "content/en"
+    weight = 1
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term"]
+summaryLength = 40
+
+# Docsy theme (Hugo module). Bootstrap and Font Awesome come from npm:
+# Docsy 0.18 does not vendor them inside the theme module.
+[module]
+  [[module.imports]]
+    path = "github.com/docsy/docsy/theme"
+  [[module.mounts]]
+    source = "node_modules/bootstrap"
+    target = "assets/vendor/bootstrap"
+  [[module.mounts]]
+    source = "node_modules/@fortawesome/fontawesome-free"
+    target = "assets/vendor/Font-Awesome"
+  [[module.mounts]]
+    source = "node_modules/@fortawesome/fontawesome-free/webfonts"
+    target = "static/webfonts"
+  # Publish the schemas and examples under /schemas/ and /examples/.
+  [[module.mounts]]
+    source = "schemas"
+    target = "static/schemas"
+  [[module.mounts]]
+    source = "examples"
+    target = "static/examples"
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.asciidoc]
+    backend = "html5"
+    extensions = []
+    [markup.asciidoc.attributes]
+      "source-highlighter" = "highlight.js"
+      "toc" = "left"
+      "sectanchors" = "true"
+      "idprefix" = ""
+      "idseparator" = "-"
+
+[params]
+  copyright = "Cladone-IT"
+  version = "1.0"
+  [params.ui]
+    navbar_logo = false
+    breadcrumb_disable = false
+    sidebar_search_disable = false
+    navbar_translucent_over_cover_disable = false
+    [params.ui.feedback]
+      enable = false
+  [params.links]
+    [[params.links.user]]
+      name = "Source"
+      url = "https://github.com/cladone/gate-one"
+      icon = "fa-brands fa-git-alt"
+      desc = "Source-available repository"
+    [[params.links.user]]
+      name = "Licence"
+      url = "https://github.com/cladone/gate-one/blob/main/LICENSE"
+      icon = "fa-solid fa-scale-balanced"
+      desc = "BSL-CUSTOM (English authoritative)"
+
+[security]
+  [security.exec]
+    allow = ['^(dart-)?sass$', '^go$', '^git$', '^node$', '^postcss$', '^asciidoctor$']

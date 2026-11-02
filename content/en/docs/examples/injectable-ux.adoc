@@ -1,0 +1,95 @@
+---
+title: Injectable UX
+linkTitle: Injectable UX
+weight: 50
+description: Badge, gating, injection bundle, 403 banner and CSP.
+---
+
+= Injectable UX
+
+This example runs with the `dev` provider and demonstrates every
+injection surface in one route.
+
+== Files
+
+* link:/examples/injectable-ux/routes.json[`routes.json`]
+* link:/examples/injectable-ux/bundle.json[`bundle.json`]
+* link:/examples/injectable-ux/banner.html[`banner.html`]
+
+== Route
+
+[source,json]
+----
+{
+  "host": "app.demo.localhost", "path": "/*", "frontend": true,
+  "backend": "http://127.0.0.1:8080", "auth": {},
+  "inject": "bundle.json",
+  "userBadge": {
+    "position": "right",
+    "claims": ["preferred_username", "email"],
+    "roles": ["admin"],
+    "logoutLabel": "Sign out"
+  },
+  "uiGate": [
+    { "selector": ".danger-zone", "roles": ["admin"] },
+    { "selector": ".beta-feature", "hidden": "before" },
+    { "selector": "[data-feature=export]", "auth": "before" }
+  ],
+  "authGuard": { "forbidden": { "banner": true } },
+  "csp": { "mode": "nonce" }
+}
+----
+
+== Bundle
+
+[source,json]
+----
+{
+  "injects": [
+    {
+      "name": "announcement", "target": "body-end",
+      "when": "/dashboard", "file": "banner.html"
+    },
+    {
+      "name": "brand-style", "target": "head",
+      "style": ".demo-brand{letter-spacing:.02em}"
+    }
+  ],
+  "patch": [{
+    "selector": "[data-feature=beta]",
+    "attrs": { "data-gtw-auth-hidden": "before" }
+  }]
+}
+----
+
+`injects[].when` targets a path prefix; `file` is read at load, relative
+to the bundle. `patch` appends the `data-gtw-*` attributes client-side on
+every guard evaluation.
+
+== Try it
+
+[source,bash]
+----
+python3 -m http.server 8080
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+Log in as `alice` (user) then `bob` (admin). The `.danger-zone` is only
+visible to admin; the `.beta-feature` is hidden before login; the export
+control opens a login tab and replays the action after login.
+
+== CSP
+
+`csp.mode: "nonce"` emits Gate One's own policy and stamps inline
+scripts. If the application already sends a CSP, prefer
+`csp.mode: "merge"`; if the application forbids inline scripts, use
+`hash` or `merge` and keep application scripts external.
+
+== Caveats
+
+* UI gating is a UX layer, not authorization. Keep server-side
+  `auth.identity` rules for real rights.
+* The guard cannot intercept a request the browser never sent.
+* Injection and CSP are per route; do not enable `own: true` unless the
+  configured policy is complete for the application.

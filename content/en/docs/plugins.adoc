@@ -1,0 +1,209 @@
+---
+title: Plugins
+linkTitle: Plugins
+weight: 30
+description: "The out-of-process extension contract: manifest, trust store, event subscription, assertion and licence."
+---
+
+= Plugins
+
+Gate One extensions are **out-of-process** services. The gateway talks
+to them over HTTP/JSON; it never loads a third-party authentication
+provider and never calls a plugin on the authentication path.
+
+== Plugin families
+
+[cols="2,1,1,1,1",options="header"]
+|===
+| Family | Runs in | Transport | Decides auth? | Licence
+
+| Auth adapter | broker | HTTP/JSON (gRPC later) | yes, in the broker | Gate One licence
+| Route handler / aggregator | Gate One | sidecar route or out-of-process | no, after auth | extension licence
+| Injection / userscript / UI | Gate One | signed inject bundle at startup | no | extension licence
+| Event consumer | Gate One | HTTP/JSON | no | extension licence
+| WASM transform | Gate One | wazero (later) | no | extension licence
+|===
+
+Only the last four are extensions. Auth adapters stay in the broker and
+remain under the Gate One licence.
+
+== Invariants
+
+A plugin never decides whether a request is authenticated.
+
+* no pre-auth hook; the plugin is called after `checkAuth`/`checkMCPAuth`;
+* no self-registered route; it attaches to a compiled route;
+* immutable identity DTO, never the mutable `*http.Request`;
+* reserved headers (`Authorization`, `Cookie`, `X-User-*`,
+  `X-Gate-One-*`, `X-Forwarded-*`) are stripped before any outbound call;
+* `auth`, `securityHeaders`, `license`, `rateLimit` and `quota` are out
+  of scope;
+* internal network only, signed assertion on every call, separate UID,
+  no secrets in the environment, egress allow-list.
+
+Specific tests enforce that an anonymous request, an invalid token or a
+missing scope never reaches the plugin.
+
+== Event consumer contract
+
+The plugin exposes two endpoints:
+
+[cols="1,2",options="header"]
+|===
+| Endpoint | Purpose
+| `GET /health` | readiness; a failing health check stops new batches
+| `POST /events` | batch `[{offset, event}]`; commit, then acknowledge
+|===
+
+Every call carries:
+
+[source,http]
+----
+X-Gate-One-Assertion: base64url(payload).base64url(HMAC-SHA256)
+----
+
+The payload binds the audience (plugin name), an expiry and the body
+size. The plugin must verify it before processing the batch.
+
+The event schema is published at
+link:/schemas/usage-event.schema.json[`usage-event.schema.json`] and
+documented in link:/docs/config/usage-event/[the reference]. The user is
+an opaque `subjectId`; no token, cookie, email or username is present.
+
+== Manifest
+
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "kind": "extension",
+  "name": "com.cladone.audit",
+  "version": "1.0.0",
+  "apiVersion": "v1",
+  "hostAPI": ">=1.0 <2.0",
+  "keyId": "example-2026",
+  "artifact": {
+    "type": "binary",
+    "digest": "sha256:…",
+    "size": 84,
+    "platform": "linux/amd64"
+  },
+  "capabilities": ["events"],
+  "events": {
+    "types": ["auth", "error"],
+    "filters": { "statusClasses": ["4xx", "5xx"] },
+    "maxLagBytes": 5000000,
+    "onMaxLag": "block"
+  },
+  "signature": {
+    "alg": "ed25519",
+    "keyId": "example-2026",
+    "value": "base64url…"
+  }
+}
+----
+
+The signature covers the canonical JSON with `signature` zeroed, plus the
+artefact digest. For an extension the manifest also carries the event
+subscription and the optional `licenseFeature`.
+
+See link:/docs/config/plugin-manifest/[the manifest reference] for every
+field.
+
+== Trust store
+
+The trust store is the local allow-list. It is provisioned out-of-band
+(signed lock file, package manager, embedded key) and never fetched from
+the plugin.
+
+[source,json]
+----
+{
+  "keys": { "example-2026": "base64url-ed25519-public-key" },
+  "allowedNames": ["com.cladone.*"],
+  "allowedDependencies": {},
+  "revokedDigests": [],
+  "allowAuth": false,
+  "coreVersion": "1.5.0"
+}
+----
+
+The loader verifies the signature, artefact digest and size,
+dependencies, revocation, host API, kind and event subscription. For a
+local sidecar it verifies before starting; for a remote service it
+verifies the manifest and the image/attestation, and authenticates the
+channel.
+
+See link:/docs/config/plugin-trust-store/[the trust-store reference].
+
+== Configuration
+
+[source,json]
+----
+{
+  "usage": {
+    "dir": "./usage-wal",
+    "nodeId": "gw-1",
+    "subjectSecretEnv": "GATE_ONE_SUBJECT_SECRET",
+    "pluginSecretEnv": "GATE_ONE_PLUGIN_SECRET",
+    "trustStore": "trust-store.json",
+    "types": {
+      "auth":  { "shareBytes": 10485760, "fsync": "always" },
+      "error": { "shareBytes": 10485760, "fsync": "window_ms", "windowMs": 250 }
+    },
+    "plugins": [{
+      "name": "com.cladone.audit",
+      "url": "http://127.0.0.1:9100",
+      "manifest": "audit.manifest.json",
+      "artifact": "audit-echo.placeholder"
+    }]
+  }
+}
+----
+
+`usage.trustStore` is required when a plugin uses a signed manifest.
+Relative paths (`manifest`, `artifact`, `trustStore`, `dir`) are
+resolved from the configuration file. After editing, `SIGHUP` reloads
+the configuration and recreates the gateway, including its plugins; an
+invalid file is refused.
+
+== Reference plugin
+
+`cmd/plugin-audit-echo` is the reference consumer. It verifies the
+assertion, decodes the batch and logs the events; it has no dependency
+on Gate One internals.
+
+[source,bash]
+----
+export GATE_ONE_PLUGIN_SECRET=...
+go run ./cmd/plugin-audit-echo -addr :9100 -name com.cladone.audit
+----
+
+The complete signed example is
+link:/examples/usage-events/routes.json[`routes.json`], link:/examples/usage-events/audit.manifest.json[`audit.manifest.json`], link:/examples/usage-events/trust-store.json[`trust-store.json`].
+
+== What is not a plugin
+
+* an authentication provider inside Gate One (`type: "plugin"` is
+  rejected);
+* a mutable request or identity hook before authentication;
+* a self-registered route;
+* a replacement for `securityHeaders`, `license`, `rateLimit` or
+  `quota`;
+* a compile-time Go module distributed as a third-party plugin.
+
+== Licence
+
+The core is source-available under BSL-CUSTOM (English `LICENSE`
+authoritative; `LICENSE.fr.md` is a French reference). Non-auth,
+non-broker extensions may be closed-source or commercial under the
+plugin exception, provided they respect the documented API/manifest and
+do not impose incompatible terms on Gate One. See `PLUGIN-LICENSING.md`
+in the source repository.
+
+== Read next
+
+* link:/docs/config/plugin-manifest/[Manifest fields]
+* link:/docs/config/plugin-trust-store/[Trust store fields]
+* link:/docs/config/usage-event/[Event fields]
+* link:/docs/features/usage-events/[Usage events]

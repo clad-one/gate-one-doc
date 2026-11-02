@@ -1,0 +1,53 @@
+---
+title: Plugin trust store
+linkTitle: Trust store
+weight: 40
+---
+
+= Plugin trust store
+:toc: left
+:toclevels: 3
+:icons: font
+
+Generated from `schemas/plugin-trust-store.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+
+The local allow-list referenced by `usage.trustStore`. It is provisioned out-of-band and never fetched from a plugin.
+
+[[config-root]]
+== Fields
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-keys]] `keys`
+| object
+| yes
+| Signing keys: key id -> raw Ed25519 public key, base64 (standard or raw URL encoding).
+
+| [[field-allowedNames]] `allowedNames`
+| array of string
+| no
+| Allowed plugin names. Exact names or glob patterns interpreted with path.Match (for example com.cladone.*).
+
+| [[field-allowedDependencies]] `allowedDependencies`
+| object
+| no
+| Allowed dependency digests: name -> sha256 digest.
+
+| [[field-revokedDigests]] `revokedDigests`
+| array of string
+| no
+| Artefact digests refused even with a valid signature.
+
+| [[field-allowAuth]] `allowAuth`
+| boolean
+| no
+| Allow manifests with kind=auth (high-trust modules). Default false.
+
+| [[field-coreVersion]] `coreVersion`
+| string
+| no
+| Host API version, for example 1.5.0. Compared with the manifest hostAPI constraint.
+
+|===
