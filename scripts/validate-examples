@@ -91,11 +91,14 @@ def validate_manifest_artefact(path: Path, manifest: dict) -> None:
 
 def validate_trust_store(path: Path, trust: dict) -> None:
     for kid, encoded in trust.get("keys", {}).items():
-        try:
-            raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
-        except Exception as exc:  # noqa: BLE001
-            raise SystemExit(f"FAIL {path.relative_to(ROOT)}: key {kid}: {exc}")
-        if len(raw) != 32:
+        raw = None
+        for decoder in (base64.urlsafe_b64decode, base64.b64decode):
+            try:
+                raw = decoder(encoded + "=" * (-len(encoded) % 4))
+                break
+            except Exception:  # noqa: BLE001
+                continue
+        if raw is None or len(raw) != 32:
             raise SystemExit(
                 f"FAIL {path.relative_to(ROOT)}: key {kid} is not a 32-byte "
                 "Ed25519 public key"
