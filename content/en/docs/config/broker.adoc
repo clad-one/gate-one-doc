@@ -169,6 +169,11 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | no
 | Environment variable gating POST /register (server-to-server registration).
 
+| [[field-tenants-mappings]] `mappings`
+| array of <<config-tenants-mappings,object>>
+| no
+| Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
+
 |===
 
 [[config-tenants-google]]
@@ -229,6 +234,42 @@ Upstream OIDC identity provider configuration. The google key defaults to the Go
 | boolean
 | no
 | Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+
+|===
+
+[[config-tenants-mappings]]
+==== tenants.mappings
+
+One claim-to-rights mapping rule.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-mappings-claim]] `claim`
+| string
+| yes
+| Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles. Minimum length: 1.
+
+| [[field-tenants-mappings-values]] `values`
+| array of string
+| no
+| Values to match. If omitted, the rule matches when the claim is present and non-empty.
+
+| [[field-tenants-mappings-roles]] `roles`
+| array of string
+| no
+| Broker roles added when the rule matches.
+
+| [[field-tenants-mappings-scopes]] `scopes`
+| array of string
+| no
+| Broker scopes added when the rule matches.
+
+| [[field-tenants-mappings-claims]] `claims`
+| object
+| no
+| Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
 
 |===
 

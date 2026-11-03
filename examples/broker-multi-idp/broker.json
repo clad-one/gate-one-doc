@@ -54,15 +54,21 @@
       "adminEmails": [
         "admin@example.com"
       ],
-      "groupRoles": {
-        "admins": [
-          "admin"
-        ]
-      },
       "accessTokenTtlSeconds": 600,
       "idTokenTtlSeconds": 600,
       "refreshTokenTtlSeconds": 2592000,
-      "sessionTtlSeconds": 43200
+      "sessionTtlSeconds": 43200,
+      "mappings": [
+        {
+          "claim": "groups",
+          "values": [
+            "admins"
+          ],
+          "roles": [
+            "admin"
+          ]
+        }
+      ]
     }
   ]
 }

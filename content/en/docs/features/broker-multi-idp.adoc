@@ -26,7 +26,7 @@ directly to one OIDC or JWT issuer per provider.
 
 * it federates the browser login to one or more upstream OIDC providers;
 * it applies local policy: tenant, roles, audiences, allowed domains,
-  admin emails and group mapping;
+  admin emails, claim mappings and per-user role/scope/claim grants;
 * it re-emits its own **Ed25519-signed** ID/access/refresh tokens;
 * it keeps a broker session cookie on its own host, so several
   applications in the same browser share one upstream login;
@@ -135,6 +135,72 @@ hosts registration and email verification. This is for small
 deployments and demos; an enterprise directory remains the better
 source of truth.
 
+== User rights and mappings
+
+The broker now has a small user directory for both local and federated
+accounts. Every user — local or federated — carries the same
+`roles`/`scopes`/`claims` grants. A federated user has exactly **one**
+external link `(issuer, subject)`; the IdP account is never recreated.
+
+Mappings translate upstream claims into broker rights on every federated
+login:
+
+[source,json]
+----
+"mappings": [
+  { "claim": "groups", "values": ["admins"], "roles": ["admin"] },
+  {
+    "claim": "realm_access.roles",
+    "values": ["offline_access"],
+    "roles": ["user"]
+  },
+  {
+    "claim": "department",
+    "scopes": ["read:things"],
+    "claims": { "department": "support" }
+  }
+]
+----
+
+Effective rights = tenant defaults + admin emails + mapped claims +
+the user's stored grants. Mapping results are not persisted: if the IdP
+changes a group, the next login reflects it.
+
+The admin CLI uses the same config and Redis store:
+
+[source,bash]
+----
+# a local account
+cladone-auth user create -config cladone-auth.json -tenant mycompany \
+  -kind local -email alice@mycompany.example.com \
+  -password 'long-enough-password' -roles support
+
+# a federated account (JIT creates it at first login; this pre-provisions it)
+cladone-auth user create -config cladone-auth.json -tenant mycompany \
+  -kind federated -issuer https://accounts.google.com -sub 'google-sub-1' \
+  -email alice@mycompany.example.com -roles support
+
+# inspect and replace grants (federated users are looked up by identity)
+cladone-auth user show -config cladone-auth.json -tenant mycompany \
+  -issuer https://accounts.google.com -sub 'google-sub-1'
+cladone-auth user set -config cladone-auth.json -tenant mycompany \
+  -issuer https://accounts.google.com -sub 'google-sub-1' \
+  -roles support,auditor -scopes read:things \
+  -claims '{"department":"support"}'
+----
+
+If an upstream subject changes unexpectedly, relink the same broker user
+instead of deleting it and losing its grants:
+
+[source,bash]
+----
+cladone-auth user set -config cladone-auth.json -tenant mycompany \
+  -id <user-id> -new-issuer https://tenant.eu.auth0.com/ -new-sub 'auth0|...'
+----
+
+Grant changes take effect at the next login; revoke the user's sessions
+for immediate effect.
+
 == Security properties
 
 * Upstream client secrets are read from environment variables
@@ -149,9 +215,9 @@ source of truth.
 
 == Limits
 
-* The broker is an issuer, not a general-purpose authorization server:
-  its policy is tenant/roles/audiences, not per-resource rules. Route
-  rules stay in Gate One.
+* The broker owns the user directory and normalized roles/scopes/claims,
+  but it is not a per-resource policy engine: route decisions stay in
+  Gate One.
 * Authentication adapters and broker IdP adapters remain under the Gate
   One licence; they are not third-party extension plugins.
 * The broker is not required for a single OIDC provider. Prefer direct
@@ -160,5 +226,6 @@ source of truth.
 == Configuration reference
 
 * link:/docs/config/broker/[Broker configuration]
+* link:/docs/config/broker/#field-tenants-mappings[`tenants[].mappings`]
 * link:/docs/config/gate-one/#field-authProviders[`authProviders`]
 * link:/docs/config/gate-one/#field-defaultAuthProvider[`defaultAuthProvider`]

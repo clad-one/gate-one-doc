@@ -179,6 +179,13 @@
         "registrationSecretEnv": {
           "type": "string",
           "description": "Environment variable gating POST /register (server-to-server registration)."
+        },
+        "mappings": {
+          "type": "array",
+          "description": "Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.",
+          "items": {
+            "$ref": "#/definitions/mappingRule"
+          }
         }
       }
     },
@@ -352,6 +359,50 @@
           "type": "string",
           "format": "email",
           "description": "From address for verification emails."
+        }
+      }
+    },
+    "mappingRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim"
+      ],
+      "description": "One claim-to-rights mapping rule.",
+      "properties": {
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles."
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Values to match. If omitted, the rule matches when the claim is present and non-empty."
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Broker roles added when the rule matches."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Broker scopes added when the rule matches."
+        },
+        "claims": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused."
         }
       }
     }

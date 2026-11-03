@@ -20,7 +20,7 @@
   linkTitle: Multiple identity providers
   weight: 20
   usefulIf: your users come from several identity providers, or you need local accounts.
-  summary: The optional broker federates upstream IdPs, applies local policy and emits its own Ed25519-signed tokens.
+  summary: The optional broker federates upstream IdPs, normalizes roles/scopes/claims, manages local and federated user grants and emits its own Ed25519-signed tokens.
   example: /docs/examples/broker/
   configRefs:
     - label: authProviders
