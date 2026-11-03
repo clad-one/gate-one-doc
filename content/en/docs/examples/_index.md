@@ -13,7 +13,8 @@ the published JSON Schema; local examples are also checked with
 | Example | What it shows |
 |---|---|
 | [Getting started](getting-started/) | A local demo with the embedded development identity provider, a user badge and one route. |
-| [Multi-app SSO](multi-app-sso/) | Two applications on a shared cookie domain, one OIDC provider, Redis-backed session state. |
+| [Multi-app SSO](multi-app-sso/) | Two applications on a shared cookie domain and one OIDC provider, with the default bbolt store. |
+| [Redis-backed sessions](redis-session/) | The same SSO setup with a shared Redis store for several Gate One replicas. |
 | [Broker federation](broker/) | Google + Microsoft through the optional broker, then one Gate One provider per tenant. |
 | [APIs and MCP](api-mcp/) | A browser provider, a JWT provider, an identity-conditioned API route and an MCP service. |
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle, 403 banner and a nonce CSP. |
@@ -24,6 +25,7 @@ The raw files are also served under `/examples/`:
 
 * [`examples/getting-started/routes.json`](/examples/getting-started/routes.json)
 * [`examples/sso-multi-apps/routes.json`](/examples/sso-multi-apps/routes.json)
+* [`examples/redis-session/routes.json`](/examples/redis-session/routes.json)
 * [`examples/broker-multi-idp/broker.json`](/examples/broker-multi-idp/broker.json)
   and [`routes.json`](/examples/broker-multi-idp/routes.json)
 * [`examples/protect-api-mcp/routes.json`](/examples/protect-api-mcp/routes.json)

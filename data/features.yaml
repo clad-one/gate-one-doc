@@ -3,7 +3,7 @@
   linkTitle: SSO across apps
   weight: 10
   usefulIf: you want one login for several applications without changing the applications.
-  summary: One OIDC provider, one login host, a shared cookie domain and a shared session store.
+  summary: One OIDC provider, one login host and a shared cookie domain across applications.
   example: /docs/examples/getting-started/
   configRefs:
     - label: issuer

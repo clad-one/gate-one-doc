@@ -43,14 +43,7 @@ According to the route, the application receives an identity:
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",
-    "cookieDomain": "example.com",
-    "sessionKeyEnv": "OIDC_SESSION_KEY",
-    "sessionStore": {
-      "type": "redis",
-      "url": "redis://redis:6379/0",
-      "passwordEnv": "REDIS_PASSWORD",
-      "prefix": "cladone:auth:v1:"
-    }
+    "cookieDomain": "example.com"
   },
   "routes": [
     {
@@ -69,16 +62,25 @@ The complete file is link:/examples/sso-multi-apps/routes.json[`examples/sso-mul
 See also the link:/docs/examples/getting-started/[getting-started example]
 for a local demo with the embedded development identity provider.
 
-== Why Redis
+== Session store: bbolt or Redis
 
-A single instance can keep the session and revocation state in a local
-bbolt file. Several Gate One instances must share the same state **and**
-the same cookie-signing key:
+A single Gate One instance uses the default bbolt store: there is no
+`sessionStore` block and no Redis. This is enough for the SSO example
+above and gives immediate logout/revocation on that instance.
 
-* `sessionKeyEnv` names an environment variable present on every node;
+Several Gate One instances must share the session and revocation state
+**and** the same cookie-signing key:
+
+* `sessionKeyEnv` names a signing key present on every node;
 * `sessionStore.type: "redis"` points every node at the same Redis;
 * Sentinel and TLS are supported for a highly available Redis
   (`masterName`, `sentinelAddrs`, `tls`, …).
+
+Redis matters for **multi-instance logout/revocation**: a revocation
+recorded by one replica must be visible to the others. It is not needed
+for SSO between several applications served by one Gate One instance.
+See link:/docs/examples/redis-session/[Redis-backed sessions] for the
+dedicated example.
 
 When `sessionStore` is Redis and Redis is unavailable, authenticated
 routes fail with `502 authentication_unavailable`. Public routes keep
@@ -107,8 +109,9 @@ lifetime, or 30 days. It is never shorter than the session TTL.
 * **Manual rolling restart.** Restart one instance at a time; in-flight
   requests drain for up to 30 seconds. There is no blue/green deployment
   yet.
-* **Secrets never in the file.** Use `clientSecretEnv`, and keep
-  `sessionKeyEnv` identical on every replica.
+* **Secrets never in the file.** Use `clientSecretEnv`.
+* **Several replicas only.** Add Redis and keep `sessionKeyEnv`
+  identical on every node; a single instance does not need either.
 
 == Limits
 

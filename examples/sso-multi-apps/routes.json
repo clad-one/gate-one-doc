@@ -5,14 +5,7 @@
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",
-    "cookieDomain": "example.com",
-    "sessionKeyEnv": "OIDC_SESSION_KEY",
-    "sessionStore": {
-      "type": "redis",
-      "url": "redis://redis:6379/0",
-      "passwordEnv": "REDIS_PASSWORD",
-      "prefix": "cladone:auth:v1:"
-    }
+    "cookieDomain": "example.com"
   },
   "routes": [
     {

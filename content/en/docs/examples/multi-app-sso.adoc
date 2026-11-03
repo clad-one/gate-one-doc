@@ -23,14 +23,7 @@ link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`]
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",
-    "cookieDomain": "example.com",
-    "sessionKeyEnv": "OIDC_SESSION_KEY",
-    "sessionStore": {
-      "type": "redis",
-      "url": "redis://redis:6379/0",
-      "passwordEnv": "REDIS_PASSWORD",
-      "prefix": "cladone:auth:v1:"
-    }
+    "cookieDomain": "example.com"
   },
   "routes": [
     {
@@ -50,8 +43,6 @@ link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`]
 [source,bash]
 ----
 export OIDC_CLIENT_SECRET=...
-export OIDC_SESSION_KEY="$(openssl rand -base64 32)"
-export REDIS_PASSWORD=...
 gate-one -check -config routes.json
 gate-one -config routes.json
 ----
@@ -63,10 +54,8 @@ provider. Point DNS (or your test hosts file) for `app.example.com`,
 == Why it works
 
 * `cookieDomain: "example.com"` lets both hosts share the session cookie.
-* `sessionKeyEnv` is identical on every replica, so any replica can
-  verify the cookie.
-* Redis shares the session and revocation state; bbolt is single-instance
-  only.
+* This example runs a single Gate One instance, so the default bbolt
+  session/revocation store is enough.
 * The second visit does not redirect to the identity provider.
 
 == Caveats
@@ -74,12 +63,16 @@ provider. Point DNS (or your test hosts file) for `app.example.com`,
 * The applications must share a parent domain. `app.mycompany.com` and
   `app.other.com` cannot share a cookie; use one login per parent domain
   or a common hostname.
-* A logout revokes the session centrally; every replica sharing Redis
-  refuses it on the next request.
+* On a single instance, a logout revokes the session for the next
+  request. For several replicas, use the
+  link:../redis-session/[Redis-backed sessions] example so the
+  revocation is shared across nodes.
 * The applications can stay public: remove `"auth": {}` from one route.
   Only that route becomes anonymous.
 
 == Next
 
-If your users come from several identity providers, add the optional
-broker: link:../broker/[Broker federation].
+If you run several Gate One replicas, use
+link:../redis-session/[Redis-backed sessions]. If your users come from
+several identity providers, add the optional broker:
+link:../broker/[Broker federation].

@@ -7,9 +7,9 @@ description: A local demo with the embedded development identity provider.
 
 = Getting started
 
-This example runs entirely on your machine: no identity provider, no
-Redis, no external service. It uses the embedded `dev` provider, which
-is loopback-only and must never be used in production.
+This example runs entirely on your machine: no identity provider and
+no external service. It uses the embedded `dev` provider, which is
+loopback-only and must never be used in production.
 
 == File
 
@@ -65,6 +65,5 @@ loopback on modern systems.
 
 == Next
 
-Replace the `dev` block with a real `oidc` provider
-(link:../multi-app-sso/[multi-app SSO]) and move the session store to
-Redis before running more than one instance.
+Replace the `dev` block with a real `oidc` provider; see
+link:../multi-app-sso/[multi-app SSO].

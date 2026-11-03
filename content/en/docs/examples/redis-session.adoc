@@ -1,0 +1,76 @@
+---
+title: Redis-backed sessions
+linkTitle: Redis-backed sessions
+weight: 25
+description: Shared session and revocation state for several Gate One replicas.
+---
+
+= Redis-backed sessions
+
+This example uses Redis as the OIDC session/revocation store. It is the
+multi-instance variant of the
+link:../multi-app-sso/[multi-app SSO] example.
+
+== File
+
+link:/examples/redis-session/routes.json[`examples/redis-session/routes.json`]
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://auth.example.com/realms/mycompany",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "passwordEnv": "REDIS_PASSWORD",
+      "prefix": "cladone:auth:v1:"
+    }
+  },
+  "routes": [{
+    "host": "app.example.com", "path": "/*", "frontend": true,
+    "backend": "http://app:8080", "auth": {}
+  }]
+}
+----
+
+== Run it
+
+[source,bash]
+----
+export OIDC_CLIENT_SECRET=...
+export OIDC_SESSION_KEY="$(openssl rand -base64 32)"
+export REDIS_PASSWORD=...
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+`OIDC_SESSION_KEY` must be identical on every Gate One replica: it signs
+the shared session cookie. The Redis URL and password are also shared.
+
+== When to use it
+
+* several Gate One replicas behind a load balancer;
+* immediate revocation across replicas after a logout or back-channel
+  logout;
+* a shared session/revocation state that survives an individual
+  replica restart.
+
+For a **single** Gate One instance, the default bbolt store is enough;
+Redis adds an external service without changing the SSO behaviour. See
+link:../multi-app-sso/[multi-app SSO] for that simpler setup.
+
+== Failure mode
+
+When `sessionStore` is Redis and Redis is unavailable, authenticated
+routes fail with `502 authentication_unavailable`. Public routes keep
+working.
+
+Sentinel, TLS and ACL authentication are configured in
+link:/docs/config/gate-one/#field-authProvider-sessionStore[`authProvider.sessionStore`].
