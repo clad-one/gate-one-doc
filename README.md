@@ -85,12 +85,19 @@ COSIGN_PASSWORD="$(cat ~/.config/gate-one/release/cosign.password)" \
 COSIGN_PUB=release/cosign.pub \
 ./scripts/release.sh --allow-untagged
 
-# normal release: source and product tags must both be vX.Y.Z
+# normal release: source tag vX.Y.Z, product tag vX.Y.Z
+# or vX.Y.Z-docs.N for a documentation-only release
 COSIGN_KEY=... COSIGN_PASSWORD=... ./scripts/release.sh
 ```
 
+The product tag must be `vX.Y.Z` (same release train as the source) or
+`vX.Y.Z-docs.N` for a docs-only release. In the `-docs.N` case the
+binary archives keep the source version (`gate-one_X.Y.Z_*`) while the
+site archive and release label carry the docs suffix.
+
 Artifacts land in `dist/`: one archive per OS/arch, the site archive,
-SPDX SBOMs, `SHA256SUMS`, `SHA256SUMS.bundle` and `cosign.pub`.
+SPDX SBOMs, `RELEASE_MANIFEST.json`, `SHA256SUMS`,
+`SHA256SUMS.bundle` and `cosign.pub`.
 Verify with:
 
 ```bash
