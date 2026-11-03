@@ -1,7 +1,7 @@
 {
   "authProvider": {
     "type": "oidc",
-    "issuer": "https://auth.example.com/realms/acme",
+    "issuer": "https://auth.example.com/realms/mycompany",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",

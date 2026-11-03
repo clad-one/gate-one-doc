@@ -1,19 +1,19 @@
 {
   "authProviders": [
     {
-      "id": "acme",
+      "id": "mycompany",
       "type": "oidc",
-      "issuer": "https://auth.example.com/t/acme",
+      "issuer": "https://auth.example.com/t/mycompany",
       "clientId": "gate-one",
-      "clientSecretEnv": "ACME_OIDC_SECRET",
+      "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
       "loginBaseUrl": "https://login.example.com",
       "cookieDomain": "example.com",
-      "cookieName": "gate_one_acme_session",
+      "cookieName": "gate_one_mycompany_session",
       "roleClaims": [
         "roles"
       ],
       "mcpAudience": "https://mcp.example.com",
-      "sessionKeyEnv": "ACME_SESSION_KEY",
+      "sessionKeyEnv": "MYCOMPANY_SESSION_KEY",
       "sessionStore": {
         "type": "redis",
         "url": "redis://redis:6379/0",
@@ -22,7 +22,7 @@
       }
     }
   ],
-  "defaultAuthProvider": "acme",
+  "defaultAuthProvider": "mycompany",
   "routes": [
     {
       "host": "app.example.com",
@@ -30,7 +30,7 @@
       "frontend": true,
       "backend": "http://app:8080",
       "auth": {
-        "provider": "acme"
+        "provider": "mycompany"
       }
     }
   ]

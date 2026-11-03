@@ -39,7 +39,7 @@ According to the route, the application receives an identity:
 {
   "authProvider": {
     "type": "oidc",
-    "issuer": "https://auth.example.com/realms/acme",
+    "issuer": "https://auth.example.com/realms/mycompany",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",
@@ -101,7 +101,7 @@ lifetime, or 30 days. It is never shorter than the session TTL.
 == Operational notes
 
 * **Same parent domain required.** `cookieDomain` must cover every
-  application host. `app.acme.com` and `app.other.com` cannot share a
+  application host. `app.mycompany.com` and `app.other.com` cannot share a
   cookie; use one login per parent domain, or put the applications
   behind a common hostname.
 * **Manual rolling restart.** Restart one instance at a time; in-flight

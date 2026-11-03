@@ -30,9 +30,9 @@ only the broker.
     "authPrefix": "cladone:auth:v1:"
   },
   "tenants": [{
-    "id": "acme",
+    "id": "mycompany",
     "clientId": "gate-one",
-    "clientSecretEnv": "ACME_BROKER_CLIENT_SECRET",
+    "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
     "redirectUris": ["https://login.example.com/auth/callback"],
     "upstreams": {
       "google": {
@@ -60,16 +60,16 @@ only the broker.
 ----
 {
   "authProviders": [{
-    "id": "acme",
+    "id": "mycompany",
     "type": "oidc",
-    "issuer": "https://auth.example.com/t/acme",
+    "issuer": "https://auth.example.com/t/mycompany",
     "clientId": "gate-one",
-    "clientSecretEnv": "ACME_OIDC_SECRET",
+    "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
     "loginBaseUrl": "https://login.example.com",
     "cookieDomain": "example.com",
-    "cookieName": "gate_one_acme_session",
+    "cookieName": "gate_one_mycompany_session",
     "roleClaims": ["roles"],
-    "sessionKeyEnv": "ACME_SESSION_KEY",
+    "sessionKeyEnv": "MYCOMPANY_SESSION_KEY",
     "sessionStore": {
       "type": "redis",
       "url": "redis://redis:6379/0",
@@ -77,10 +77,10 @@ only the broker.
       "prefix": "cladone:auth:v1:"
     }
   }],
-  "defaultAuthProvider": "acme",
+  "defaultAuthProvider": "mycompany",
   "routes": [{
     "host": "app.example.com", "path": "/*", "frontend": true,
-    "backend": "http://app:8080", "auth": { "provider": "acme" }
+    "backend": "http://app:8080", "auth": { "provider": "mycompany" }
   }]
 }
 ----
@@ -91,14 +91,14 @@ only the broker.
 ----
 # broker
 export REDIS_PASSWORD=...
-export ACME_BROKER_CLIENT_SECRET=...
+export MYCOMPANY_BROKER_CLIENT_SECRET=...
 export GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=...
 export MICROSOFT_CLIENT_ID=... MICROSOFT_CLIENT_SECRET=...
 cladone-auth -config broker.json
 
 # gate one
-export ACME_OIDC_SECRET=...
-export ACME_SESSION_KEY="$(openssl rand -base64 32)"
+export MYCOMPANY_OIDC_SECRET=...
+export MYCOMPANY_SESSION_KEY="$(openssl rand -base64 32)"
 gate-one -check -config routes.json
 gate-one -config routes.json
 ----

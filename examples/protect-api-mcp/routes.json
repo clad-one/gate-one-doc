@@ -1,14 +1,14 @@
 {
   "authProviders": [
     {
-      "id": "acme",
+      "id": "mycompany",
       "type": "oidc",
-      "issuer": "https://auth.example.com/t/acme",
+      "issuer": "https://auth.example.com/t/mycompany",
       "clientId": "gate-one",
-      "clientSecretEnv": "ACME_OIDC_SECRET",
+      "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
       "loginBaseUrl": "https://login.example.com",
       "cookieDomain": "example.com",
-      "sessionKeyEnv": "ACME_SESSION_KEY",
+      "sessionKeyEnv": "MYCOMPANY_SESSION_KEY",
       "sessionStore": {
         "type": "redis",
         "url": "redis://redis:6379/0",
@@ -17,14 +17,14 @@
       }
     },
     {
-      "id": "acme-api",
+      "id": "mycompany-api",
       "type": "jwt",
-      "issuer": "https://auth.example.com/t/acme",
-      "jwksUrl": "https://auth.example.com/t/acme/jwks.json",
+      "issuer": "https://auth.example.com/t/mycompany",
+      "jwksUrl": "https://auth.example.com/t/mycompany/jwks.json",
       "audience": "https://api.example.com"
     }
   ],
-  "defaultAuthProvider": "acme",
+  "defaultAuthProvider": "mycompany",
   "mcpDefaults": {
     "scope": "mcp-tools"
   },
@@ -41,7 +41,7 @@
       "path": "/v1/*",
       "backend": "http://api:8080",
       "auth": {
-        "provider": "acme-api",
+        "provider": "mycompany-api",
         "identity": {
           "scopes": [
             "read:things"
@@ -54,7 +54,7 @@
       "path": "/mcp",
       "backend": "http://mcp:8080",
       "auth": {
-        "provider": "acme-api"
+        "provider": "mycompany-api"
       },
       "mcp": {
         "enabled": true,

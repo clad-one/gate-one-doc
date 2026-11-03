@@ -9,9 +9,9 @@
   },
   "tenants": [
     {
-      "id": "acme",
+      "id": "mycompany",
       "clientId": "gate-one",
-      "clientSecretEnv": "ACME_BROKER_CLIENT_SECRET",
+      "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
       "redirectUris": [
         "https://login.example.com/auth/callback"
       ],

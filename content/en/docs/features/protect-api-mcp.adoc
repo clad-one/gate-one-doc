@@ -41,7 +41,7 @@ is allowed** after a successful authentication:
   "path": "/v1/*",
   "backend": "http://api:8080",
   "auth": {
-    "provider": "acme-api",
+    "provider": "mycompany-api",
     "when": { "method": ["GET", "POST"] },
     "identity": {
       "scopes": ["read:things"],
@@ -58,10 +58,10 @@ An empty `auth` (`{}`) means authentication is **always** required.
 [source,json]
 ----
 {
-  "id": "acme-api",
+  "id": "mycompany-api",
   "type": "jwt",
-  "issuer": "https://auth.example.com/t/acme",
-  "jwksUrl": "https://auth.example.com/t/acme/jwks.json",
+  "issuer": "https://auth.example.com/t/mycompany",
+  "jwksUrl": "https://auth.example.com/t/mycompany/jwks.json",
   "audience": "https://api.example.com"
 }
 ----
@@ -80,7 +80,7 @@ An MCP route declares its protected-resource identity:
   "host": "mcp.example.com",
   "path": "/mcp",
   "backend": "http://mcp:8080",
-  "auth": { "provider": "acme-api" },
+  "auth": { "provider": "mycompany-api" },
   "mcp": {
     "enabled": true,
     "path": "/mcp",

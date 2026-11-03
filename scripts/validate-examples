@@ -119,11 +119,11 @@ def run_gate_one(path: Path) -> None:
     env = os.environ.copy()
     env.update({
         "OIDC_CLIENT_SECRET": "check-only",
-        "ACME_OIDC_SECRET": "check-only",
+        "MYCOMPANY_OIDC_SECRET": "check-only",
         "GATE_ONE_SUBJECT_SECRET": "check-only-subject-secret-32-bytes",
         "GATE_ONE_PLUGIN_SECRET": "0123456789abcdef0123456789abcdef",
         "OIDC_SESSION_KEY": "check-only-session-key",
-        "ACME_SESSION_KEY": "check-only-session-key",
+        "MYCOMPANY_SESSION_KEY": "check-only-session-key",
     })
     proc = subprocess.run(
         [binary, "-check", "-config", str(path)],

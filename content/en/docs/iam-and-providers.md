@@ -141,7 +141,7 @@ policy, but do not need a full IAM suite.
 
 ```mermaid
 flowchart LR
-  GO["Gate One<br/>authProvider.type: oidc"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant acme"]
+  GO["Gate One<br/>authProvider.type: oidc"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant mycompany"]
   BROKER -->|"upstream login"| G["Google"]
   BROKER -->|"upstream login"| M["Microsoft"]
   BROKER -.->|"optional local password"| L["Local account<br/>PBKDF2"]

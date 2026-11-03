@@ -5,10 +5,12 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Gate One" subtitle="Authentication and UX for apps you don't control" height="med" color="dark" %}}
+{{% blocks/cover title="Gate One" subtitle="Overlay once for all" height="med" color="dark" %}}
 
-Add a real login, per-route policy, usage events and injectable UX to the
-applications you already run. No SDK, no fork, no frontend rewrite.
+Injectable UX and usage events. SSO login with front/back interception,
+PWA, REST-to-MCP and aggregation, front proxy — all included.
+
+No SDK, no fork, no frontend rewrite.
 
 <a class="btn btn-lg btn-primary me-3 mb-3" href="/docs/features/">See the features</a>
 <a class="btn btn-lg btn-outline-light mb-3" href="/docs/examples/getting-started/">Start in two commands</a>

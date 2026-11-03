@@ -19,22 +19,22 @@ link:/examples/protect-api-mcp/routes.json[`examples/protect-api-mcp/routes.json
 {
   "authProviders": [
     {
-      "id": "acme", "type": "oidc",
-      "issuer": "https://auth.example.com/t/acme",
+      "id": "mycompany", "type": "oidc",
+      "issuer": "https://auth.example.com/t/mycompany",
       "clientId": "gate-one",
-      "clientSecretEnv": "ACME_OIDC_SECRET",
+      "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
       "loginBaseUrl": "https://login.example.com",
       "cookieDomain": "example.com",
-      "sessionKeyEnv": "ACME_SESSION_KEY"
+      "sessionKeyEnv": "MYCOMPANY_SESSION_KEY"
     },
     {
-      "id": "acme-api", "type": "jwt",
-      "issuer": "https://auth.example.com/t/acme",
-      "jwksUrl": "https://auth.example.com/t/acme/jwks.json",
+      "id": "mycompany-api", "type": "jwt",
+      "issuer": "https://auth.example.com/t/mycompany",
+      "jwksUrl": "https://auth.example.com/t/mycompany/jwks.json",
       "audience": "https://api.example.com"
     }
   ],
-  "defaultAuthProvider": "acme",
+  "defaultAuthProvider": "mycompany",
   "routes": [
     {
       "host": "app.example.com", "path": "/*", "frontend": true,
@@ -43,13 +43,13 @@ link:/examples/protect-api-mcp/routes.json[`examples/protect-api-mcp/routes.json
     {
       "host": "api.example.com", "path": "/v1/*", "backend": "http://api:8080",
       "auth": {
-        "provider": "acme-api",
+        "provider": "mycompany-api",
         "identity": { "scopes": ["read:things"] }
       }
     },
     {
       "host": "mcp.example.com", "path": "/mcp", "backend": "http://mcp:8080",
-      "auth": { "provider": "acme-api" },
+      "auth": { "provider": "mycompany-api" },
       "mcp": {
         "enabled": true, "path": "/mcp", "name": "things",
         "resource": "https://mcp.example.com", "scope": "mcp-tools",
@@ -64,7 +64,7 @@ link:/examples/protect-api-mcp/routes.json[`examples/protect-api-mcp/routes.json
 
 [source,bash]
 ----
-TOKEN="$(curl -s -X POST https://auth.example.com/t/acme/token \
+TOKEN="$(curl -s -X POST https://auth.example.com/t/mycompany/token \
   -d grant_type=client_credentials \
   -d client_id=... -d client_secret=... | jq -r .access_token)"
 
