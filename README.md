@@ -69,7 +69,7 @@ npm run docs
 ```
 
 The build fails if the generated files are stale (CI runs
-`npm run docs && git diff --exit-code`).
+`./scripts/check-generated`).
 
 ## Releases
 
@@ -79,10 +79,29 @@ and Windows, attaches the schemas, examples and docs, and produces
 checksums, an SBOM (syft) and a signature (cosign or minisign).
 
 ```bash
-./scripts/release.sh --dry-run
+# local build from an untagged source HEAD
+COSIGN_KEY=~/.config/gate-one/release/cosign.key \
+COSIGN_PASSWORD="$(cat ~/.config/gate-one/release/cosign.password)" \
+COSIGN_PUB=release/cosign.pub \
+./scripts/release.sh --allow-untagged
+
+# normal release: source and product tags must both be vX.Y.Z
+COSIGN_KEY=... COSIGN_PASSWORD=... ./scripts/release.sh
 ```
 
-Binaries are **not** committed: they are attached to a tagged release.
+Artifacts land in `dist/`: one archive per OS/arch, the site archive,
+SPDX SBOMs, `SHA256SUMS`, `SHA256SUMS.bundle` and `cosign.pub`.
+Verify with:
+
+```bash
+cosign verify-blob --key cosign.pub \
+  --bundle SHA256SUMS.bundle SHA256SUMS
+sha256sum -c SHA256SUMS
+```
+
+The verification key is committed as `release/cosign.pub`; the private
+key stays outside the repository. Binaries are **not** committed: they
+are attached to a tagged release.
 
 ## Hosting
 

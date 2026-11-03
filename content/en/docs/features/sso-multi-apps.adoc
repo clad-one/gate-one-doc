@@ -80,8 +80,9 @@ the same cookie-signing key:
 * Sentinel and TLS are supported for a highly available Redis
   (`masterName`, `sentinelAddrs`, `tls`, …).
 
-If Redis is unavailable, authenticated routes fail closed with
-`502 authentication_unavailable`. Public routes keep working.
+When `sessionStore` is Redis and Redis is unavailable, authenticated
+routes fail with `502 authentication_unavailable`. Public routes keep
+working.
 
 == Logout and revocation
 

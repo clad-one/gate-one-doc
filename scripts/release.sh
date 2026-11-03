@@ -108,7 +108,7 @@ for target in "${TARGETS[@]}"; do
 	os="${target%/*}"
 	arch="${target#*/}"
 	bin="gate-one"
-	ext=""
+	ext=".tar.gz"
 	[ "$os" = "windows" ] && { bin="gate-one.exe"; ext=".zip"; }
 
 	stage="$DIST/stage/gate-one_${VERSION}_${os}_${arch}"
@@ -135,7 +135,9 @@ for target in "${TARGETS[@]}"; do
 	else
 		tar -czf "$archive" -C "$stage" .
 	fi
-	"$syft_bin" "dir:$stage" -o "spdx-json=$DIST/gate-one_${VERSION}_${os}_${arch}.spdx.json" >/dev/null
+	"$syft_bin" "dir:$stage" \
+		--source-name "gate-one" --source-version "$VERSION" \
+		-o "spdx-json=$DIST/gate-one_${VERSION}_${os}_${arch}.spdx.json" >/dev/null
 	rm -rf "$stage"
 done
 
@@ -145,22 +147,31 @@ rmdir "$DIST/stage" 2>/dev/null || true
 "$PWD/scripts/build-site" >/dev/null
 tar -czf "$DIST/gate-one_${VERSION}_site.tar.gz" -C "$PWD/public" .
 
+if [ -f "$PWD/release/cosign.pub" ]; then
+	cp "$PWD/release/cosign.pub" "$DIST/cosign.pub"
+fi
+
 (
 	cd "$DIST"
 	if command -v sha256sum >/dev/null 2>&1; then
-		sha256sum ./*.tar.gz ./*.zip ./*.spdx.json > SHA256SUMS 2>/dev/null || \
-			sha256sum ./*.tar.gz ./*.spdx.json > SHA256SUMS
+		sha256sum ./*.tar.gz ./*.zip ./*.spdx.json ./cosign.pub > SHA256SUMS 2>/dev/null || \
+			sha256sum ./*.tar.gz ./*.spdx.json ./cosign.pub > SHA256SUMS
 	else
-		shasum -a 256 ./*.tar.gz ./*.zip ./*.spdx.json > SHA256SUMS 2>/dev/null || \
-			shasum -a 256 ./*.tar.gz ./*.spdx.json > SHA256SUMS
+		shasum -a 256 ./*.tar.gz ./*.zip ./*.spdx.json ./cosign.pub > SHA256SUMS 2>/dev/null || \
+			shasum -a 256 ./*.tar.gz ./*.spdx.json ./cosign.pub > SHA256SUMS
 	fi
 )
 
 if [ -n "${COSIGN_KEY:-}" ]; then
 	"$cosign_bin" sign-blob --yes --key "$COSIGN_KEY" \
-		--output-signature "$DIST/SHA256SUMS.sig" \
-		--output-certificate "$DIST/SHA256SUMS.pem" \
+		--bundle "$DIST/SHA256SUMS.bundle" \
 		"$DIST/SHA256SUMS"
+	pub="${COSIGN_PUB:-${COSIGN_KEY%.key}.pub}"
+	if [ -f "$pub" ]; then
+		"$cosign_bin" verify-blob --key "$pub" \
+			--bundle "$DIST/SHA256SUMS.bundle" "$DIST/SHA256SUMS"
+	fi
+	chmod 644 "$DIST/SHA256SUMS.bundle"
 elif [ -n "${MINISIGN_SECRET_KEY:-}" ]; then
 	"$minisign_bin" -S -s "$MINISIGN_SECRET_KEY" -m "$DIST/SHA256SUMS" \
 		-x "$DIST/SHA256SUMS.minisig"
@@ -176,8 +187,16 @@ Artifacts:
 - \`gate-one_${VERSION}_<os>_<arch>.tar.gz\` (or \`.zip\` on Windows)
 - \`gate-one_${VERSION}_site.tar.gz\` (static documentation)
 - \`*.spdx.json\` (SBOM, syft)
-- \`SHA256SUMS\` and its signature
+- \`SHA256SUMS\` and its signature (\`SHA256SUMS.bundle\` for cosign)
+- \`cosign.pub\` (the release verification key)
 - \`schemas/\` and \`examples/\` in every binary archive
+
+Verify the checksum signature:
+
+\`\`\`bash
+cosign verify-blob --key cosign.pub --bundle SHA256SUMS.bundle SHA256SUMS
+sha256sum -c SHA256SUMS
+\`\`\`
 
 Supported: Linux amd64/arm64, macOS amd64/arm64, Windows amd64
 (CGO disabled). Binaries are not committed to Git: attach this
