@@ -21,7 +21,7 @@ description: Route-level identity rules, JWT validation for APIs and MCP protect
 
 **Browser session.** Gate One hosts (or delegates) the login page, sets
 an RP session cookie and proxies the request after authentication. Use
-`type: "oidc"` (or `http` for auth-bridge).
+`type: "oidc"` (or `http-bridge` for auth-bridge).
 
 **Machine bearer.** A client presents `Authorization: Bearer <JWT>`.
 Gate One validates the signature through the provider's JWKS, then the

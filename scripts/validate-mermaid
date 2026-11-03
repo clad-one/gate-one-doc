@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+/* Parse every Mermaid block in content/ with the locally installed
+ * mermaid build. This catches diagram syntax errors at build time,
+ * without a browser or an external service. */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const { JSDOM } = require('jsdom');
+
+const root = path.resolve(__dirname, '..');
+const content = path.join(root, 'content');
+const mermaidPath = path.join(
+  root, 'node_modules', 'mermaid', 'dist', 'mermaid.min.js'
+);
+
+if (!fs.existsSync(mermaidPath)) {
+  console.error('validate-mermaid: run npm ci first (mermaid is missing)');
+  process.exit(2);
+}
+
+const dom = new JSDOM('<!doctype html><html><body></body></html>', {
+  runScripts: 'outside-only',
+});
+const ctx = dom.getInternalVMContext();
+vm.runInContext(fs.readFileSync(mermaidPath, 'utf8'), ctx);
+
+function walk(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(full));
+    else if (/\.(md|markdown)$/i.test(entry.name)) out.push(full);
+  }
+  return out;
+}
+
+async function main() {
+  let blocks = 0;
+  let files = 0;
+  for (const file of walk(content)) {
+    const text = fs.readFileSync(file, 'utf8');
+    const matches = [...text.matchAll(/```mermaid\n([\s\S]*?)```/g)];
+    if (!matches.length) continue;
+    files++;
+    for (const [index, match] of matches.entries()) {
+      blocks++;
+      try {
+        await ctx.mermaid.parse(match[1]);
+      } catch (err) {
+        console.error(
+          `validate-mermaid: ${path.relative(root, file)} block ${index + 1}: ${err.message}`
+        );
+        process.exitCode = 1;
+      }
+    }
+  }
+  if (process.exitCode) process.exit(process.exitCode);
+  console.log(`validate-mermaid: ${blocks} diagram(s) in ${files} file(s) OK`);
+}
+
+main().catch((err) => {
+  console.error('validate-mermaid:', err);
+  process.exit(1);
+});

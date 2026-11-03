@@ -61,7 +61,7 @@ loopback on modern systems.
 * the redirect to the dedicated `login.demo.localhost` host;
 * the shared `demo.localhost` session cookie;
 * the user badge in the top-right corner and its logout button;
-* the `-check` output: routes, auth mode, login URL.
+* the `-check` output: routes, provider type, login URL.
 
 == Next
 

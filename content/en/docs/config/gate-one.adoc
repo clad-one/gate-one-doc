@@ -33,10 +33,10 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | [[field-authProvider]] `authProvider`
 | <<config-authProvider,object>>
 | no
-| Authentication provider. `dev` is the embedded loopback-only IdP used for onboarding/tests; `http` is any external service implementing the Gate One auth contract (auth-bridge is the reference implementation; a non-conforming service needs an adapter); `oidc` is the native Relying Party (discovery, code+PKCE, JWKS, session, logout, MCP resource server). Absent = legacy oidc + auth-bridge translation, so existing configs are unchanged.
+| Authentication provider. `dev` is the embedded loopback-only IdP used for onboarding/tests; `http-bridge` is any external service implementing the Gate One HTTP bridge contract (auth-bridge is the reference implementation; a non-conforming service needs an adapter); `oidc` is the native Relying Party (discovery, code+PKCE, JWKS, session, logout, MCP resource server); `jwt` is a stateless bearer verifier. Absent = legacy oidc + auth-bridge translation, so existing configs are unchanged. The legacy type `http` is accepted as a deprecated alias of `http-bridge`.
 
 | [[field-authProviders]] `authProviders`
-| array of value
+| array of object
 | no
 | Named authentication providers for per-route binding. Mutually exclusive with the legacy singular authProvider. Each item uses the same fields as authProvider plus id/cookieName; a route selects one with auth.provider.
 
@@ -157,16 +157,16 @@ Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluati
 [[config-authProvider]]
 === authProvider
 
-Authentication provider. `dev` is the embedded loopback-only IdP used for onboarding/tests; `http` is any external service implementing the Gate One auth contract (auth-bridge is the reference implementation; a non-conforming service needs an adapter); `oidc` is the native Relying Party (discovery, code+PKCE, JWKS, session, logout, MCP resource server). Absent = legacy oidc + auth-bridge translation, so existing configs are unchanged.
+Authentication provider. `dev` is the embedded loopback-only IdP used for onboarding/tests; `http-bridge` is any external service implementing the Gate One HTTP bridge contract (auth-bridge is the reference implementation; a non-conforming service needs an adapter); `oidc` is the native Relying Party (discovery, code+PKCE, JWKS, session, logout, MCP resource server); `jwt` is a stateless bearer verifier. Absent = legacy oidc + auth-bridge translation, so existing configs are unchanged. The legacy type `http` is accepted as a deprecated alias of `http-bridge`.
 
 [cols="2,2,1,5",options="header"]
 |===
 | Field | Type | Required | Description
 
 | [[field-authProvider-type]] `type`
-| string (one of: `dev`, `http`, `oidc`, `jwt`)
+| string (one of: `dev`, `http-bridge`, `http`, `oidc`, `jwt`)
 | no
-| Provider implementation. Default: dev when a dev block is present, oidc when clientId is present, jwt when jwksUrl is present, http otherwise.
+| Provider implementation. Default: dev when a dev block is present, oidc when clientId is present, jwt when jwksUrl is present, http-bridge otherwise. `http` is a deprecated alias of `http-bridge`.
 
 | [[field-authProvider-id]] `id`
 | string
@@ -181,7 +181,7 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 | [[field-authProvider-baseUrl]] `baseUrl`
 | string
 | no
-| Service root for type http (default http://auth-bridge:3000, or AUTH_BRIDGE_URL).
+| Service root for type http-bridge (default http://auth-bridge:3000, or AUTH_BRIDGE_URL).
 
 | [[field-authProvider-loginBaseUrl]] `loginBaseUrl`
 | string
@@ -191,7 +191,7 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 | [[field-authProvider-loginUrl]] `loginUrl`
 | string
 | no
-| Full login page URL. Defaults to loginBaseUrl + /login, then (type http) the legacy oidc.loginUrl, then baseUrl + /login.
+| Full login page URL. Defaults to loginBaseUrl + /login, then (type http-bridge) the legacy oidc.loginUrl, then baseUrl + /login.
 
 | [[field-authProvider-issuer]] `issuer`
 | string
@@ -206,22 +206,22 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 | [[field-authProvider-verifyUrl]] `verifyUrl`
 | string
 | no
-| Identity verification endpoint (type http). Default baseUrl + /auth.
+| Identity verification endpoint (type http-bridge). Default baseUrl + /auth.
 
 | [[field-authProvider-mcpVerifyUrl]] `mcpVerifyUrl`
 | string
 | no
-| MCP bearer verification endpoint (type http). Default baseUrl + /auth/mcp.
+| MCP bearer verification endpoint (type http-bridge). Default baseUrl + /auth/mcp.
 
 | [[field-authProvider-healthUrl]] `healthUrl`
 | string
 | no
-| Readiness endpoint (type http). Default baseUrl + /health.
+| Readiness endpoint (type http-bridge). Default baseUrl + /health.
 
 | [[field-authProvider-headers]] `headers`
 | <<config-authProvider-headers,object>>
 | no
-| Maps the identity response headers of an external provider (type http). Empty = auth-bridge defaults.
+| Maps the identity response headers of an external provider (type http-bridge). Empty = auth-bridge defaults.
 
 | [[field-authProvider-clientId]] `clientId`
 | string
@@ -333,7 +333,7 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 [[config-authProvider-headers]]
 ==== authProvider.headers
 
-Maps the identity response headers of an external provider (type http). Empty = auth-bridge defaults.
+Maps the identity response headers of an external provider (type http-bridge). Empty = auth-bridge defaults.
 
 [cols="2,2,1,5",options="header"]
 |===

@@ -9,13 +9,16 @@
     "docs": "./scripts/gen-config-docs",
     "validate": "./scripts/validate-examples",
     "release": "./scripts/release.sh",
-    "test": "npm run docs && npm run validate && npm run build",
-    "check": "./scripts/check-generated && ./scripts/validate-examples"
+    "test": "npm run docs && npm run validate && npm run mermaid && npm run build",
+    "check": "./scripts/check-generated && ./scripts/validate-examples && ./scripts/validate-mermaid",
+    "mermaid": "./scripts/validate-mermaid"
   },
   "license": "SEE LICENSE IN https://github.com/cladone/gate-one",
   "devDependencies": {
     "autoprefixer": "^10.6.2",
     "hugo-extended": "^0.169.0",
+    "jsdom": "^30.1.3",
+    "mermaid": "^11.17.2",
     "postcss": "^8.5.32",
     "postcss-cli": "^12.0.0",
     "sass-embedded": "^1.107.1"

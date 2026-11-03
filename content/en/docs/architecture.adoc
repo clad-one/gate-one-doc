@@ -48,7 +48,7 @@ A failure at step 2 is a **503 before authentication**, so an event the
 operator declared durable is not lost. A failure at step 3 never reaches
 the backend.
 
-== Authentication modes
+== Provider types
 
 [cols="1,2,2",options="header"]
 |===
@@ -56,8 +56,9 @@ the backend.
 
 | `dev` | Onboarding, tests, local demos. A dedicated `login.<domain>`
 host, real alice/bob form, loopback only. | none
-| `http` | Any service implementing the Gate One auth contract;
-auth-bridge is the reference. | auth-bridge or an adapter
+| `http-bridge` | Any service implementing the Gate One HTTP bridge
+contract; auth-bridge is the reference. The legacy `http` alias is
+accepted. | auth-bridge or a custom bridge
 | `oidc` | Native OpenID Connect relying party: discovery, code + PKCE,
 state/nonce, JWKS, signed session, RP-initiated and back-channel logout,
 MCP bearer validation. | an OIDC identity provider
@@ -68,7 +69,7 @@ page, no session cookie. | a JWT issuer with JWKS
 `authProvider` is the single-provider form. `authProviders` +
 `defaultAuthProvider` + `auth.provider` bind one provider per route for
 multi-tenant hosting. Only `oidc` and `jwt` are allowed in the plural
-form; `http` and `dev` remain legacy single-provider modes.
+form; `http-bridge` and `dev` remain single-provider types.
 
 An authentication provider is **not** a plugin. `authProvider.type:
 "plugin"` is rejected. Authentication adapters are brokered: they live in

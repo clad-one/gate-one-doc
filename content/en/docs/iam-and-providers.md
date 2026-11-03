@@ -1,0 +1,176 @@
+---
+title: IAM, IdPs and provider types
+linkTitle: IAM and providers
+weight: 15
+description: Who authorizes, who identifies, and which authProvider type Gate One uses.
+---
+
+Gate One sits between the user, an authorization service and an identity
+provider. The vocabulary matters: an **IAM** and an **IdP** are not the
+same thing, and `authProvider.type` is a **provider type**, not an
+"authentication mode".
+
+> This page deliberately avoids the phrase *authentication mode*. The
+> schema has one field, `authProvider.type`; it selects **who Gate One
+> asks to verify a request**, not how the user authenticates upstream.
+
+## The three roles
+
+| Role | Question it answers | Examples |
+|---|---|---|
+| **IAM / authorization** | What is this account allowed to do? Which tenants, roles, audiences and token lifetimes apply? | `cladone-auth`, Keycloak, Entra ID, Auth0, Okta |
+| **IdP / identification** | Who is this human? | Google, Microsoft, Keycloak as an upstream IdP, a corporate LDAP/SAML directory |
+| **Gate One / enforcement** | Is this request authenticated, and does it satisfy the route policy? | `authProvider`, `auth.identity`, MCP scope checks |
+
+An IAM can also be an IdP (Keycloak does both). The distinction is still
+useful: **the IAM configures the IdPs it trusts**, and Gate One configures
+the IAM (or one IdP) as its provider.
+
+## Who configures whom
+
+```mermaid
+flowchart LR
+  ADMIN["Platform admin"] -->|"tenants, roles, audiences"| IAM["IAM / authorization<br/>cladone-auth (optional)<br/>or Keycloak / Entra / Auth0"]
+  IAM -->|"tenants.upstreams"| GOOGLE["Google<br/>IdP"]
+  IAM --> MICROSOFT["Microsoft<br/>IdP"]
+  IAM --> KEYCLOAK["Keycloak / OIDC<br/>IdP"]
+  IAM -.->|"localAccounts (optional)"| LOCAL["Local accounts"]
+  GO["Gate One<br/>authProvider"] -->|"oidc: issuer + JWKS"| IAM
+  GO -.->|"oidc direct: one IdP"| KEYCLOAK
+  GO -->|"jwt: bearer + JWKS"| API["API / MCP issuer"]
+  GO -->|"verified identity + policy"| APP["Application"]
+```
+
+Two valid shapes:
+
+1. **With an IAM (recommended for several IdPs).** The IAM owns the
+   upstream IdP configuration (`tenants[].upstreams`), local policy and
+   token issuance. Gate One points at the IAM with one `oidc` provider.
+2. **Without an IAM.** Gate One points directly at one OIDC IdP that
+   also issues tokens. This is simpler, but that IdP now plays both the
+   identification and authorization roles.
+
+In both shapes, Gate One enforces `auth.identity` per route; the IAM does
+not decide which application route a user may call.
+
+## Provider types
+
+```mermaid
+flowchart TB
+  subgraph TYPES["authProvider.type"]
+    OIDC["oidc<br/>native OIDC relying party"]
+    JWT["jwt<br/>stateless bearer validation"]
+    BRIDGE["http-bridge<br/>HTTP bridge contract"]
+    DEV["dev<br/>embedded, loopback only"]
+  end
+  OIDC --> OIDC_TARGET["cladone-auth tenant<br/>or one OIDC IdP"]
+  JWT --> JWT_TARGET["JWKS issuer<br/>IAM or API issuer"]
+  BRIDGE --> BRIDGE_TARGET["auth-bridge / custom adapter"]
+  BRIDGE_TARGET --> PROTO["SAML, LDAP, mTLS, API key, legacy auth"]
+  DEV --> DEV_TARGET["embedded alice/bob"]
+```
+
+| Type | Gate One talks to | Browser login | Session owner | Use when |
+|---|---|---|---|---|
+| `oidc` | An OIDC issuer: `cladone-auth` tenant or one IdP | Yes | Gate One (bbolt/Redis) | You have an OIDC issuer, or you use the broker |
+| `jwt` | A JWKS endpoint | No | Stateless | APIs and MCP machine clients |
+| `http-bridge` | A service implementing the Gate One HTTP bridge contract | Yes, on the bridge | The bridge | The technology is not OAuth/OIDC, or you already run auth-bridge |
+| `dev` | The embedded loopback-only IdP | Yes | Gate One (local) | Onboarding and tests only |
+
+`http` is accepted as a **deprecated alias** of `http-bridge` so existing
+configurations keep working. New configurations should use
+`http-bridge`.
+
+### `oidc`
+
+Gate One is the OpenID Connect relying party: discovery, authorization
+code + PKCE, state/nonce, JWKS, signed session, RP-initiated and
+back-channel logout. It hosts the login surface on `loginBaseUrl`.
+
+Use it for a direct OIDC IdP or for a `cladone-auth` tenant. This is the
+only provider type that combines a browser session with local revocation
+state (bbolt or Redis).
+
+### `jwt`
+
+Gate One validates a bearer token against a JWKS. It never hosts a login
+page and never issues a token. Use it for APIs and MCP clients, not for a
+browser session.
+
+### `http-bridge`
+
+Gate One delegates verification to an HTTP service that implements the
+**Gate One HTTP bridge contract**. The bridge is where non-OIDC
+technologies are adapted: SAML, LDAP, mTLS, API keys, a legacy session
+service, or auth-bridge in front of Keycloak.
+
+Gate One only calls `/auth`, `/auth/mcp` and `/health`, and redirects the
+browser to the bridge's login page. The bridge owns the protocol and,
+usually, the session cookie. See
+[the HTTP bridge contract](/docs/bridge-contract/) for endpoints, headers
+and status codes.
+
+There is **no `grpc-bridge` provider type today**. The gRPC binding is
+planned for the broker-side identity adapters, not for `authProvider`.
+If it becomes useful, it will be a new type rather than a silent change
+to `http-bridge`.
+
+### `dev`
+
+The embedded provider exists for onboarding and tests. It is loopback
+only, has real alice/bob accounts, and must not be exposed to a network.
+
+## Internal OAuth IAM: `cladone-auth`
+
+`cladone-auth` is the optional internal OAuth/OIDC IAM. It is a small
+multi-tenant issuer, not a full identity provider:
+
+* it federates external IdPs (Google, Microsoft, Keycloak, …) configured
+  per tenant under `tenants[].upstreams`;
+* it applies local policy: tenant, roles, audiences, allowed domains,
+  admin emails and group mapping;
+* it emits its own Ed25519-signed ID/access/refresh tokens and publishes
+  JWKS and discovery;
+* it publishes the revocation keyspace Gate One reads for a global
+  logout.
+
+It is deliberately lighter than Keycloak: one Go binary, one JSON file,
+Redis optional for multi-instance state, no realm/theme/admin console to
+operate. That makes it a good fit when you need several IdPs or local
+policy, but do not need a full IAM suite.
+
+```mermaid
+flowchart LR
+  GO["Gate One<br/>authProvider.type: oidc"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant acme"]
+  BROKER -->|"upstream login"| G["Google"]
+  BROKER -->|"upstream login"| M["Microsoft"]
+  BROKER -.->|"optional local password"| L["Local account<br/>PBKDF2"]
+  BROKER -->|"JWKS + revocation"| GO
+```
+
+The recommended path is **external IdPs**: there is no password store to
+protect and no password-hash cost at login. Local accounts
+(`localAccounts`) are optional for small deployments; they use PBKDF2
+and add the operational burden of a credential store.
+
+Configuration:
+
+* [Broker configuration reference](/docs/config/broker/)
+* [Multiple identity providers feature](/docs/features/broker-multi-idp/)
+* [Broker federation example](/docs/examples/broker/)
+
+## Choosing a type
+
+| If you need… | Use |
+|---|---|
+| One OIDC issuer, browser login, Gate One session | `oidc` |
+| Several IdPs or local policy in front of one issuer | `oidc` to `cladone-auth` |
+| Bearer tokens for APIs or MCP, no browser session | `jwt` |
+| SAML, LDAP, mTLS, API keys, or an existing auth-bridge | `http-bridge` |
+| A local demo without external services | `dev` only |
+
+## Related
+
+* [Architecture](/docs/architecture/)
+* [HTTP bridge contract](/docs/bridge-contract/)
+* [Plugins](/docs/plugins/)

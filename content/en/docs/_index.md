@@ -21,8 +21,13 @@ injectable UX, usage events.</p>
 feature.</p>
 </div></div></div>
 <div class="col"><div class="card h-100"><div class="card-body">
+<h2 class="card-title h5"><a href="/docs/iam-and-providers/">IAM and providers</a></h2>
+<p class="card-text">Who authorizes, who identifies, and which
+<code>authProvider.type</code> to use.</p>
+</div></div></div>
+<div class="col"><div class="card h-100"><div class="card-body">
 <h2 class="card-title h5"><a href="/docs/architecture/">Architecture</a></h2>
-<p class="card-text">Request path, authentication modes, HA and the
+<p class="card-text">Request path, provider types, HA and the
 plugin boundary.</p>
 </div></div></div>
 <div class="col"><div class="card h-100"><div class="card-body">

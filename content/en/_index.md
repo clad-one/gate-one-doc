@@ -70,6 +70,7 @@ request, applies the configured policy and forwards it. The application
 does not know it is behind an identity-aware proxy, unless you choose to
 send it the opaque subject header.
 
+[IAM and provider types](/docs/iam-and-providers/) ·
 [Read the architecture](/docs/architecture/) ·
 [Browse the examples](/docs/examples/) ·
 [Generate a configuration](/docs/config/gate-one/)

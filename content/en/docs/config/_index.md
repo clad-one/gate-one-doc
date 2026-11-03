@@ -9,7 +9,7 @@ These pages are generated from the JSON Schemas in `schemas/` by
 `scripts/gen-config-docs`. Edit the schema or the generator, then run
 `npm run docs`; the build fails on a stale diff.
 
-* [Gate One configuration](gate-one/) — `api-routes.json`
+* [Gate One configuration](gate-one/) — `api-routes.json` (`authProvider.type`: `dev`, `http-bridge`, `oidc`, `jwt`)
 * [Broker configuration](broker/) — `cladone-auth`
 * [Plugin manifest](plugin-manifest/)
 * [Plugin trust store](plugin-trust-store/)

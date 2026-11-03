@@ -32,7 +32,8 @@ npm run build          # scripts/build-site (minified production build)
 npm run serve          # local server with drafts
 npm run docs           # regenerate the configuration reference
 npm run validate       # validate examples/ against schemas/
-npm run check          # CI guard: generated docs + examples
+npm run mermaid        # parse every Mermaid diagram
+npm run check          # CI guard: generated docs + examples + diagrams
 ```
 
 `npm run build` puts the static site in `public/`.
@@ -41,6 +42,11 @@ Dart Sass is provided by `sass-embedded`; the build script adds
 `node_modules/.bin` to `PATH` so Hugo finds it. Bootstrap and Font
 Awesome are mounted from `node_modules/` (Docsy 0.18 does not vendor
 them in the Hugo module).
+
+Diagrams are Mermaid code fences. The Mermaid build is mounted from
+`node_modules/mermaid/dist` and served locally: **no CDN or external
+service** is contacted at runtime. `npm run mermaid` parses every
+diagram without a browser.
 
 ## Repository layout
 

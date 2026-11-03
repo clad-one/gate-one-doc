@@ -75,9 +75,15 @@ def type_label(root: dict[str, Any], schema: dict[str, Any]) -> str:
     schema = resolve(root, schema)
     if not isinstance(schema, dict):
         return "value"
+    if "$ref" in original and original["$ref"].startswith("#/properties/"):
+        return "object"
     kind = schema.get("type", "value")
     if kind == "array":
         items = schema.get("items", {})
+        if isinstance(items, dict) and items.get("$ref", "").startswith(
+            "#/properties/"
+        ):
+            return "array of object"
         return f"array of {type_label(root, items)}"
     if kind == "object":
         return "object"
