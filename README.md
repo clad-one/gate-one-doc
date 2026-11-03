@@ -55,7 +55,7 @@ content/en/          English documentation (Markdown + AsciiDoc)
 data/features.yaml   Feature claims rendered on /docs/features/
 examples/            Copyable, validated configuration examples
 schemas/             Published JSON Schemas (source: gate-one-src/testdata)
-scripts/             build-site, gen-config-docs, validate-examples, release.sh
+scripts/             build-site, gen-config-docs, validate-examples
 static/              Static assets and hosting headers
 ```
 
@@ -73,31 +73,29 @@ The build fails if the generated files are stale (CI runs
 
 ## Releases
 
-`scripts/release.sh` builds the Gate One binaries from the source
-repository (`GATE_ONE_SRC`, default `../gate-one-src`) for Linux, macOS
-and Windows, attaches the schemas, examples and docs, and produces
-checksums, an SBOM (syft) and a signature (cosign or minisign).
+The signed release pipeline lives in the source repository:
+`../gate-one-src/release.sh`. This repository no longer has its own
+release script; it supplies the documentation site, the published
+schemas and the feature examples.
 
 ```bash
-# local build from an untagged source HEAD
+cd ../gate-one-src
 COSIGN_KEY=~/.config/gate-one/release/cosign.key \
 COSIGN_PASSWORD="$(cat ~/.config/gate-one/release/cosign.password)" \
 COSIGN_PUB=release/cosign.pub \
-./scripts/release.sh --allow-untagged
-
-# normal release: source tag vX.Y.Z, product tag vX.Y.Z
-# or vX.Y.Z-docs.N for a documentation-only release
-COSIGN_KEY=... COSIGN_PASSWORD=... ./scripts/release.sh
+./release.sh
 ```
 
-The product tag must be `vX.Y.Z` (same release train as the source) or
-`vX.Y.Z-docs.N` for a docs-only release. In the `-docs.N` case the
-binary archives keep the source version (`gate-one_X.Y.Z_*`) while the
-site archive and release label carry the docs suffix.
+The source tag is `vX.Y.Z`. The product tag must be `vX.Y.Z` (same
+release train) or `vX.Y.Z-docs.N` for a documentation-only release.
+In the `-docs.N` case the binary archives keep the source version
+(`gate-one_X.Y.Z_*`) while the site archive and release label carry the
+docs suffix.
 
-Artifacts land in `dist/`: one archive per OS/arch, the site archive,
-SPDX SBOMs, `RELEASE_MANIFEST.json`, `SHA256SUMS`,
+Artifacts land in `../gate-one-src/dist/`: one archive per OS/arch, the
+site archive, SPDX SBOMs, `RELEASE_MANIFEST.json`, `SHA256SUMS`,
 `SHA256SUMS.bundle` and `cosign.pub`.
+
 Verify with:
 
 ```bash
@@ -106,9 +104,9 @@ cosign verify-blob --key cosign.pub \
 sha256sum -c SHA256SUMS
 ```
 
-The verification key is committed as `release/cosign.pub`; the private
-key stays outside the repository. Binaries are **not** committed: they
-are attached to a tagged release.
+The verification key is committed in the source repository as
+`release/cosign.pub`; the private key stays outside both repositories.
+Binaries are **not** committed: they are attached to a tagged release.
 
 ## Hosting
 

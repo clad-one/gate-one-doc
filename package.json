@@ -8,7 +8,6 @@
     "serve": "./scripts/serve-site",
     "docs": "./scripts/gen-config-docs",
     "validate": "./scripts/validate-examples",
-    "release": "./scripts/release.sh",
     "test": "npm run docs && npm run validate && npm run mermaid && npm run build",
     "check": "./scripts/check-generated && ./scripts/validate-examples && ./scripts/validate-mermaid",
     "mermaid": "./scripts/validate-mermaid"
