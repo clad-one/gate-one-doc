@@ -1,0 +1,60 @@
+---
+title: HTTP bridge
+linkTitle: HTTP bridge
+weight: 45
+description: An http-bridge provider for a non-OIDC technology.
+---
+
+= HTTP bridge
+
+This example connects Gate One to a service implementing the
+link:/docs/bridge-contract/[HTTP bridge contract]. The bridge can adapt
+SAML, LDAP, mTLS, API keys or a legacy session service; Gate One only
+sees `/auth`, `/auth/mcp` and `/health`.
+
+== File
+
+link:/examples/http-bridge/routes.json[`examples/http-bridge/routes.json`]
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "http-bridge",
+    "baseUrl": "http://legacy-bridge:8080",
+    "loginUrl": "https://login.example.com/login",
+    "issuer": "https://auth.example.com/realms/example",
+    "headers": {
+      "userId": "X-User-Id",
+      "username": "X-Username",
+      "email": "X-Email",
+      "roles": "X-Roles",
+      "scopes": "X-Scopes",
+      "claims": "X-Claims"
+    }
+  },
+  "routes": [{
+    "host": "app.example.com", "path": "/*", "frontend": true,
+    "backend": "http://app:8080", "auth": {}
+  }]
+}
+----
+
+== Run it
+
+[source,bash]
+----
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+The bridge must be reachable at `baseUrl`, expose the contract endpoints,
+and return `200` plus identity headers for an authenticated session.
+
+== Caveats
+
+* The bridge owns the session; Gate One does not create an RP cookie for
+  this provider.
+* A `5xx` from the bridge is an outage (502), not a login failure.
+* Keep the bridge on the internal network.
+* The legacy type `http` is an alias of `http-bridge`.

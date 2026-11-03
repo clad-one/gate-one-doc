@@ -164,6 +164,8 @@ def health():
     return {"status": "ok"}
 ```
 
+A complete example is
+[`examples/http-bridge/routes.json`](/examples/http-bridge/routes.json).
 Configure:
 
 ```json
