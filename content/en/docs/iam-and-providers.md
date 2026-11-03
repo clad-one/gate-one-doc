@@ -4,12 +4,16 @@ linkTitle: IAM and providers
 weight: 15
 description: Who authorizes, who identifies, and which authProvider type Gate One uses.
 ---
-**IAM** services covers Authorization and configures the authenticating Identity Providers **IdP**s it trusts. 
+**IAM** services cover authorization and configure the identity providers (**IdPs**) they trust.
 
-> Gate One sits between the user, an authorization service and an IdP. 
-> schema's field `authProvider.type` is an **authorization provider type**.
-> it selects **who Gate One asks to verify a request**, 
-> the authProvider has its own way/configuration to have user access the IdP(s) for authentication.
+Gate One sits between the user, an IAM/authorization source and an IdP.
+The schema's `authProvider.type` is a **provider type**: it selects who
+Gate One asks to verify a request and obtain identity/authorization
+claims. It is not an IAM by itself.
+
+`auth.identity` is where Gate One enforces route policy. An IdP that also
+carries roles, scopes and claims is acting as the IAM for that
+deployment; Gate One still does not store users or assign rights.
 
 ## The three roles
 
@@ -19,8 +23,8 @@ description: Who authorizes, who identifies, and which authProvider type Gate On
 | **IdP / identification** | Who is this human? | Google, Microsoft, Keycloak as an upstream IdP, a corporate LDAP/SAML directory |
 | **Gate One / enforcement** | Is this request authenticated, and does it satisfy the route policy? | `authProvider`, `auth.identity`, MCP scope checks |
 
-An IAM can also be an IdP (Keycloak does both). 
-Gate One configures/connect the IAM that itself configures/connect the IdP(s).
+An IAM can also be an IdP: Keycloak, Entra ID and Auth0 all do both.
+Gate One connects to the IAM, and the IAM configures the IdPs it trusts.
 
 ## Who configures whom
 
@@ -29,25 +33,33 @@ flowchart LR
   ADMIN["Platform admin"] -->|"tenants, roles, audiences"| IAM["IAM / authorization<br/>cladone-auth (optional)<br/>or Keycloak / Entra / Auth0"]
   IAM -->|"tenants.upstreams"| GOOGLE["Google<br/>IdP"]
   IAM --> MICROSOFT["Microsoft<br/>IdP"]
-  IAM --> KEYCLOAK["Keycloak / OIDC<br/>IdP"]
+  IAM --> KEYCLOAK["Keycloak / OIDC<br/>IdP (also IAM in direct mode)"]
   IAM -.->|"localAccounts (optional)"| LOCAL["Local accounts"]
-  GO["Gate One<br/>authProvider"] -->|"oidc: issuer + JWKS"| IAM
-  GO -.->|"oidc direct: one IdP"| KEYCLOAK
+  GO["Gate One<br/>authProvider + route policy"] -->|"oidc: issuer + JWKS"| IAM
+  GO -.->|"oidc direct: issuer + JWKS"| KEYCLOAK
   GO -->|"jwt: bearer + JWKS"| API["API / MCP issuer"]
+  IAM -->|"roles, scopes, claims in the token"| GO
+  KEYCLOAK -.->|"roles, scopes, claims"| GO
   GO -->|"verified identity + policy"| APP["Application"]
 ```
 
 Two valid shapes:
 
-1. **With an external IAM (recommended for several IdPs).** The IAM owns the
-   upstream IdP configuration (`tenants[].upstreams`), local policy and
-   token issuance. Gate One points at the IAM with one `oidc` provider.
-2. **Without an IAM.** Gate One points directly at one OIDC IdP that
-   also issues tokens. This is simpler, but that IdP now plays both the
-   identification and authorization roles.
+1. **With a separate IAM (recommended for several IdPs).** The IAM owns
+   the upstream IdP configuration (`tenants[].upstreams`), local policy,
+   user grants and token issuance. Gate One points at the IAM with one
+   `oidc` provider.
+2. **Without a separate IAM.** Gate One points directly at one OIDC
+   provider that acts as both the IdP and the IAM/authorization server.
+   It authenticates the user and emits the roles, scopes and claims Gate
+   One enforces. This is simpler, but the provider must supply the claims
+   your routes need.
 
 In both shapes, Gate One enforces `auth.identity` per route; the IAM does
-not decide which application route a user may call.
+not decide which application route a user may call. An IdP that only
+authenticates (for example a plain Google login) does not provide
+application roles; use an IAM/broker or another claim source if you need
+them.
 
 ## Provider types
 
@@ -68,7 +80,7 @@ flowchart TB
 
 | Type | Gate One talks to | Browser login | Session owner | Use when |
 |---|---|---|---|---|
-| `oidc` | An OIDC issuer: `cladone-auth` tenant or one IdP | Yes | Gate One (bbolt/Redis) | You have an OIDC issuer, or you use the broker |
+| `oidc` | An OIDC issuer: `cladone-auth` tenant or one IdP/IAM | Yes | Gate One (bbolt/Redis) | You have an OIDC issuer, or you use the broker |
 | `jwt` | A JWKS endpoint | No | Stateless | APIs and MCP machine clients |
 | `http-bridge` | A service implementing the Gate One HTTP bridge contract | Yes, on the bridge | The bridge | The technology is not OAuth/OIDC, or you already run auth-bridge |
 | `dev` | The embedded loopback-only IdP | Yes | Gate One (local) | Onboarding and tests only |
@@ -119,12 +131,16 @@ only, has real alice/bob accounts, and must not be exposed to a network.
 ## Internal OAuth IAM: `cladone-auth`
 
 `cladone-auth` is the optional internal OAuth/OIDC IAM. It is a small
-multi-tenant issuer, not a full identity provider:
+multi-tenant issuer with a broker-side user directory:
 
 * it federates external IdPs (Google, Microsoft, Keycloak, …) configured
   per tenant under `tenants[].upstreams`;
 * it applies local policy: tenant, roles, audiences, allowed domains,
-  admin emails and group mapping;
+  admin emails, claim mappings and user grants;
+* it stores **one external identity link** `(issuer, subject)` per
+  federated user; it never recreates the IdP account;
+* local and federated users both carry `roles`/`scopes`/`claims`, managed
+  by the admin CLI;
 * it emits its own Ed25519-signed ID/access/refresh tokens and publishes
   JWKS and discovery;
 * it publishes the revocation keyspace Gate One reads for a global
@@ -132,22 +148,28 @@ multi-tenant issuer, not a full identity provider:
 
 It is deliberately lighter than Keycloak: one Go binary, one JSON file,
 Redis optional for multi-instance state, no realm/theme/admin console to
-operate. That makes it a good fit when you need several IdPs or local
-policy, but do not need a full IAM suite.
+operate. That makes it a good fit when you need several IdPs, normalized
+rights or local policy, but do not need a full IAM suite.
 
 ```mermaid
 flowchart LR
-  GO["Gate One<br/>authProvider.type: oidc"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant mycompany"]
+  GO["Gate One<br/>authProvider + route policy"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant mycompany"]
   BROKER -->|"upstream login"| G["Google"]
   BROKER -->|"upstream login"| M["Microsoft"]
   BROKER -.->|"optional local password"| L["Local account<br/>PBKDF2"]
-  BROKER -->|"JWKS + revocation"| GO
+  BROKER -->|"roles, scopes, claims"| GO
+  USERS["user directory<br/>local + federated grants"] --- BROKER
+  MAPPINGS["claim mappings<br/>IdP claims -> roles/scopes/claims"] --- BROKER
 ```
 
 The recommended path is **external IdPs**: there is no password store to
 protect and no password-hash cost at login. Local accounts
 (`localAccounts`) are optional for small deployments; they use PBKDF2
 and add the operational burden of a credential store.
+
+Claim mappings are evaluated on every federated login. Per-user grants
+are applied to both local and federated users, and changes take effect at
+the next login.
 
 Configuration:
 
@@ -159,8 +181,8 @@ Configuration:
 
 | If you need… | Use |
 |---|---|
-| One OIDC issuer, browser login, Gate One session | `oidc` |
-| Several IdPs or local policy in front of one issuer | `oidc` to `cladone-auth` |
+| One OIDC issuer that is also the IAM, browser login, Gate One session | `oidc` |
+| Several IdPs, normalized rights or managed user grants | `oidc` to `cladone-auth` |
 | Bearer tokens for APIs or MCP, no browser session | `jwt` |
 | SAML, LDAP, mTLS, API keys, or an existing auth-bridge | `http-bridge` |
 | A local demo without external services | `dev` only |
@@ -169,4 +191,5 @@ Configuration:
 
 * [Architecture](/docs/architecture/)
 * [HTTP bridge contract](/docs/bridge-contract/)
+* [Multiple identity providers](/docs/features/broker-multi-idp/)
 * [Plugins](/docs/plugins/)
