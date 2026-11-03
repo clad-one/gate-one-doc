@@ -14,6 +14,21 @@ Gate One never sees the upstream protocol. It only asks the bridge
 whether the request is authenticated and, for MCP, whether the token
 carries the required scope.
 
+```mermaid
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant G as Gate One
+  participant Br as HTTP bridge
+  participant I as SAML / LDAP / mTLS / API key
+  B->>G: Request + cookies
+  G->>Br: GET /auth with cookies and X-Forwarded-*
+  Br->>I: protocol-specific verification
+  I-->>Br: identity facts
+  Br-->>G: 200 + X-User-* + Set-Cookie
+  G-->>B: proxied response
+```
+
 > The legacy type `http` is an alias of `http-bridge`. The contract is
 > the same; new configurations should use `http-bridge`.
 
