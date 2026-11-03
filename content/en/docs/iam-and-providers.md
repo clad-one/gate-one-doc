@@ -4,15 +4,12 @@ linkTitle: IAM and providers
 weight: 15
 description: Who authorizes, who identifies, and which authProvider type Gate One uses.
 ---
+**IAM** services covers Authorization and configures the authenticating Identity Providers **IdP**s it trusts. 
 
-Gate One sits between the user, an authorization service and an identity
-provider. The vocabulary matters: an **IAM** and an **IdP** are not the
-same thing, and `authProvider.type` is a **provider type**, not an
-"authentication mode".
-
-> This page deliberately avoids the phrase *authentication mode*. The
-> schema has one field, `authProvider.type`; it selects **who Gate One
-> asks to verify a request**, not how the user authenticates upstream.
+> Gate One sits between the user, an authorization service and an IdP. 
+> schema's field `authProvider.type` is an **authorization provider type**.
+> it selects **who Gate One asks to verify a request**, 
+> the authProvider has its own way/configuration to have user access the IdP(s) for authentication.
 
 ## The three roles
 
@@ -22,9 +19,8 @@ same thing, and `authProvider.type` is a **provider type**, not an
 | **IdP / identification** | Who is this human? | Google, Microsoft, Keycloak as an upstream IdP, a corporate LDAP/SAML directory |
 | **Gate One / enforcement** | Is this request authenticated, and does it satisfy the route policy? | `authProvider`, `auth.identity`, MCP scope checks |
 
-An IAM can also be an IdP (Keycloak does both). The distinction is still
-useful: **the IAM configures the IdPs it trusts**, and Gate One configures
-the IAM (or one IdP) as its provider.
+An IAM can also be an IdP (Keycloak does both). 
+Gate One configures/connect the IAM that itself configures/connect the IdP(s).
 
 ## Who configures whom
 
@@ -43,7 +39,7 @@ flowchart LR
 
 Two valid shapes:
 
-1. **With an IAM (recommended for several IdPs).** The IAM owns the
+1. **With an external IAM (recommended for several IdPs).** The IAM owns the
    upstream IdP configuration (`tenants[].upstreams`), local policy and
    token issuance. Gate One points at the IAM with one `oidc` provider.
 2. **Without an IAM.** Gate One points directly at one OIDC IdP that
