@@ -150,8 +150,6 @@ gh api --method POST repos/clad-one/gate-one-doc/pages \
   -f 'source[branch]=gh-pages' -f 'source[path]=/'
 ```
 
-Pushing a `v*` tag also runs `.github/workflows/pages.yml`, which calls
-the same publishing script with the repository token.
 
 ```bash
 # from an exact tag; the script refuses a dirty tree
