@@ -1,4 +1,4 @@
-module github.com/cladone/gate-one-product
+module github.com/clad-one/gate-one-doc
 
 go 1.22
 

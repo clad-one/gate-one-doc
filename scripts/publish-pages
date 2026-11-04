@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Publish the static documentation site to GitHub Pages.
+#
+# Each release is stored under its own folder, named after the release
+# label, so old documentation stays online:
+#
+#   https://clad-one.github.io/gate-one-doc/v0.3.1-docs.1/
+#
+# The root index redirects to the newest published release.
+#
+# Usage:
+#   ./scripts/publish-pages                # current exact tag
+#   ./scripts/publish-pages v0.3.1-docs.1  # explicit release label
+#
+# Environment:
+#   PAGES_REMOTE   git remote to push to (default: origin)
+#   PAGES_BRANCH   branch used by GitHub Pages (default: gh-pages)
+#   SITE_BASE_URL  override the generated base URL
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+TAG="${1:-${GITHUB_REF_NAME:-}}"
+if [ -z "$TAG" ]; then
+	TAG="$(git describe --tags --exact-match 2>/dev/null || true)"
+fi
+if [ -z "$TAG" ]; then
+	echo "publish-pages: give a release tag, or check out an exact tag" >&2
+	exit 1
+fi
+if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-docs\.[1-9][0-9]*)?$ ]]; then
+	echo "publish-pages: invalid release label '$TAG'" >&2
+	echo "  expected vX.Y.Z or vX.Y.Z-docs.N" >&2
+	exit 1
+fi
+if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+	echo "publish-pages: tag $TAG does not exist locally" >&2
+	exit 1
+fi
+if [ -n "$(git status --porcelain)" ]; then
+	echo "publish-pages: working tree is dirty; commit first" >&2
+	exit 1
+fi
+
+REMOTE="${PAGES_REMOTE:-origin}"
+BRANCH="${PAGES_BRANCH:-gh-pages}"
+BASE_URL="${SITE_BASE_URL:-https://clad-one.github.io/gate-one-doc/$TAG/}"
+
+echo "publish-pages: building $TAG for $BASE_URL"
+rm -rf public
+./scripts/build-site --baseURL "$BASE_URL"
+
+WORKTREE="$(mktemp -d "${TMPDIR:-/tmp}/gate-one-pages.XXXXXX")"
+cleanup() {
+	git worktree remove --force "$WORKTREE" >/dev/null 2>&1 || rm -rf "$WORKTREE"
+}
+trap cleanup EXIT
+
+git fetch "$REMOTE" "$BRANCH" >/dev/null 2>&1 || true
+if git show-ref --verify --quiet "refs/remotes/$REMOTE/$BRANCH"; then
+	git worktree add -B "$BRANCH" "$WORKTREE" "$REMOTE/$BRANCH" >/dev/null
+elif git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+	git worktree add "$WORKTREE" "$BRANCH" >/dev/null
+else
+	git worktree add --detach "$WORKTREE" >/dev/null
+	(
+		cd "$WORKTREE"
+		git checkout --orphan "$BRANCH" >/dev/null 2>&1
+		git rm -rf . >/dev/null 2>&1 || true
+	)
+fi
+
+rm -rf "$WORKTREE/$TAG"
+mkdir -p "$WORKTREE/$TAG"
+cp -R public/. "$WORKTREE/$TAG/"
+touch "$WORKTREE/.nojekyll"
+
+versions=()
+for dir in "$WORKTREE"/v*/; do
+	[ -d "$dir" ] || continue
+	versions+=("$(basename "$dir")")
+done
+latest="$(printf '%s\n' "${versions[@]}" | sort -V | tail -n 1)"
+
+{
+	cat <<HTML
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gate One documentation</title>
+<meta http-equiv="refresh" content="0; url=./$latest/">
+<link rel="canonical" href="./$latest/">
+</head>
+<body>
+<h1>Gate One documentation</h1>
+<p>Redirecting to the latest release: <a href="./$latest/">$latest</a>.</p>
+<h2>Published releases</h2>
+<ul>
+HTML
+	for version in $(printf '%s\n' "${versions[@]}" | sort -Vr); do
+		printf '<li><a href="./%s/">%s</a></li>\n' "$version" "$version"
+	done
+	cat <<'HTML'
+</ul>
+</body>
+</html>
+HTML
+} > "$WORKTREE/index.html"
+
+(
+	cd "$WORKTREE"
+	git add -A
+	if ! git diff --cached --quiet; then
+		git commit -m "docs: publish $TAG" >/dev/null
+	fi
+	git push "$REMOTE" "$BRANCH"
+)
+
+echo "publish-pages: published $BASE_URL"

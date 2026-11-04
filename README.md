@@ -55,7 +55,7 @@ content/en/          English documentation (Markdown + AsciiDoc)
 data/features.yaml   Feature claims rendered on /docs/features/
 examples/            Copyable, validated configuration examples
 schemas/             Published JSON Schemas (source: gate-one-src/testdata)
-scripts/             build-site, gen-config-docs, validate-examples
+scripts/             build-site, gen-config-docs, validate-examples, publish-pages
 static/              Static assets and hosting headers
 ```
 
@@ -71,12 +71,25 @@ npm run docs
 The build fails if the generated files are stale (CI runs
 `./scripts/check-generated`).
 
+## Repositories
+
+- Public source and release assets:
+  <https://github.com/clad-one/gate-one>
+- Documentation source and GitHub Pages:
+  <https://github.com/clad-one/gate-one-doc>
+- Published documentation:
+  <https://clad-one.github.io/gate-one-doc/>
+
+This repository contains **documentation only**. It has no release
+script and no `dist/` directory: binaries, SBOMs and signatures belong
+to the source repository.
+
 ## Releases
 
 The signed release pipeline lives in the source repository:
-`../gate-one-src/release.sh`. This repository no longer has its own
-release script; it supplies the documentation site, the published
-schemas and the feature examples.
+`../gate-one-src/release.sh`. It supplies the documentation site, the
+published schemas and the feature examples, and writes all artifacts to
+`../gate-one-src/dist/`.
 
 ```bash
 cd ../gate-one-src
@@ -110,14 +123,52 @@ Binaries are **not** committed: they are attached to a tagged release.
 
 ## Hosting
 
-Set `baseURL` in `hugo.toml` to the production origin before deploying;
-the default is a placeholder (`https://gate-one.example.com/`).
+The output is fully static. The primary host is **GitHub Pages** for
+this repository. `baseURL` in `hugo.toml` is set to the project root
+(`https://clad-one.github.io/gate-one-doc/`).
 
-The output is fully static. Cloudflare Pages, GitHub Pages, Netlify,
-GitLab Pages or any HTTPS static host works. `static/_headers` carries
-the security headers for hosts that support that format (Cloudflare
-Pages, Netlify). For other hosts, configure the equivalent headers at
-the edge; a hosted Gate One can also sit in front of the site.
+### GitHub Pages: one folder per release
+
+Each documentation release is published under a folder named after its
+tag:
+
+```text
+https://clad-one.github.io/gate-one-doc/v0.3.1-docs.1/
+```
+
+Old folders are kept, so versioned documentation stays available. The
+site root redirects to the newest published release and lists the
+others.
+
+The publishing branch is `gh-pages`; GitHub Pages must be configured to
+deploy from that branch at `/` (Settings → Pages → Deploy from a branch).
+The first publication creates the branch.
+
+```bash
+# from an exact tag; the script refuses a dirty tree
+./scripts/publish-pages
+
+# or name the release explicitly
+./scripts/publish-pages v0.3.1-docs.1
+```
+
+The script:
+
+1. builds with `--baseURL https://clad-one.github.io/gate-one-doc/<tag>/`;
+2. copies `public/` to `<tag>/` in a temporary `gh-pages` worktree;
+3. regenerates the root redirect and version list;
+4. commits and pushes `gh-pages`.
+
+`PAGES_REMOTE`, `PAGES_BRANCH` and `SITE_BASE_URL` override the
+defaults. The same release label is used by `../gate-one-src/release.sh`
+for the documentation archive, so the archive and the live site share
+the same absolute links.
+
+Cloudflare Pages, Netlify, GitLab Pages and other HTTPS static hosts
+also work. `static/_headers` carries security headers for hosts that
+support that format (Cloudflare Pages, Netlify). For other hosts,
+configure the equivalent headers at the edge; a hosted Gate One can also
+sit in front of the site.
 
 Cloudflare Pages is wired through `wrangler.toml`:
 

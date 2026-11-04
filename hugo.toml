@@ -1,4 +1,4 @@
-baseURL = "https://gate-one.example.com/"
+baseURL = "https://clad-one.github.io/gate-one-doc/"
 title = "Gate One"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
@@ -71,12 +71,12 @@ summaryLength = 40
   [params.links]
     [[params.links.user]]
       name = "Source"
-      url = "https://github.com/cladone/gate-one"
+      url = "https://github.com/clad-one/gate-one"
       icon = "fa-brands fa-git-alt"
       desc = "Source-available repository"
     [[params.links.user]]
       name = "Licence"
-      url = "https://github.com/cladone/gate-one/blob/main/LICENSE"
+      url = "https://github.com/clad-one/gate-one/blob/main/LICENSE"
       icon = "fa-solid fa-scale-balanced"
       desc = "BSL-CUSTOM (English authoritative)"
 

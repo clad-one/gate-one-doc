@@ -12,7 +12,7 @@
     "check": "./scripts/check-generated && ./scripts/validate-examples && ./scripts/validate-mermaid",
     "mermaid": "./scripts/validate-mermaid"
   },
-  "license": "SEE LICENSE IN https://github.com/cladone/gate-one",
+  "license": "SEE LICENSE IN https://github.com/clad-one/gate-one",
   "devDependencies": {
     "autoprefixer": "^10.6.2",
     "hugo-extended": "^0.169.0",
