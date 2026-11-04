@@ -10,7 +10,7 @@ in **AsciiDoc**. English is the only language for now; the content layout
 
 ## Prerequisites
 
-- Node.js 20.19+ (Dart Sass embedded requires it)
+- Node.js 24+ (current npm and Dart Sass embedded support)
 - Ruby + Asciidoctor (`gem install asciidoctor --user-install`)
 - Go 1.22+ (Hugo modules; `go` must be on `PATH`)
 

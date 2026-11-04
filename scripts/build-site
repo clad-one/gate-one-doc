@@ -20,6 +20,11 @@ if ! command -v asciidoctor >/dev/null 2>&1; then
 	echo "  export PATH=\"\$(ruby -e 'puts Gem.user_dir')/bin:\$PATH\"" >&2
 	exit 1
 fi
+if ! ./node_modules/.bin/sass --embedded --version 2>/dev/null | grep -q '"implementationName": "dart-sass"'; then
+	echo "build-site: sass does not support Hugo's embedded Dart Sass protocol." >&2
+	echo "  reinstall the platform binaries: npm ci --include=optional" >&2
+	exit 1
+fi
 npx hugo --minify "$@"
 
 # Hugo ignores underscore-prefixed static files, but Cloudflare Pages and
