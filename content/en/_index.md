@@ -5,7 +5,7 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Gate One" subtitle="An overlay to apply you features, once for all." height="med" color="dark" %}}
+{{% blocks/cover title="Gate One" subtitle="An overlay to apply your features, once for all." height="med" color="dark" %}}
 
 Once for all: SSO login with front/back interception,
 PWA, dynamic REST-to-MCP, 
