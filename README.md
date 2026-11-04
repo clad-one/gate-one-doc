@@ -142,7 +142,16 @@ others.
 
 The publishing branch is `gh-pages`; GitHub Pages must be configured to
 deploy from that branch at `/` (Settings → Pages → Deploy from a branch).
-The first publication creates the branch.
+The first publication creates the branch. Once the branch exists, an
+administrator can enable Pages from the API:
+
+```bash
+gh api --method POST repos/clad-one/gate-one-doc/pages \
+  -f 'source[branch]=gh-pages' -f 'source[path]=/'
+```
+
+Pushing a `v*` tag also runs `.github/workflows/pages.yml`, which calls
+the same publishing script with the repository token.
 
 ```bash
 # from an exact tag; the script refuses a dirty tree
