@@ -1,0 +1,86 @@
+---
+title: Cross-domain SSO
+linkTitle: Cross-domain SSO
+weight: 25
+description: One IdP login across app-a.com and app-b.fr, with one provider per domain.
+---
+
+= Cross-domain SSO
+
+This example puts two unrelated domains behind one IdP session. Each
+domain keeps its own Gate One cookie; no cookie crosses the TLD boundary.
+
+== Files
+
+* link:/examples/cross-tld-sso/routes.json[`examples/cross-tld-sso/routes.json`]
+* link:/examples/cross-tld-sso/README.md[`examples/cross-tld-sso/README.md`]
+
+== Shared group, per-domain providers
+
+[source,json]
+----
+{
+  "ssoGroups": [{
+    "id": "acme",
+    "issuer": "https://idp.example.com/realms/acme",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "prefix": "cladone:auth:v1:"
+    },
+    "providers": [
+      {"id": "app-a", "loginBaseUrl": "https://login.app-a.com", "cookieDomain": "app-a.com"},
+      {"id": "app-b", "loginBaseUrl": "https://login.app-b.fr", "cookieDomain": "app-b.fr"}
+    ]
+  }],
+  "defaultAuthProvider": "app-a",
+  "routes": [{
+    "hosts": ["app-a.com", "app-b.fr"],
+    "path": "/*",
+    "frontend": true,
+    "backend": "http://app:8080",
+    "auth": {}
+  }]
+}
+----
+
+`issuer`, `clientId`, `sessionStore` and `sessionKeyEnv` are written once.
+Each provider entry only carries its domain, login host and optional
+cookie name. The route is written once; Gate One expands it to
+`app-a.com` and `app-b.fr` and binds each one to its provider.
+
+== Run it
+
+[source,bash]
+----
+export OIDC_CLIENT_SECRET=...
+export OIDC_SESSION_KEY="$(openssl rand -base64 32)"
+export REDIS_PASSWORD=...
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+Register both callbacks at the IdP:
+
+* `https://login.app-a.com/auth/callback`
+* `https://login.app-b.fr/auth/callback`
+
+== What to verify
+
+1. Log in on `app-a.com` once.
+2. Visit `app-b.fr` with the same browser. Gate One redirects to the
+   same IdP and returns without a login form.
+3. Log out on `app-a.com`; the next request on `app-b.fr` must be
+   refused (back-channel logout or shared Redis revocation).
+4. Expire/clear the IdP session; the next visit must show the normal
+   login form, not a loop.
+
+== Caveats
+
+* This is zero **form**, not zero redirect.
+* Both domains must use the same issuer and the same user identity.
+* Use `cookieDomain` instead when the applications share a parent
+  domain.

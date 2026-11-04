@@ -64,8 +64,9 @@ lifetime, or 30 days. It is never shorter than the session TTL.
 
 * **Same parent domain required.** `cookieDomain` must cover every
   application host. `app.mycompany.com` and `app.other.com` cannot share a
-  cookie; use one login per parent domain, or put the applications
-  behind a common hostname.
+  cookie. For unrelated domains, use
+  link:/docs/features/cross-tld-sso/[cross-domain SSO]: each domain keeps
+  its own cookie and the IdP session provides the single login.
 * **Secrets never in the file.** Use `clientSecretEnv`.
 * **Several replicas?** See
   link:/docs/features/horizontal-scaling/[Horizontal scaling] for the
@@ -77,7 +78,8 @@ lifetime, or 30 days. It is never shorter than the session TTL.
   the identity provider's job (or the optional embedded IAM's).
 * A route can bind only one authentication provider. Multi-provider
   hosting uses `authProviders` + `auth.provider` and one provider per
-  route.
+  route. Cross-TLD SSO uses `ssoGroups` + `routes[].hosts` so the shared
+  provider settings are declared once.
 * Applications that need the raw access token must opt in; by default
   tokens are never forwarded.
 

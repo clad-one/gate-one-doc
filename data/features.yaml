@@ -11,6 +11,21 @@
     - label: cookieDomain
       url: /docs/config/gate-one/#field-authProvider-cookieDomain
   plugin: false
+- slug: cross-tld-sso
+  title: SSO across different domains
+  linkTitle: Cross-domain SSO
+  weight: 15
+  usefulIf: your applications live on unrelated domains and you want one IdP login without a second form.
+  summary: ssoGroups declares the shared OIDC/client/session settings once, one provider per domain, and routes.hosts expands one route body across those domains.
+  example: /docs/examples/cross-tld-sso/
+  configRefs:
+    - label: ssoGroups
+      url: /docs/config/gate-one/#field-ssoGroups
+    - label: routes.hosts
+      url: /docs/config/gate-one/#field-routes-hosts
+    - label: sessionStore
+      url: /docs/config/gate-one/#field-ssoGroups-sessionStore
+  plugin: false
 - slug: multiple-idps
   title: Multiple identity providers
   linkTitle: Multiple identity providers

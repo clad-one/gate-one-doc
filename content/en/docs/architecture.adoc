@@ -71,6 +71,14 @@ page, no session cookie. | a JWT issuer with JWKS
 multi-tenant hosting. Only `oidc` and `jwt` are allowed in the plural
 form; `http-bridge` and `dev` remain single-provider types.
 
+For unrelated domains (for example `app-a.com` and `app-b.fr`), use
+`ssoGroups`: the shared OIDC/client/session settings are written once,
+`providers[]` declares one domain-specific provider, and
+`routes[].hosts[]` expands one route body across those domains. Each
+domain keeps its own Gate One cookie; the IdP session provides the
+zero-form login. This is not a shared cross-TLD cookie. See
+link:/docs/features/cross-tld-sso/[Cross-domain SSO].
+
 An authentication provider is **not** a plugin. `authProvider.type:
 "plugin"` is rejected. Authentication adapters are brokered: they live in
 the broker and remain under the Gate One licence.
@@ -156,7 +164,8 @@ A production deployment looks like this:
 * **Two replicas** behind a load balancer; no published container port.
 * **Shared state** in Redis (Sentinel + TLS + ACL) with a versioned key
   prefix. A local bbolt file is valid for a single instance only.
-* **Same session key** on every replica (`sessionKeyEnv`).
+* **Same session key** on every replica (`sessionKeyEnv`), and one
+  shared `ssoGroups` session store for cross-TLD providers.
 * **Health probes**: `/healthz` (liveness) and `/readyz` (readiness,
   including providers and usage).
 * **Manual rolling restart**: one replica at a time, 30-second stop

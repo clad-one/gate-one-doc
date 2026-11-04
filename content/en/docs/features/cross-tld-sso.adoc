@@ -1,0 +1,148 @@
+---
+title: SSO across different domains
+linkTitle: Cross-domain SSO
+weight: 15
+description: One IdP login across unrelated domains, with one provider per domain and a shared IdP session.
+---
+
+= SSO across different domains
+
+== Useful if you want to…
+
+* give users **one login** across `app-a.com` and `app-b.fr`;
+* keep one cookie per domain instead of trying to share a cookie across
+  unrelated registrable domains;
+* declare the OIDC/client/session settings **once** and avoid divergent
+  copies;
+* declare the application route body once when the backend is the same.
+
+Gate One cannot set one cookie for `app-a.com` and `app-b.fr`: browsers
+reject a `Domain` that is not a suffix of the current host. Cross-TLD SSO
+therefore relies on the **IdP session**, exactly like the multi-subdomain
+case relies on `cookieDomain`.
+
+== What the user sees
+
+```text
+app-a.com -> login.app-a.com -> IdP (session already exists)
+          -> callback -> Gate One session for app-a.com
+
+app-b.fr  -> login.app-b.fr  -> same IdP (same session)
+          -> callback -> Gate One session for app-b.fr
+```
+
+There is **one redirect per domain**, but no login form while the IdP
+session is valid. If the IdP session is expired, the normal interactive
+login is required. This is not a handoff protocol and it does not create
+a cross-TLD Gate One cookie.
+
+== Configuration
+
+The shared settings live once on the `ssoGroups` entry. Only the
+domain-specific fields are repeated in `providers[]`:
+
+[source,json]
+----
+{
+  "ssoGroups": [{
+    "id": "acme",
+    "type": "oidc",
+    "issuer": "https://idp.example.com/realms/acme",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "scopes": ["openid", "profile", "email"],
+    "roleClaims": ["roles"],
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "passwordEnv": "REDIS_PASSWORD",
+      "prefix": "cladone:auth:v1:"
+    },
+    "backchannelLogout": true,
+    "providers": [
+      {
+        "id": "app-a",
+        "loginBaseUrl": "https://login.app-a.com",
+        "cookieDomain": "app-a.com"
+      },
+      {
+        "id": "app-b",
+        "loginBaseUrl": "https://login.app-b.fr",
+        "cookieDomain": "app-b.fr"
+      }
+    ]
+  }],
+  "defaultAuthProvider": "app-a",
+  "routes": [{
+    "hosts": ["app-a.com", "app-b.fr"],
+    "path": "/*",
+    "frontend": true,
+    "backend": "http://app:8080",
+    "auth": {}
+  }]
+}
+----
+
+`providers[]` only accepts `id`, `loginBaseUrl`, `loginUrl`,
+`cookieDomain`, `cookieName`, `redirectUrl`, `links` and `mcpAudience`.
+A shared field such as `issuer`, `clientId` or `sessionStore` placed in a
+provider is rejected by the strict decoder.
+
+`routes[].hosts[]` expands one route body into one concrete route per
+host; `auth.provider` is inferred from the provider whose
+`cookieDomain` covers the host. `hosts` is mutually exclusive with
+`host` and `wildcard`.
+
+== Why Redis is required for a multi-domain group
+
+Each domain has its own Gate One session cookie. A group with more than
+one provider must use `sessionStore.type: "redis"` with the same
+`sessionKeyEnv` on every provider: the revocation state (and the
+`sub`/`sid` global logout) is then shared, so a logout on `app-a.com` is
+refused on `app-b.fr` on the next request.
+
+Without shared state, `app-b.fr` can keep accepting its local cookie
+until it expires even after a logout on `app-a.com`.
+
+== IdP setup
+
+Register every callback:
+
+* `https://login.app-a.com/auth/callback`
+* `https://login.app-b.fr/auth/callback`
+
+If you use back-channel logout, register both:
+
+* `https://login.app-a.com/backchannel-logout`
+* `https://login.app-b.fr/backchannel-logout`
+
+Both domains must use the **same issuer** and the same user identity
+(`issuer` + `sub`). If you use different IdPs per domain, the broker's
+account linking is not enough yet: Gate One's `subjectId` is per
+`(issuer, sub)`.
+
+== Limits
+
+* Zero **form**, not zero redirect: the IdP round-trip remains.
+* The IdP must reuse its own session; Gate One sends the provider's
+  default prompt.
+* A cookie is never shared across TLDs; logout propagation relies on
+  back-channel logout or the shared Redis revocation state.
+* With broker local accounts, the broker currently renders its local
+  login page on `/authorize` even when it has a session. Use an upstream
+  IdP for the zero-form path, or add a broker session short-circuit.
+* Applications on the same TLD should use `cookieDomain` instead; it
+  avoids the extra redirect and is simpler.
+
+== Complete example
+
+link:/examples/cross-tld-sso/routes.json[`routes.json`] and
+link:/examples/cross-tld-sso/README.md[`README.md`]
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-ssoGroups[`ssoGroups`]
+* link:/docs/config/gate-one/#field-ssoGroups-providers[`ssoGroups[].providers`]
+* link:/docs/config/gate-one/#field-routes-hosts[`routes[].hosts`]
+* link:/docs/config/gate-one/#field-ssoGroups-sessionStore[`ssoGroups[].sessionStore`]

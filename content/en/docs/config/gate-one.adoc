@@ -80,6 +80,11 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | yes
 | Routes served by this gateway. Order is not significant: the most specific host/path match wins.
 
+| [[field-ssoGroups]] `ssoGroups`
+| array of <<config-ssoGroups,object>>
+| no
+| Cross-domain SSO groups. Shared OIDC/client/session settings are declared once per group; providers[] declares only what varies per application domain. Expanded into authProviders at load. Auth-registry is exhaustive: a shared field placed in a provider entry is rejected by the strict decoder.
+
 |===
 
 [[config-securityHeaders]]
@@ -829,8 +834,13 @@ Narrow the subscription by route, tenant, method, status class or sample rate.
 
 | [[field-routes-host]] `host`
 | string
-| yes
-| Host of the route (routed by Host). Named capture {name}: one DNS label, expanded AT LOAD into one concrete route per allow-listed label of the wildcard block (bounded, fail-closed anti-SSRF).
+| no
+| Single literal application host (or wildcard pattern when wildcard is set). Mutually exclusive with hosts.
+
+| [[field-routes-hosts]] `hosts`
+| array of string
+| no
+| Literal application hosts sharing this route body. Expanded at load into one concrete route per host; auth.provider is inferred from the ssoGroups provider whose cookieDomain covers each host. Mutually exclusive with host and wildcard.
 
 | [[field-routes-wildcard]] `wildcard`
 | object
@@ -1883,5 +1893,290 @@ Opt-in UX for the gateway's OWN identity 403 (rights refusal — auth.identity n
 | string
 | no
 | Overrides the built-in forbidden page's message text.
+
+|===
+
+[[config-ssoGroups]]
+=== ssoGroups
+
+One cross-domain SSO group. Every provider in the group shares issuer, client, scopes, session key and session store; only login host, cookie domain and domain-specific links may differ.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-ssoGroups-id]] `id`
+| string
+| yes
+| Group identifier used in diagnostics and -check output. Minimum length: 1.
+
+| [[field-ssoGroups-type]] `type`
+| string (one of: `oidc`)
+| no
+| Provider type. Only oidc is allowed in a group; JWT providers stay standalone authProviders entries. Default: oidc.
+
+| [[field-ssoGroups-issuer]] `issuer`
+| string
+| yes
+| OIDC issuer shared by every provider in the group.
+
+| [[field-ssoGroups-clientId]] `clientId`
+| string
+| yes
+| OIDC client id shared by every provider. Register every provider callback URL at the IdP. Minimum length: 1.
+
+| [[field-ssoGroups-clientSecretEnv]] `clientSecretEnv`
+| string
+| no
+| Environment variable holding the shared OIDC client secret. Empty = public client (PKCE only).
+
+| [[field-ssoGroups-scopes]] `scopes`
+| array of string
+| no
+| OIDC scopes requested for every provider.
+
+| [[field-ssoGroups-roleClaims]] `roleClaims`
+| array of string
+| no
+| Dot paths in the ID token whose values become roles, shared by every provider.
+
+| [[field-ssoGroups-scopesClaim]] `scopesClaim`
+| string
+| no
+| Claim holding granted scopes. Default: scope; scp is always also read.
+
+| [[field-ssoGroups-sessionKeyEnv]] `sessionKeyEnv`
+| string
+| no
+| Environment variable holding the RP cookie signing key. Required with Redis; identical for every provider in the group.
+
+| [[field-ssoGroups-sessionStore]] `sessionStore`
+| <<config-ssoGroups-sessionStore,object>>
+| no
+| RP-side revocation store (back-channel logout, RP logout). Default: bbolt at ./gate-one-state.db, relative to the config file. bbolt is single-writer: a second Gate One instance on the same file is refused. Redis is the shared, multi-instance backend and makes revocation visible on the next request on every instance.
+
+| [[field-ssoGroups-sessionTtlSeconds]] `sessionTtlSeconds`
+| integer
+| no
+| OIDC RP session lifetime. Default 3600 (1h): a short TTL bounds revocation when no shared store is used. The refresh/reauth flow renews it. Minimum: 1.
+
+| [[field-ssoGroups-backchannelLogout]] `backchannelLogout`
+| boolean
+| no
+| OIDC Back-Channel Logout. Absent = auto: enabled when the IdP discovery advertises backchannel_logout_supported. false disables it. Register <loginBaseUrl>/backchannel-logout at the IdP.
+
+| [[field-ssoGroups-backchannelForwardUrl]] `backchannelForwardUrl`
+| string
+| no
+| Migration bridge: after a valid local back-channel revocation, POST the same logout_token to this auth-bridge /backchannel-logout URL so its persistent sid list stays in sync for /auth and /connections. Best effort.
+
+| [[field-ssoGroups-revocationTtlSeconds]] `revocationTtlSeconds`
+| integer
+| no
+| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the broker), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
+
+| [[field-ssoGroups-legacyTokenCookies]] `legacyTokenCookies`
+| boolean
+| no
+| Migration bridge: also set auth-bridge's access_token/refresh_token/id_token cookies on cookieDomain, so auth-bridge's token-broker proxy routes (/connections, /connect, /oauth) resolve the same session when both share the login host. Default false. The native session cookie remains authoritative for Gate One.
+
+| [[field-ssoGroups-providers]] `providers`
+| array of <<config-ssoGroups-providers,object>>
+| yes
+| One entry per application domain/provider. Only fields that vary per domain are allowed here.
+
+|===
+
+[[config-ssoGroups-sessionStore]]
+==== ssoGroups.sessionStore
+
+RP-side revocation store (back-channel logout, RP logout). Default: bbolt at ./gate-one-state.db, relative to the config file. bbolt is single-writer: a second Gate One instance on the same file is refused. Redis is the shared, multi-instance backend and makes revocation visible on the next request on every instance.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-ssoGroups-sessionStore-type]] `type`
+| string (one of: `bolt`, `redis`)
+| no
+| bolt (default, single instance) or redis (shared, multi-instance, immediate revocation).
+
+| [[field-ssoGroups-sessionStore-path]] `path`
+| string
+| no
+| bbolt file path. Default ./gate-one-state.db (relative to the config file).
+
+| [[field-ssoGroups-sessionStore-url]] `url`
+| string
+| no
+| Redis URL for type redis (redis:// or rediss://). Mutually exclusive with sentinel mode.
+
+| [[field-ssoGroups-sessionStore-sentinelAddrs]] `sentinelAddrs`
+| array of string
+| no
+| Redis Sentinel addresses (host:port). Required with masterName.
+
+| [[field-ssoGroups-sessionStore-masterName]] `masterName`
+| string
+| no
+| Redis Sentinel master name. Requires sentinelAddrs.
+
+| [[field-ssoGroups-sessionStore-sentinelUsername]] `sentinelUsername`
+| string
+| no
+| ACL user used to authenticate to the Sentinels themselves (sentinel mode only). Separate from username, which is the Redis data user.
+
+| [[field-ssoGroups-sessionStore-sentinelPasswordEnv]] `sentinelPasswordEnv`
+| string
+| no
+| Environment variable holding the Sentinel password (sentinel mode only). Never put the password in this file.
+
+| [[field-ssoGroups-sessionStore-tls]] `tls`
+| boolean
+| no
+| Use TLS in sentinel mode (Sentinels and the discovered master). In URL mode use a rediss:// URL instead.
+
+| [[field-ssoGroups-sessionStore-tlsCaFile]] `tlsCaFile`
+| string
+| no
+| PEM CA bundle for the Sentinel TLS connections. Requires tls=true; empty = system roots.
+
+| [[field-ssoGroups-sessionStore-tlsServerName]] `tlsServerName`
+| string
+| no
+| TLS server name override (useful when the Sentinels are addressed by IP). Requires tls=true.
+
+| [[field-ssoGroups-sessionStore-username]] `username`
+| string
+| no
+| Redis ACL username.
+
+| [[field-ssoGroups-sessionStore-passwordEnv]] `passwordEnv`
+| string
+| no
+| Environment variable holding the Redis password. Never put the password in this file.
+
+| [[field-ssoGroups-sessionStore-db]] `db`
+| integer
+| no
+| Redis logical database. Default 0. Minimum: 0.
+
+| [[field-ssoGroups-sessionStore-prefix]] `prefix`
+| string
+| no
+| Shared revocation key prefix. Default cladone:auth:v1:. Must match the broker's redis.authPrefix.
+
+| [[field-ssoGroups-sessionStore-dialTimeoutMs]] `dialTimeoutMs`
+| integer
+| no
+| Redis dial timeout in milliseconds. Default 500. Minimum: 0.
+
+| [[field-ssoGroups-sessionStore-readTimeoutMs]] `readTimeoutMs`
+| integer
+| no
+| Redis read timeout in milliseconds. Default 300. Minimum: 0.
+
+| [[field-ssoGroups-sessionStore-writeTimeoutMs]] `writeTimeoutMs`
+| integer
+| no
+| Redis write timeout in milliseconds. Default 300. Minimum: 0.
+
+| [[field-ssoGroups-sessionStore-poolSize]] `poolSize`
+| integer
+| no
+| Redis connection pool size. Default 64. Minimum: 0.
+
+|===
+
+[[config-ssoGroups-providers]]
+==== ssoGroups.providers
+
+One domain/provider inside an SSO group. Shared fields (issuer, clientId, sessionStore, …) are deliberately absent: put them on the group.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-ssoGroups-providers-id]] `id`
+| string
+| yes
+| Provider id used by routes (auth.provider). Must be globally unique. Minimum length: 1.
+
+| [[field-ssoGroups-providers-loginBaseUrl]] `loginBaseUrl`
+| string
+| yes
+| Public origin of this domain's login service. Must be the cookieDomain or one of its subdomains.
+
+| [[field-ssoGroups-providers-loginUrl]] `loginUrl`
+| string
+| no
+| Optional full login page URL. Defaults to loginBaseUrl + /login.
+
+| [[field-ssoGroups-providers-cookieDomain]] `cookieDomain`
+| string
+| yes
+| Registrable parent domain for this provider's session cookie (e.g. app-a.com or app-b.fr). Distinct and non-overlapping within the group; route hosts must be covered by it. Minimum length: 1.
+
+| [[field-ssoGroups-providers-cookieName]] `cookieName`
+| string
+| no
+| Optional session cookie name. Empty = provider-scoped default.
+
+| [[field-ssoGroups-providers-redirectUrl]] `redirectUrl`
+| string
+| no
+| Optional OIDC callback URL. Defaults to loginBaseUrl + /auth/callback. Must be on cookieDomain or a subdomain.
+
+| [[field-ssoGroups-providers-links]] `links`
+| <<config-ssoGroups-providers-links,object>>
+| no
+| Links owned by the authentication connector, displayed in the user badge. account is the IdP's own account console: NO OIDC standard, so the URL is explicit (Keycloak /realms/<realm>/account/, Entra myaccount.microsoft.com, Google myaccount.google.com, Okta /enduser/settings…).
+
+| [[field-ssoGroups-providers-mcpAudience]] `mcpAudience`
+| string
+| no
+| MCP access-token audience policy. Empty = scope-only (compatible default). A literal value requires that value in aud. "auto" requires the endpoint's own protected-resource identifier (recommended, and used with Keycloak audience mappers).
+
+|===
+
+[[config-ssoGroups-providers-links]]
+===== ssoGroups.providers.links
+
+Links owned by the authentication connector, displayed in the user badge. account is the IdP's own account console: NO OIDC standard, so the URL is explicit (Keycloak /realms/<realm>/account/, Entra myaccount.microsoft.com, Google myaccount.google.com, Okta /enduser/settings…).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-ssoGroups-providers-links-account]] `account`
+| <<config-ssoGroups-providers-links-account,object>>
+| no
+| A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+|===
+
+[[config-ssoGroups-providers-links-account]]
+====== ssoGroups.providers.links.account
+
+A link rendered in the expanded user badge. URL: http(s) absolute or a local absolute path (/...); javascript:/data: are refused. target defaults to _blank; rel is forced to noopener noreferrer.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-ssoGroups-providers-links-account-label]] `label`
+| string
+| no
+| Displayed text. Optional for the connector links (default Account/Services); required for userBadge.links. Maximum length: 64.
+
+| [[field-ssoGroups-providers-links-account-url]] `url`
+| string
+| yes
+| http(s) absolute URL or local absolute path (/...). Maximum length: 2048.
+
+| [[field-ssoGroups-providers-links-account-target]] `target`
+| string (one of: `_blank`, `_self`)
+| no
+| Link target. Default _blank.
 
 |===
