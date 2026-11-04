@@ -50,3 +50,47 @@
 .td-box--primary span > a {
   color: $cladone-rust-light;
 }
+
+// Main page only: swap the dark and primary bands.
+.td-home .td-box--dark,
+.td-home .td-footer,
+.td-home .td-cover-block.-bg-dark {
+  background-color: $cladone-green;
+}
+
+.td-home .td-cover-block.td-overlay--dark::after {
+  background-color: transparent;
+}
+
+.td-home .td-box--primary {
+  background-color: $cladone-rust;
+}
+
+.td-home .td-box--dark .td-arrow-down::before {
+  border-color: $cladone-green transparent transparent transparent;
+}
+
+.td-home .td-box--primary .td-arrow-down::before {
+  border-color: $cladone-rust transparent transparent transparent;
+}
+
+// The hero title and mark take the inverted colour.
+.td-home .td-cover-block h1.display-1 {
+  color: $cladone-rust;
+}
+
+.td-home .td-cover-block h1.display-1::before {
+  background-image: url("../images/cladone-logo-red.png");
+}
+
+.td-home .td-cover-block .btn-primary {
+  background-color: $cladone-rust;
+  border-color: $cladone-rust;
+}
+
+.td-home .td-cover-block .btn-primary:hover,
+.td-home .td-cover-block .btn-primary:focus,
+.td-home .td-cover-block .btn-primary:active {
+  background-color: #632626;
+  border-color: #632626;
+}
