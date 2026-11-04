@@ -1,9 +1,22 @@
 // Section-specific colors on the landing page.
 
-// Hero title: bold, using the primary button background.
+// Hero title: bold, with the Cladone mark to its left.
 .td-cover-block h1.display-1 {
   color: $cladone-green;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35em;
+}
+
+.td-cover-block h1.display-1::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.9em;
+  height: 0.9em;
+  background: url("../images/cladone-logo.png") center / contain no-repeat;
 }
 
 // Rust panels (cover, final section, footer) keep white headings and links.

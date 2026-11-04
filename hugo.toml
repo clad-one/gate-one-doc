@@ -28,6 +28,9 @@ summaryLength = 40
     source = "node_modules/@fortawesome/fontawesome-free"
     target = "assets/vendor/Font-Awesome"
   [[module.mounts]]
+    source = "static"
+    target = "static"
+  [[module.mounts]]
     source = "node_modules/@fortawesome/fontawesome-free/webfonts"
     target = "static/webfonts"
   # Mermaid is served locally (no CDN at runtime). Docsy's bundled Mermaid
