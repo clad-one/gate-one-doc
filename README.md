@@ -164,6 +164,9 @@ defaults. The same release label is used by `../gate-one-src/release.sh`
 for the documentation archive, so the archive and the live site share
 the same absolute links.
 
+`canonifyURLs` is enabled so root-relative links emitted by AsciiDoc
+(such as `/docs/config/gate-one/`) receive the versioned base URL.
+
 Cloudflare Pages, Netlify, GitLab Pages and other HTTPS static hosts
 also work. `static/_headers` carries security headers for hosts that
 support that format (Cloudflare Pages, Netlify). For other hosts,

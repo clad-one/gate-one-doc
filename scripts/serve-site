@@ -12,4 +12,5 @@ if ! command -v asciidoctor >/dev/null 2>&1; then
 	echo "serve-site: asciidoctor is required (gem install asciidoctor --user-install)" >&2
 	exit 1
 fi
-exec npx hugo server -D --bind 127.0.0.1 "$@"
+exec npx hugo server -D --bind 127.0.0.1 \
+	--baseURL http://127.0.0.1:1313/ "$@"

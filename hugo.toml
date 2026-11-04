@@ -1,4 +1,5 @@
 baseURL = "https://clad-one.github.io/gate-one-doc/"
+canonifyURLs = true
 title = "Gate One"
 defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
