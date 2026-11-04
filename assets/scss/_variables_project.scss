@@ -3,9 +3,9 @@ $cladone-green: #4a7c59;
 $cladone-green-light: #6fae8e;
 $cladone-green-dark: #2a5f3f;
 $cladone-green-deep: #2a6e3f;
-$cladone-ink: #20242e;
 $cladone-rust: #a04040;
-$cladone-paper: #faf9f7;
+$cladone-rust-light: #f2d6bd;
+$cladone-sage: #e5eae4;
 
 // Replace Docsy's Bootstrap blue with the Cladone green family.
 $blue: $cladone-green;
@@ -18,5 +18,5 @@ $dark: $cladone-rust;
 $link-color: $cladone-green-dark;
 $headings-color: $cladone-green-dark;
 
-$body-bg: $cladone-paper;
+$body-bg: $cladone-sage;
 $body-color: #222;

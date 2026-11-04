@@ -13,12 +13,21 @@
   text-decoration: underline;
 }
 
-// The green feature band uses rust for its non-white text.
+// The light-green page background also colours the "white" sections.
+.td-box--white {
+  background-color: $cladone-sage;
+}
+
+.td-box--white .td-arrow-down::before {
+  border-color: $cladone-sage transparent transparent transparent;
+}
+
+// The green feature band uses a light rust/brown for its non-white text.
 .td-box--primary {
-  --bs-heading-color: #{$cladone-rust};
+  --bs-heading-color: #{$cladone-rust-light};
 }
 
 .td-box--primary p > a,
 .td-box--primary span > a {
-  color: $cladone-rust;
+  color: $cladone-rust-light;
 }
