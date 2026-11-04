@@ -5,10 +5,12 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Gate One" subtitle="Overlay once for all" height="med" color="dark" %}}
+{{% blocks/cover title="Gate One" subtitle="An overlay to apply you features, once for all." height="med" color="dark" %}}
 
-Injectable UX and usage events. SSO login with front/back interception,
-PWA, REST-to-MCP and aggregation, front proxy — all included.
+Once for all: SSO login with front/back interception,
+PWA, dynamic REST-to-MCP, 
+service aggregation and filtering, front proxy, usage events.  
+Custom injectable UX. 
 
 No SDK, no fork, no frontend rewrite.
 
