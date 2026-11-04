@@ -3,37 +3,61 @@
   linkTitle: SSO across apps
   weight: 10
   usefulIf: you want one login for several applications without changing the applications.
-  summary: One OIDC provider, one login host and a shared cookie domain across applications.
-  example: /docs/examples/getting-started/
+  summary: One authentication provider, one login host and a shared cookie domain across applications.
+  example: /docs/examples/multi-app-sso/
   configRefs:
     - label: issuer
       url: /docs/config/gate-one/#field-authProvider-issuer
     - label: cookieDomain
       url: /docs/config/gate-one/#field-authProvider-cookieDomain
-    - label: sessionKeyEnv
-      url: /docs/config/gate-one/#field-authProvider-sessionKeyEnv
-    - label: sessionStore
-      url: /docs/config/gate-one/#field-authProvider-sessionStore
   plugin: false
-- slug: broker-multi-idp
-  title: Google, Auth0, Microsoft or local accounts
+- slug: multiple-idps
+  title: Multiple identity providers
   linkTitle: Multiple identity providers
   weight: 20
-  usefulIf: your users come from several identity providers, or you need local accounts.
-  summary: The optional broker federates upstream IdPs, normalizes roles/scopes/claims, manages local and federated user grants and emits its own Ed25519-signed tokens.
-  example: /docs/examples/broker/
+  usefulIf: your users come from several identity providers and you already run an IAM.
+  summary: Use Keycloak, Zitadel or another OIDC IAM to federate Google and other IdPs behind one issuer.
+  example: /docs/examples/keycloak-google/
   configRefs:
-    - label: authProviders
-      url: /docs/config/gate-one/#field-authProviders
-    - label: defaultAuthProvider
-      url: /docs/config/gate-one/#field-defaultAuthProvider
+    - label: issuer
+      url: /docs/config/gate-one/#field-authProvider-issuer
+    - label: clientId
+      url: /docs/config/gate-one/#field-authProvider-clientId
+    - label: roleClaims
+      url: /docs/config/gate-one/#field-authProvider-roleClaims
+  plugin: false
+- slug: embedded-iam
+  title: Embedded IAM
+  linkTitle: Embedded IAM
+  weight: 30
+  usefulIf: you want IdP federation and managed user grants without running an external IAM.
+  summary: The lightweight cladone-auth broker maps IdP claims to a common roles/scopes/claims model and manages local and federated users.
+  example: /docs/examples/embedded-iam/
+  configRefs:
     - label: broker tenants
       url: /docs/config/broker/#field-tenants
+    - label: claim mappings
+      url: /docs/config/broker/#field-tenants-mappings
+    - label: authProviders
+      url: /docs/config/gate-one/#field-authProviders
+  plugin: false
+- slug: horizontal-scaling
+  title: Horizontal scaling
+  linkTitle: Horizontal scaling
+  weight: 40
+  usefulIf: you need several Gate One replicas behind a load balancer.
+  summary: Shared Redis session/revocation state and a common signing key make logout and revocation effective across replicas.
+  example: /docs/examples/high-availability/
+  configRefs:
+    - label: sessionStore
+      url: /docs/config/gate-one/#field-authProvider-sessionStore
+    - label: sessionKeyEnv
+      url: /docs/config/gate-one/#field-authProvider-sessionKeyEnv
   plugin: false
 - slug: protect-api-mcp
   title: Protect APIs and MCP tools
   linkTitle: APIs and MCP
-  weight: 30
+  weight: 50
   usefulIf: you expose APIs or MCP tools to authenticated users and machine clients.
   summary: Route-level identity conditions, JWT/JWKS validation for APIs, and MCP protected-resource metadata with audience and scope checks.
   example: /docs/examples/api-mcp/
@@ -48,7 +72,7 @@
 - slug: injectable-ux
   title: Injectable UX
   linkTitle: Injectable UX
-  weight: 40
+  weight: 60
   usefulIf: you cannot modify the frontend but need a user badge, a guard, gated controls or a PWA shell.
   summary: HTML/JS/CSS injection, declarative UI gating, a 403 banner and a strict CSP — without touching the application source.
   example: /docs/examples/injectable-ux/
@@ -65,7 +89,7 @@
 - slug: usage-events
   title: Usage events and plugins
   linkTitle: Usage events
-  weight: 50
+  weight: 70
   usefulIf: you need metering, audit, observability, or a commercial extension.
   summary: Durable per-type WAL, signed out-of-process plugins, targeted 503 on backpressure and an opaque subjectId instead of user data.
   example: /docs/examples/usage-plugin/

@@ -32,7 +32,7 @@ Shared OIDC session across your applications, with a central logout and
 immediate revocation.
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fa-solid fa-users-gear" title="Any identity provider" url="/docs/features/broker-multi-idp/" %}}
+{{% blocks/feature icon="fa-solid fa-users-gear" title="Any identity provider" url="/docs/features/multiple-idps/" %}}
 Talk directly to Keycloak, Entra, Auth0 or Google, or let the optional
 broker federate several providers and local accounts.
 {{% /blocks/feature %}}

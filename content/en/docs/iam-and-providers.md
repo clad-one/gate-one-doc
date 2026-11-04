@@ -173,9 +173,9 @@ the next login.
 
 Configuration:
 
+* [Embedded IAM feature](/docs/features/embedded-iam/)
+* [Embedded IAM example](/docs/examples/embedded-iam/)
 * [Broker configuration reference](/docs/config/broker/)
-* [Multiple identity providers feature](/docs/features/broker-multi-idp/)
-* [Broker federation example](/docs/examples/broker/)
 
 ## Choosing a type
 
@@ -191,5 +191,5 @@ Configuration:
 
 * [Architecture](/docs/architecture/)
 * [HTTP bridge contract](/docs/bridge-contract/)
-* [Multiple identity providers](/docs/features/broker-multi-idp/)
+* [Multiple identity providers](/docs/features/multiple-idps/)
 * [Plugins](/docs/plugins/)

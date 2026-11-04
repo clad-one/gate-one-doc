@@ -12,10 +12,11 @@ the published JSON Schema; local examples are also checked with
 
 | Example | What it shows |
 |---|---|
-| [Getting started](getting-started/) | A local demo with the embedded development identity provider, a user badge and one route. |
-| [Multi-app SSO](multi-app-sso/) | Two applications on a shared cookie domain and one OIDC provider, with the default bbolt store. |
-| [Redis-backed sessions](redis-session/) | The same SSO setup with a shared Redis store for several Gate One replicas. |
-| [Broker federation](broker/) | Google + Microsoft through the optional broker, then one Gate One provider per tenant. |
+| [Getting started](getting-started/) | A local demo with the embedded development identity provider, its default users and a user badge. |
+| [Multi-app SSO](multi-app-sso/) | A second application added to the same provider and cookie domain, reusing the login session. |
+| [Keycloak with Google](keycloak-google/) | A classical external IAM: Keycloak federates Google, Gate One trusts one Keycloak issuer. |
+| [Embedded IAM](embedded-iam/) | `cladone-auth` federates Google, maps claims and stores local/federated user grants. |
+| [High Availability](high-availability/) | Several Gate One replicas behind a load balancer with shared Redis state. |
 | [APIs and MCP](api-mcp/) | A browser provider, a JWT provider, an identity-conditioned API route and an MCP service. |
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle, 403 banner and a nonce CSP. |
 | [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. |
@@ -25,9 +26,10 @@ The raw files are also served under `/examples/`:
 
 * [`examples/getting-started/routes.json`](/examples/getting-started/routes.json)
 * [`examples/sso-multi-apps/routes.json`](/examples/sso-multi-apps/routes.json)
-* [`examples/redis-session/routes.json`](/examples/redis-session/routes.json)
-* [`examples/broker-multi-idp/broker.json`](/examples/broker-multi-idp/broker.json)
-  and [`routes.json`](/examples/broker-multi-idp/routes.json)
+* [`examples/keycloak-google/routes.json`](/examples/keycloak-google/routes.json)
+* [`examples/embedded-iam/broker.json`](/examples/embedded-iam/broker.json)
+  and [`routes.json`](/examples/embedded-iam/routes.json)
+* [`examples/high-availability/routes.json`](/examples/high-availability/routes.json)
 * [`examples/protect-api-mcp/routes.json`](/examples/protect-api-mcp/routes.json)
 * [`examples/http-bridge/routes.json`](/examples/http-bridge/routes.json)
 * [`examples/injectable-ux/routes.json`](/examples/injectable-ux/routes.json)

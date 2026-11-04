@@ -1,0 +1,151 @@
+---
+title: Embedded IAM
+linkTitle: Embedded IAM
+weight: 30
+description: Federate Google in cladone-auth, map claims and assign user grants.
+---
+
+= Embedded IAM
+
+This example runs the optional embedded IAM `cladone-auth` as the single
+OIDC issuer for Gate One. `cladone-auth` federates Google and normalizes
+Google claims into the roles/scopes/claims Gate One enforces.
+
+== Files
+
+* link:/examples/embedded-iam/broker.json[`examples/embedded-iam/broker.json`]
+* link:/examples/embedded-iam/routes.json[`examples/embedded-iam/routes.json`]
+
+== Broker configuration
+
+[source,json]
+----
+{
+  "publicUrl": "https://auth.example.com",
+  "listen": ":8081",
+  "redis": {
+    "url": "redis://redis:6379/0",
+    "passwordEnv": "REDIS_PASSWORD",
+    "prefix": "cladone:broker:v1:",
+    "authPrefix": "cladone:auth:v1:"
+  },
+  "tenants": [{
+    "id": "mycompany",
+    "clientId": "gate-one",
+    "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
+    "redirectUris": ["https://login.example.com/auth/callback"],
+    "upstreams": {
+      "google": {
+        "issuer": "https://accounts.google.com",
+        "clientIdEnv": "GOOGLE_CLIENT_ID",
+        "clientSecretEnv": "GOOGLE_CLIENT_SECRET",
+        "hostedDomain": "example.com"
+      }
+    },
+    "defaultRoles": ["user"],
+    "allowedDomains": ["example.com"],
+    "mappings": [
+      { "claim": "groups", "values": ["admins"], "roles": ["admin"] }
+    ]
+  }]
+}
+----
+
+`mappings` translates IdP-specific claims into the common model. The
+legacy `groupRoles` block is still accepted for the `groups` claim.
+
+== Gate One configuration
+
+[source,json]
+----
+{
+  "authProviders": [{
+    "id": "mycompany",
+    "type": "oidc",
+    "issuer": "https://auth.example.com/t/mycompany",
+    "clientId": "gate-one",
+    "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "roleClaims": ["roles"],
+    "sessionKeyEnv": "MYCOMPANY_SESSION_KEY",
+    "sessionStore": {
+      "type": "redis",
+      "url": "redis://redis:6379/0",
+      "passwordEnv": "REDIS_PASSWORD",
+      "prefix": "cladone:auth:v1:"
+    }
+  }],
+  "defaultAuthProvider": "mycompany",
+  "routes": [{
+    "host": "app.example.com", "path": "/*", "frontend": true,
+    "backend": "http://app:8080", "auth": { "provider": "mycompany" }
+  }]
+}
+----
+
+The Redis store is here because this example is also the multi-instance
+form; a single broker instance can use its memory store, and a single
+Gate One instance can use the default bbolt store.
+
+== Users and grants
+
+Federated users are created at first login without rights (JIT). An
+admin then assigns roles/scopes/claims:
+
+[source,bash]
+----
+# inspect the JIT user (issuer/subject come from the IdP token)
+cladone-auth user list -config broker.json -tenant mycompany
+cladone-auth user show -config broker.json -tenant mycompany \
+  -issuer https://accounts.google.com -sub 'google-sub-1'
+
+# assign common rights
+cladone-auth user set -config broker.json -tenant mycompany \
+  -issuer https://accounts.google.com -sub 'google-sub-1' \
+  -roles support -scopes read:things \
+  -claims '{"department":"support"}'
+----
+
+Local users use the same commands with `-kind local` and a password. The
+same `roles`/`scopes`/`claims` model applies to both.
+
+If the IdP subject changes unexpectedly, relink the same broker user
+with `-new-issuer`/`-new-sub` instead of deleting it; its grants are
+preserved.
+
+== Run it
+
+[source,bash]
+----
+# broker
+export REDIS_PASSWORD=...
+export MYCOMPANY_BROKER_CLIENT_SECRET=...
+export GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=...
+cladone-auth -config broker.json
+
+# gate one
+export MYCOMPANY_OIDC_SECRET=...
+export MYCOMPANY_SESSION_KEY="$(openssl rand -base64 32)"
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+== What to observe
+
+* the broker's IdP chooser, then Google login;
+* the broker session cookie on `auth.example.com`;
+* `roleClaims: ["roles"]` and the mapped `admin` role in the Gate One
+  policy;
+* `cladone-auth user show` after first login, then a grant update that
+  appears on the next login;
+* a global logout revoking `sid` and `sub`.
+
+== Caveats
+
+* The broker is an issuer and user directory, not a per-resource policy
+  engine; route rules stay in Gate One.
+* One external identity link per user; no account linking.
+* Upstream secrets stay in environment variables.
+* If you already run Keycloak/Zitadel, use them as the external IAM:
+  link:../keycloak-google/[Keycloak with Google].

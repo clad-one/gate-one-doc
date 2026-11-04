@@ -1,19 +1,20 @@
 ---
-title: Redis-backed sessions
-linkTitle: Redis-backed sessions
-weight: 25
-description: Shared session and revocation state for several Gate One replicas.
+title: High Availability
+linkTitle: High Availability
+weight: 35
+description: Balance load across several Gate One replicas with shared session and revocation state.
 ---
 
-= Redis-backed sessions
+= High Availability
 
-This example uses Redis as the OIDC session/revocation store. It is the
+This example runs several Gate One replicas behind a load balancer and
+uses Redis as the shared OIDC session/revocation store. It is the
 multi-instance variant of the
 link:../multi-app-sso/[multi-app SSO] example.
 
 == File
 
-link:/examples/redis-session/routes.json[`examples/redis-session/routes.json`]
+link:/examples/high-availability/routes.json[`examples/high-availability/routes.json`]
 
 [source,json]
 ----
@@ -56,14 +57,12 @@ the shared session cookie. The Redis URL and password are also shared.
 
 == When to use it
 
-* several Gate One replicas behind a load balancer;
-* immediate revocation across replicas after a logout or back-channel
-  logout;
-* a shared session/revocation state that survives an individual
-  replica restart.
+When you need horizontal scaling using several Gate One replicas behind
+a load balancer.
 
-For a **single** Gate One instance, the default bbolt store is enough;
-Redis adds an external service without changing the SSO behaviour. See
+== Single-instance alternative
+
+A single Gate One instance keeps the default bbolt store. See
 link:../multi-app-sso/[multi-app SSO] for that simpler setup.
 
 == Failure mode

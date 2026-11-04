@@ -1,0 +1,88 @@
+---
+title: Multiple identity providers
+linkTitle: Multiple identity providers
+weight: 20
+description: Use a classical OIDC IAM such as Keycloak or Zitadel to federate several identity providers behind one issuer.
+---
+
+= Multiple identity providers
+
+== Useful if you want to…
+
+* accept users from **several identity providers** (Google, Microsoft,
+  GitHub, a corporate directory, …);
+* keep one issuer and one login surface for Gate One;
+* centralize user policy, roles and federation in an existing IAM;
+* avoid adding another identity service to the platform.
+
+== The classical pattern: an external IAM
+
+An **OIDC IAM** such as **Keycloak** or **Zitadel** can federate several
+IdPs itself. In that pattern:
+
+* users authenticate against the IAM;
+* the IAM delegates to Google, Microsoft or another upstream IdP;
+* the IAM applies users, groups, roles and policies;
+* Gate One points at **one OIDC issuer** — the IAM — and never sees the
+  upstream IdPs.
+
+[source,text]
+----
+browser -> Gate One -> Keycloak/Zitadel -> Google or another IdP
+----
+
+Keycloak and Zitadel are common open-source choices. They already provide
+the IAM features you need: identity-provider federation, user directory,
+groups/roles, account management and an admin console.
+
+The complete Gate One + Keycloak + Google setup is in the
+link:/docs/examples/keycloak-google/[Keycloak with Google example].
+
+== The embedded alternative: `cladone-auth`
+
+If you do not want to run an external IAM, Gate One ships the optional
+**embedded IAM** `cladone-auth`. It is a lightweight OIDC issuer that:
+
+* federates external IdPs, so it is not an IdP itself;
+* keeps one login surface and one issuer for Gate One;
+* maps IdP IAM fields into a common roles/scopes/claims model;
+* manages per-user grants for both local and federated users.
+
+It is deliberately resource-light: the recommended path uses external
+IdPs, so there is no password store and no password-hashing cost. Local
+accounts are optional for small deployments.
+
+It is a broker, not a full replacement for Keycloak/Zitadel: no
+per-resource policy engine, no admin UI, no multi-identity linking.
+
+* Feature: link:/docs/features/embedded-iam/[Embedded IAM]
+* Example: link:/docs/examples/embedded-iam/[Embedded IAM example]
+
+== Choosing
+
+| If you… | Use |
+|---|---|
+| Already run Keycloak, Zitadel, Entra or Auth0 | that IAM as the single OIDC issuer |
+| Want federation without another IAM service | `cladone-auth` embedded IAM |
+| Have only one IdP | direct `oidc`, no IAM needed |
+| Need full user lifecycle, admin console and enterprise policies | an external IAM such as Keycloak or Zitadel |
+
+In both patterns Gate One trusts one issuer and applies route policy
+locally; the difference is where user federation and administration live.
+
+== Limits
+
+* Gate One is not the IAM: it does not store users or assign rights.
+* With an external IAM, its roles/scopes must be present in the token
+  claims configured for Gate One (`roleClaims`/`scopesClaim`).
+* With `cladone-auth`, the embedded IAM is an issuer and user directory,
+  not a general per-resource policy engine.
+* Authentication adapters remain under the Gate One licence; they are
+  not third-party extension plugins.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-authProvider-issuer[`authProvider.issuer`]
+* link:/docs/config/gate-one/#field-authProvider-clientId[`authProvider.clientId`]
+* link:/docs/config/gate-one/#field-authProvider-roleClaims[`authProvider.roleClaims`]
+* link:/docs/config/broker/[Embedded IAM configuration]

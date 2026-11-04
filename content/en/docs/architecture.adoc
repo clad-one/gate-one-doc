@@ -185,7 +185,7 @@ A production deployment looks like this:
 == Read next
 
 * link:/docs/features/sso-multi-apps/[SSO across your apps]
-* link:/docs/features/broker-multi-idp/[Multiple identity providers]
+* link:/docs/features/multiple-idps/[Multiple identity providers]
 * link:/docs/features/protect-api-mcp/[APIs and MCP]
 * link:/docs/features/injectable-ux/[Injectable UX]
 * link:/docs/features/usage-events/[Usage events and plugins]

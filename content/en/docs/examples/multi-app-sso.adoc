@@ -2,15 +2,21 @@
 title: Multi-app SSO
 linkTitle: Multi-app SSO
 weight: 20
-description: Two applications, one OIDC provider and a shared cookie domain.
+description: Add a second application to an existing login session.
 ---
 
 = Multi-app SSO
 
-This example puts two existing applications behind one Gate One provider.
-The user logs in once; both applications accept the same session.
+This example starts from one protected application and adds a second
+**route behind the same authentication provider**. That is what creates
+SSO: the provider and the shared cookie domain are already in place, and
+the second route reuses the same Gate One session.
 
-== Files
+Changing the provider alone does not create SSO. Adding a route alone
+does not create SSO either. The two routes must use the **same provider**
+and share the **same cookie domain**.
+
+== File
 
 link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`]
 
@@ -38,6 +44,10 @@ link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`]
 }
 ----
 
+The second `reports.example.com` route is the only addition needed for
+SSO, because it is under the same `cookieDomain` and uses the default
+provider.
+
 == Run it
 
 [source,bash]
@@ -51,9 +61,18 @@ Register `https://login.example.com/auth/callback` at the identity
 provider. Point DNS (or your test hosts file) for `app.example.com`,
 `reports.example.com` and `login.example.com` at Gate One.
 
+== What to observe
+
+1. Open `https://app.example.com`; log in.
+2. Open `https://reports.example.com` in the same browser.
+3. The second host must **not** redirect to the identity provider: the
+   shared `example.com` session cookie is reused.
+
 == Why it works
 
 * `cookieDomain: "example.com"` lets both hosts share the session cookie.
+* Both routes use the same `authProvider` and therefore the same issuer
+  and session key.
 * This example runs a single Gate One instance, so the default bbolt
   session/revocation store is enough.
 * The second visit does not redirect to the identity provider.
@@ -61,18 +80,17 @@ provider. Point DNS (or your test hosts file) for `app.example.com`,
 == Caveats
 
 * The applications must share a parent domain. `app.mycompany.com` and
-  `app.other.com` cannot share a cookie; use one login per parent domain
-  or a common hostname.
+  `app.other.com` cannot share a cookie.
 * On a single instance, a logout revokes the session for the next
-  request. For several replicas, use the
-  link:../redis-session/[Redis-backed sessions] example so the
-  revocation is shared across nodes.
+  request. For several replicas, see
+  link:../high-availability/[High Availability].
 * The applications can stay public: remove `"auth": {}` from one route.
   Only that route becomes anonymous.
 
 == Next
 
-If you run several Gate One replicas, use
-link:../redis-session/[Redis-backed sessions]. If your users come from
-several identity providers, add the optional broker:
-link:../broker/[Broker federation].
+If you need several Gate One replicas, use
+link:../high-availability/[High Availability]. If your users come from
+several identity providers, see
+link:../keycloak-google/[Keycloak with Google] or
+link:../embedded-iam/[Embedded IAM].

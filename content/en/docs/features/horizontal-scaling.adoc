@@ -1,0 +1,60 @@
+---
+title: Horizontal scaling
+linkTitle: Horizontal scaling
+weight: 40
+description: Run several Gate One replicas behind a load balancer with shared session and revocation state.
+---
+
+= Horizontal scaling
+
+== Useful if you want to…
+
+* run more than one Gate One instance behind a load balancer;
+* survive the loss of one replica without losing the login;
+* spread load across several replicas;
+* keep logout and revocation effective across every replica.
+
+== Why a single instance is simpler
+
+A single Gate One instance keeps its OIDC session/revocation state in a
+local bbolt file. That is enough for one instance, and it needs no Redis.
+
+bbolt is local to the instance. It cannot be shared safely by several
+Gate One replicas: a logout or back-channel revocation recorded on one
+node would not be visible to the others. That is why horizontal scaling
+requires a shared store.
+
+== What horizontal scaling requires
+
+* **Redis** as the shared session/revocation store
+  (`authProvider.sessionStore.type: "redis"`);
+* the same **session signing key** on every node
+  (`authProvider.sessionKeyEnv`);
+* the same cookie domain, so the browser presents the same session
+  cookie to every replica;
+* a load balancer in front of the replicas;
+* Redis Sentinel/TLS/ACL when Redis itself must be highly available.
+
+No sticky sessions are required for the session cookie itself: every
+replica can verify it with the shared key. Redis carries the shared
+revocation state.
+
+== Failure mode
+
+When `sessionStore` is Redis and Redis is unavailable, authenticated
+routes fail with `502 authentication_unavailable`. Public routes keep
+working.
+
+A single-instance deployment should keep the default bbolt store. Redis
+is a scaling requirement, not a default.
+
+== Example
+
+The link:/docs/examples/high-availability/[High Availability example]
+shows the Redis-backed configuration and the shared session key.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-authProvider-sessionStore[`authProvider.sessionStore`]
+* link:/docs/config/gate-one/#field-authProvider-sessionKeyEnv[`authProvider.sessionKeyEnv`]
+* link:/docs/config/gate-one/#field-authProvider-cookieDomain[`authProvider.cookieDomain`]

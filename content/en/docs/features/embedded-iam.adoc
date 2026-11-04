@@ -1,0 +1,101 @@
+---
+title: Embedded IAM
+linkTitle: Embedded IAM
+weight: 30
+description: The optional cladone-auth broker federates IdPs, maps claims and manages local and federated user grants.
+---
+
+= Embedded IAM
+
+== Useful if you want to…
+
+* federate several IdPs without running Keycloak or another external IAM;
+* keep one OIDC issuer and one login surface for Gate One;
+* normalize IdP-specific groups, roles and claims into one vocabulary;
+* assign roles/scopes/claims to local **and** federated users;
+* stay lightweight: one Go binary, one JSON file, Redis optional for
+  multi-instance state.
+
+`cladone-auth` is optional. It is a small OIDC issuer and user directory,
+not a full identity provider.
+
+== What it does
+
+* federates external IdPs configured under `tenants[].upstreams`;
+* lets an admin map upstream IAM fields into a common
+  `roles`/`scopes`/`claims` model;
+* stores one external identity link `(issuer, subject)` per federated
+  user — the IdP account is never recreated;
+* stores the same `roles`/`scopes`/`claims` grants on local users;
+* provisions federated users at first login (JIT) without rights, then
+  lets an admin assign them;
+* emits Ed25519-signed ID/access/refresh tokens, JWKS, discovery and the
+  revocation keyspace Gate One reads.
+
+The broker is deliberately resource-light. The recommended path uses
+**external IdPs**, so there is no password store and no password-hashing
+cost. Local accounts (`localAccounts`, PBKDF2) are optional for small
+deployments.
+
+== Mapping IdP claims to application rights
+
+A mapping rule takes a claim path and adds broker roles, scopes or
+claims:
+
+[source,text]
+----
+IdP claim                          common rights
+groups=admins                  ->  role admin
+realm_access.roles=offline...  ->  role user
+department=support             ->  scope read:things, claim department=support
+----
+
+Effective rights are:
+
+[source,text]
+----
+tenant defaults
++ admin emails
++ mapped IdP claims (federated only)
++ per-user grants (local and federated)
+----
+
+Mapping results are recalculated at every federated login. Per-user
+grants are stored on the user and apply to both kinds of account.
+
+== Identity model
+
+A user has exactly **one** authentication identity:
+
+* local: email + password managed by the broker;
+* federated: one `(issuer, subject)` link.
+
+There is no multi-link/account-linking model. If an upstream subject
+changes unexpectedly, an admin relinks the existing broker user instead
+of losing its grants.
+
+== Administration
+
+`cladone-auth user` provides `list`, `show`, `create`, `set` and `delete`
+for local and federated users. The same commands assign roles, scopes and
+claims, disable an account or relink a federated identity.
+
+Grant changes take effect at the next login; revoke sessions for
+immediate invalidation.
+
+== Example and reference
+
+* link:/docs/examples/embedded-iam/[Embedded IAM example] — broker
+  configuration, IdP mapping, user creation and grants.
+* link:/docs/config/broker/[Broker configuration reference]
+* link:/docs/config/broker/#field-tenants-mappings[`tenants[].mappings`]
+
+== Limits
+
+* Not a full IAM suite: no admin UI, no multi-identity linking, no
+  per-resource policy engine.
+* Route policy stays in Gate One.
+* Authentication adapters and broker IdP adapters remain under the Gate
+  One licence.
+* If you already run Keycloak or Zitadel, use it as the external IAM
+  instead: link:/docs/features/multiple-idps/[Multiple identity providers].

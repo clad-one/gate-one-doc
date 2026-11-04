@@ -52,9 +52,25 @@ gate-one -check -config routes.json
 gate-one -config routes.json
 ----
 
-The `dev` provider accepts `alice`/`alice` (user) and `bob`/`bob`
-(admin). Open `http://app.demo.localhost:3000`; `.localhost` resolves to
-loopback on modern systems.
+== Default users
+
+No signup is required. The embedded `dev` provider creates two test
+accounts:
+
+[cols="1,1,1",options="header"]
+|===
+| User | Password | Role
+| `alice` | `alice` | `user`
+| `bob` | `bob` | `admin`
+|===
+
+Open `http://app.demo.localhost:3000` and log in with one of them.
+`.localhost` resolves to loopback on modern systems.
+
+To add another development user, declare it in
+link:/docs/config/gate-one/#field-authProvider-dev-users[`authProvider.dev.users`].
+The `dev` provider is loopback-only; for a real deployment, use an OIDC
+provider.
 
 == What to look at
 

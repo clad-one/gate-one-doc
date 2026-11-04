@@ -1,0 +1,90 @@
+---
+title: Keycloak with Google
+linkTitle: Keycloak with Google
+weight: 25
+description: Federate Google in Keycloak, then point Gate One at one Keycloak issuer.
+---
+
+= Keycloak with Google
+
+This example uses Keycloak as the **IAM and OIDC issuer**, with Google as
+an additional identity provider inside Keycloak. Gate One only sees the
+Keycloak issuer; it does not configure Google directly.
+
+[source,text]
+----
+browser -> Gate One -> Keycloak -> Google
+----
+
+== File
+
+link:/examples/keycloak-google/routes.json[`examples/keycloak-google/routes.json`]
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://auth.example.com/realms/mycompany",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "roleClaims": ["realm_access.roles", "groups"]
+  },
+  "routes": [{
+    "host": "app.example.com", "path": "/*", "frontend": true,
+    "backend": "http://app:8080", "auth": {}
+  }]
+}
+----
+
+== Keycloak setup
+
+1. Create the realm `mycompany`.
+2. Create an OIDC client `gate-one` with the redirect URI
+   `https://login.example.com/auth/callback`.
+3. Add an Identity Provider of type **Google** and enter the Google
+   client ID/secret. Complete the Google OAuth consent configuration.
+4. Add a mapper/claim so Keycloak roles or groups appear in the token
+   (`realm_access.roles` is included by default; `groups` requires a
+   group-membership mapper).
+5. Optionally add a role mapper to expose application roles as `roles`.
+
+Gate One does not need the Google client ID or secret. Those stay in
+Keycloak.
+
+== Run it
+
+[source,bash]
+----
+export OIDC_CLIENT_SECRET=...
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+Register `https://login.example.com/auth/callback` as the Keycloak
+client redirect URI. Point `app.example.com`, `login.example.com` and
+`auth.example.com` at the right hosts.
+
+== What to observe
+
+* Gate One redirects to Keycloak, and Keycloak offers Google (or another
+  configured IdP) on its login page.
+* The Gate One session is created from the Keycloak issuer, not from
+  Google.
+* `roleClaims` maps Keycloak roles/groups into Gate One's route policy.
+
+== Caveats
+
+* Google must be configured and tested in Keycloak first; Gate One cannot
+  diagnose the upstream Google configuration.
+* Keycloak is now the IAM: user policy, groups and IdP federation live
+  there.
+* If you do not want to run Keycloak, see
+  link:../embedded-iam/[Embedded IAM].
+
+== Next
+
+See link:../../features/multiple-idps/[Multiple identity providers] for
+the pattern and the embedded alternative.

@@ -15,7 +15,7 @@ description: One login for several existing applications, without an SDK or a fr
 * revoke a session centrally and have every application refuse it on the next request.
 
 Gate One is a reverse proxy: the application still receives a normal HTTP
-request. It never sees a token unless you ask for one.
+request. It never sees a token unless you ask for it.
 
 == What the user sees
 
@@ -32,59 +32,20 @@ According to the route, the application receives an identity:
 * the original `Authorization` header only when the route explicitly
   delegates it.
 
-== Minimal configuration
+== What actually enables SSO
 
-[source,json]
-----
-{
-  "authProvider": {
-    "type": "oidc",
-    "issuer": "https://auth.example.com/realms/mycompany",
-    "clientId": "gate-one",
-    "clientSecretEnv": "OIDC_CLIENT_SECRET",
-    "loginBaseUrl": "https://login.example.com",
-    "cookieDomain": "example.com"
-  },
-  "routes": [
-    {
-      "host": "app.example.com", "path": "/*", "frontend": true,
-      "backend": "http://app:8080", "auth": {}
-    },
-    {
-      "host": "reports.example.com", "path": "/*", "frontend": true,
-      "backend": "http://reports:8080", "auth": {}
-    }
-  ]
-}
-----
+Three things together:
 
-The complete file is link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`].
-See also the link:/docs/examples/getting-started/[getting-started example]
-for a local demo with the embedded development identity provider.
+* **the same authentication provider** verifies both routes;
+* **a shared cookie domain** (`cookieDomain`) covers every application host;
+* **both routes are served by the same Gate One deployment**.
 
-== Session store: bbolt or Redis
+Adding a second route alone does not create SSO. Replacing the provider
+alone does not create SSO either. The second application must use the
+same provider and share the same session cookie domain.
 
-A single Gate One instance uses the default bbolt store: there is no
-`sessionStore` block and no Redis. This is enough for the SSO example
-above and gives immediate logout/revocation on that instance.
-
-Several Gate One instances must share the session and revocation state
-**and** the same cookie-signing key:
-
-* `sessionKeyEnv` names a signing key present on every node;
-* `sessionStore.type: "redis"` points every node at the same Redis;
-* Sentinel and TLS are supported for a highly available Redis
-  (`masterName`, `sentinelAddrs`, `tls`, …).
-
-Redis matters for **multi-instance logout/revocation**: a revocation
-recorded by one replica must be visible to the others. It is not needed
-for SSO between several applications served by one Gate One instance.
-See link:/docs/examples/redis-session/[Redis-backed sessions] for the
-dedicated example.
-
-When `sessionStore` is Redis and Redis is unavailable, authenticated
-routes fail with `502 authentication_unavailable`. Public routes keep
-working.
+The complete sequence and configuration are in the
+link:/docs/examples/multi-app-sso/[multi-app SSO example].
 
 == Logout and revocation
 
@@ -93,9 +54,8 @@ by default), independent of the identity provider's short ID-token
 lifetime. Logout clears the cookie and records the revocation:
 
 * RP-initiated logout uses the provider's `end_session_endpoint`;
-* back-channel logout is validated and persisted (or stored in Redis);
-* a revoked `sid`/`sub` is refused on the next request, on every node
-  that shares the store.
+* back-channel logout is validated and persisted;
+* a revoked `sid`/`sub` is refused on the next request.
 
 The revocation TTL defaults to the issuer's advertised refresh-token
 lifetime, or 30 days. It is never shorter than the session TTL.
@@ -106,17 +66,15 @@ lifetime, or 30 days. It is never shorter than the session TTL.
   application host. `app.mycompany.com` and `app.other.com` cannot share a
   cookie; use one login per parent domain, or put the applications
   behind a common hostname.
-* **Manual rolling restart.** Restart one instance at a time; in-flight
-  requests drain for up to 30 seconds. There is no blue/green deployment
-  yet.
 * **Secrets never in the file.** Use `clientSecretEnv`.
-* **Several replicas only.** Add Redis and keep `sessionKeyEnv`
-  identical on every node; a single instance does not need either.
+* **Several replicas?** See
+  link:/docs/features/horizontal-scaling/[Horizontal scaling] for the
+  shared-state requirement.
 
 == Limits
 
 * Gate One does not create users, passwords or refresh tokens; that is
-  the identity provider's job (or the optional broker's).
+  the identity provider's job (or the optional embedded IAM's).
 * A route can bind only one authentication provider. Multi-provider
   hosting uses `authProviders` + `auth.provider` and one provider per
   route.
@@ -127,5 +85,3 @@ lifetime, or 30 days. It is never shorter than the session TTL.
 
 * link:/docs/config/gate-one/#field-authProvider-issuer[`authProvider.issuer`]
 * link:/docs/config/gate-one/#field-authProvider-cookieDomain[`authProvider.cookieDomain`]
-* link:/docs/config/gate-one/#field-authProvider-sessionKeyEnv[`authProvider.sessionKeyEnv`]
-* link:/docs/config/gate-one/#field-authProvider-sessionStore[`authProvider.sessionStore`]
