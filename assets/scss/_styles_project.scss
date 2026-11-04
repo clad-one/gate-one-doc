@@ -1,5 +1,11 @@
 // Section-specific colors on the landing page.
 
+// Hero title: bold, using the primary button background.
+.td-cover-block h1.display-1 {
+  color: $cladone-green;
+  font-weight: 700;
+}
+
 // Rust panels (cover, final section, footer) keep white headings and links.
 .td-box--dark,
 .td-footer {
