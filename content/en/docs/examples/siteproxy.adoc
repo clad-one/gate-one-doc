@@ -17,13 +17,14 @@ adds a dark/light toggle and a reading-time badge.
 
 == Files
 
-The full example lives in the source repository:
+* link:/examples/siteproxy/routes.json[`routes.json`]
+* link:/examples/siteproxy/injects/bundle.json[`injects/bundle.json`]
+* link:/examples/siteproxy/injects/wikipedia-plus.user.js[`injects/wikipedia-plus.user.js`]
+* link:/examples/siteproxy/injects/wikipedia-plus.html[`injects/wikipedia-plus.html`]
+* link:/examples/siteproxy/README.md[`README.md`]
 
-* link:https://github.com/clad-one/gate-one/tree/main/examples/siteproxy[`examples/siteproxy/`]
-* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/routes.json[`routes.json`]
-* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.json[`injects/wikipedia-plus.json`]
-* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.user.js[`injects/wikipedia-plus.user.js`]
-* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.html[`injects/wikipedia-plus.html`]
+The canonical running demo also lives in the source tree under
+`examples/siteproxy/`; this page publishes the documentation copy.
 
 The `.user.js` file is the canonical, userscript-manager-installable
 artifact. The `.html` file is its generated `<script>` wrapper, used by
@@ -49,7 +50,7 @@ the injection bundle.
       ]
     }
   },
-  "inject": "injects/wikipedia-plus.json",
+  "inject": "injects/bundle.json",
   "wildcard": {
     "lang": ["en", "fr", "de", "ja", "zh", "ru", "es", "it", "pt"]
   }

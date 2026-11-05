@@ -8,8 +8,8 @@ description: Copyable, schema-validated configurations.
 Most examples are real files under `examples/` in the product
 repository. The build validates them against the published JSON Schema;
 local examples are also checked with `gate-one -check`. The proxied-site
-example lives in the source repository because it ships a complete
-userscript, and its page links to the files.
+example is mirrored in the source repository, where its runnable demo
+lives.
 
 | Example | What it shows |
 |---|---|
@@ -43,7 +43,10 @@ The raw files are also served under `/examples/`:
   [`index.html`](/examples/account-panel/index.html)
 * [`examples/injectable-ux/routes.json`](/examples/injectable-ux/routes.json)
   and [`bundle.json`](/examples/injectable-ux/bundle.json)
+* [`examples/siteproxy/routes.json`](/examples/siteproxy/routes.json),
+  [`injects/bundle.json`](/examples/siteproxy/injects/bundle.json)
+  and [`injects/wikipedia-plus.user.js`](/examples/siteproxy/injects/wikipedia-plus.user.js)
 * [`examples/usage-events/routes.json`](/examples/usage-events/routes.json), [`audit.manifest.json`](/examples/usage-events/audit.manifest.json) and [`trust-store.json`](/examples/usage-events/trust-store.json)
 
-The proxied-site example is kept in the source repository:
-[`examples/siteproxy/`](https://github.com/clad-one/gate-one/tree/main/examples/siteproxy).
+The source repository keeps the canonical runnable copy under
+`examples/siteproxy/`.
