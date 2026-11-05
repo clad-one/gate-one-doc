@@ -24,7 +24,7 @@ userscript live.
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle, 403 banner and a nonce CSP. |
 | [Enhance a proxied site](siteproxy/) | An external site proxied through Gate One with an injected userscript. |
 | [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. |
-| [HTTP bridge](http-bridge/) | An `http-bridge` provider with custom identity headers, linked to the contract. |
+| [IAM + IdP bridge](http-bridge/) | An `http-bridge` provider returning identity and IAM facts, linked to the contract. |
 
 The raw files are also served under `/examples/`:
 

@@ -14,6 +14,13 @@ Gate One never sees the upstream protocol. It only asks the bridge
 whether the request is authenticated and, for MCP, whether the token
 carries the required scope.
 
+[IMPORTANT]
+====
+The bridge returns identity facts, not routing decisions. Gate One still
+enforces `auth`, `auth.identity` and MCP scope checks on every request.
+A bridge may return only `X-User-Id`, or also roles, scopes and claims.
+====
+
 ```mermaid
 sequenceDiagram
   autonumber

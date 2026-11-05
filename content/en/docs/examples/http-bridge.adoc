@@ -1,16 +1,30 @@
 ---
-title: HTTP bridge
-linkTitle: HTTP bridge
+title: IAM + IdP bridge
+linkTitle: IAM + IdP bridge
 weight: 45
-description: An http-bridge provider for a non-OIDC technology.
+description: An http-bridge provider returning identity and IAM facts while Gate One keeps policy enforcement.
 ---
 
-= HTTP bridge
+= IAM + IdP bridge
 
-This example connects Gate One to a service implementing the
-link:/docs/bridge-contract/[HTTP bridge contract]. The bridge can adapt
-SAML, LDAP, mTLS, API keys or a legacy session service; Gate One only
-sees `/auth`, `/auth/mcp` and `/health`.
+This example configures `authProvider.type: "http-bridge"` and points it
+at a service implementing the
+link:/docs/bridge-contract/[bridge contract]. The bridge can adapt
+SAML, LDAP, mTLS, API keys or a legacy session service;
+Gate One only sees `/auth`, `/auth/mcp` and `/health`.
+
+[IMPORTANT]
+====
+The bridge supplies identity and IAM facts (user, roles, scopes, claims),
+but **Gate One remains the policy enforcement point**. `auth`,
+`auth.identity` and MCP scope checks are still performed by Gate One on
+every request. The bridge never bypasses route policy.
+====
+
+The provider type remains `http-bridge`; `http` is its deprecated alias.
+The reference `auth-bridge` deployment is the IAM + IdP shape. A custom
+bridge may return only the authenticated user, in which case Gate One
+still enforces authentication but has no roles or scopes to check.
 
 == File
 
