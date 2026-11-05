@@ -32,8 +32,14 @@ domain keeps its own Gate One cookie; no cookie crosses the TLD boundary.
       "prefix": "cladone:auth:v1:"
     },
     "providers": [
-      {"id": "app-a", "loginBaseUrl": "https://login.app-a.com", "cookieDomain": "app-a.com"},
-      {"id": "app-b", "loginBaseUrl": "https://login.app-b.fr", "cookieDomain": "app-b.fr"}
+      {
+        "id": "app-a", "loginBaseUrl": "https://login.app-a.com",
+        "cookieDomain": "app-a.com", "defaultAppUrl": "https://app-a.com/"
+      },
+      {
+        "id": "app-b", "loginBaseUrl": "https://login.app-b.fr",
+        "cookieDomain": "app-b.fr", "defaultAppUrl": "https://app-b.fr/"
+      }
     ]
   }],
   "defaultAuthProvider": "app-a",

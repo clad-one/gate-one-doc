@@ -64,12 +64,14 @@ domain-specific fields are repeated in `providers[]`:
       {
         "id": "app-a",
         "loginBaseUrl": "https://login.app-a.com",
-        "cookieDomain": "app-a.com"
+        "cookieDomain": "app-a.com",
+        "defaultAppUrl": "https://app-a.com/"
       },
       {
         "id": "app-b",
         "loginBaseUrl": "https://login.app-b.fr",
-        "cookieDomain": "app-b.fr"
+        "cookieDomain": "app-b.fr",
+        "defaultAppUrl": "https://app-b.fr/"
       }
     ]
   }],
@@ -85,7 +87,8 @@ domain-specific fields are repeated in `providers[]`:
 ----
 
 `providers[]` only accepts `id`, `loginBaseUrl`, `loginUrl`,
-`cookieDomain`, `cookieName`, `redirectUrl`, `links` and `mcpAudience`.
+`cookieDomain`, `cookieName`, `redirectUrl`, `defaultAppUrl`, `links`
+and `mcpAudience`.
 A shared field such as `issuer`, `clientId` or `sessionStore` placed in a
 provider is rejected by the strict decoder.
 
@@ -104,6 +107,10 @@ refused on `app-b.fr` on the next request.
 
 Without shared state, `app-b.fr` can keep accepting its local cookie
 until it expires even after a logout on `app-a.com`.
+
+A provider's `defaultAppUrl` is used when someone visits that provider's
+login host root; it overrides the global `defaultAppUrl` and must point
+to a route of that provider (or a host under its `cookieDomain`).
 
 == IdP setup
 
