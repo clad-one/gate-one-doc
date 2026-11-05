@@ -90,8 +90,9 @@ immediate invalidation.
 * link:/docs/config/broker/[Broker configuration reference]
 * link:/docs/config/broker/#field-tenants-mappings[`tenants[].mappings`]
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * Not a full IAM suite: no admin UI, no multi-identity linking, no
   per-resource policy engine.
 * Route policy stays in Gate One.
@@ -99,3 +100,5 @@ immediate invalidation.
   One licence.
 * If you already run Keycloak or Zitadel, use it as the external IAM
   instead: link:/docs/features/multiple-idps/[Multiple identity providers].
+====
+

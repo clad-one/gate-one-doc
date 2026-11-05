@@ -141,11 +141,14 @@ gate-one -config routes.json
   appears on the next login;
 * a global logout revoking `sid` and `sub`.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * The broker is an issuer and user directory, not a per-resource policy
   engine; route rules stay in Gate One.
 * One external identity link per user; no account linking.
 * Upstream secrets stay in environment variables.
 * If you already run Keycloak/Zitadel, use them as the external IAM:
   link:../keycloak-google/[Keycloak with Google].
+====
+

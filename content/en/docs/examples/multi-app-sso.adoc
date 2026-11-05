@@ -77,8 +77,9 @@ provider. Point DNS (or your test hosts file) for `app.example.com`,
   session/revocation store is enough.
 * The second visit does not redirect to the identity provider.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * The applications must share a parent domain. `app.mycompany.com` and
   `app.other.com` cannot share a cookie.
 * On a single instance, a logout revokes the session for the next
@@ -86,6 +87,7 @@ provider. Point DNS (or your test hosts file) for `app.example.com`,
   link:../high-availability/[High Availability].
 * The applications can stay public: remove `"auth": {}` from one route.
   Only that route becomes anonymous.
+====
 
 == Next
 

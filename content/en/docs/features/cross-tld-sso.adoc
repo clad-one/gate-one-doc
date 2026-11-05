@@ -134,8 +134,9 @@ Both domains must use the **same issuer** and the same user identity
 account linking is not enough yet: Gate One's `subjectId` is per
 `(issuer, sub)`.
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * Zero **form**, not zero redirect: the IdP round-trip remains.
 * The IdP must reuse its own session; Gate One sends the provider's
   default prompt.
@@ -146,6 +147,7 @@ account linking is not enough yet: Gate One's `subjectId` is per
   IdP for the zero-form path, or add a broker session short-circuit.
 * Applications on the same TLD should use `cookieDomain` instead; it
   avoids the extra redirect and is simpler.
+====
 
 == Complete example
 

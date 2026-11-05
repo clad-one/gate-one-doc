@@ -84,9 +84,12 @@ Register both callbacks at the IdP:
 4. Expire/clear the IdP session; the next visit must show the normal
    login form, not a loop.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * This is zero **form**, not zero redirect.
 * Both domains must use the same issuer and the same user identity.
 * Use `cookieDomain` instead when the applications share a parent
   domain.
+====
+

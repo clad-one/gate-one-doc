@@ -89,8 +89,9 @@ curl -s https://mcp.example.com/mcp \
 The metadata advertises the resource, the scope and the authorization
 server. The token audience must match `resource`.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * A `jwt` provider never hosts a login page and never issues tokens.
 * `auth.when` is technical and evaluated before authentication;
   `auth.identity` is evaluated after it.
@@ -99,3 +100,5 @@ server. The token audience must match `resource`.
 * `mcp.operations` and `mcp.upstream` are mutually exclusive. Use
   `upstream` to proxy an existing MCP server instead of declaring REST
   operations.
+====
+

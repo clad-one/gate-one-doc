@@ -86,10 +86,13 @@ scripts. If the application already sends a CSP, prefer
 `csp.mode: "merge"`; if the application forbids inline scripts, use
 `hash` or `merge` and keep application scripts external.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * UI gating is a UX layer, not authorization. Keep server-side
   `auth.identity` rules for real rights.
 * The guard cannot intercept a request the browser never sent.
 * Injection and CSP are per route; do not enable `own: true` unless the
   configured policy is complete for the application.
+====
+

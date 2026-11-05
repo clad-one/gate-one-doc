@@ -70,8 +70,9 @@ per-resource policy engine, no admin UI, no multi-identity linking.
 In both patterns Gate One trusts one issuer and applies route policy
 locally; the difference is where user federation and administration live.
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * Gate One is not the IAM: it does not store users or assign rights.
 * With an external IAM, its roles/scopes must be present in the token
   claims configured for Gate One (`roleClaims`/`scopesClaim`).
@@ -79,6 +80,7 @@ locally; the difference is where user federation and administration live.
   not a general per-resource policy engine.
 * Authentication adapters remain under the Gate One licence; they are
   not third-party extension plugins.
+====
 
 == Configuration reference
 

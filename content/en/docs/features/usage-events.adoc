@@ -190,8 +190,9 @@ copies remain under the Gate One licence. A commercial plugin may
 declare `licenseFeature`; the host refuses to load it without that
 feature.
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * There is no public compile-time plugin API. Go `plugin` (`.so`) is
   not supported.
 * A plugin cannot add a pre-auth hook, register its own route, mutate
@@ -201,6 +202,7 @@ feature.
   assertion, separate UID, no secrets in the environment, egress
   allow-list.
 * Long-term retention is the plugin's policy, not the core's.
+====
 
 == Configuration reference
 

@@ -149,8 +149,9 @@ The guard uses classes and a nonced runtime `<style>`; it does not need
 Injected content must satisfy the policy. A nonce never applies to a
 `style` attribute.
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * Injection is a response transform, not a security boundary. The
   backend must still enforce its own authorization.
 * The guard cannot recover a request that the browser never sent (for
@@ -160,6 +161,7 @@ Injected content must satisfy the policy. A nonce never applies to a
   may need an application hook.
 * UI gating hides controls; it does not grant or revoke server-side
   rights. Combine it with `auth.identity`.
+====
 
 == Configuration reference
 

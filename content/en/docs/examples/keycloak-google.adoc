@@ -75,14 +75,16 @@ client redirect URI. Point `app.example.com`, `login.example.com` and
   Google.
 * `roleClaims` maps Keycloak roles/groups into Gate One's route policy.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * Google must be configured and tested in Keycloak first; Gate One cannot
   diagnose the upstream Google configuration.
 * Keycloak is now the IAM: user policy, groups and IdP federation live
   there.
 * If you do not want to run Keycloak, see
   link:../embedded-iam/[Embedded IAM].
+====
 
 == Next
 

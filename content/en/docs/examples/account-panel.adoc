@@ -106,14 +106,16 @@ The top-edge Gate One badge is absent. **Sign out** calls
 * after logout, the panel offers **Sign in** and the application stays
   usable.
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * The probe is display-only; server-side `auth.identity` remains the
   authorization boundary.
 * Account/services links and licence details are badge-specific and are
   not part of the probe. Define the links in your application.
 * A full-page reload after login is not required; `login()` resolves
   once the gateway session is active.
+====
 
 == See also
 

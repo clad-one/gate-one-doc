@@ -72,8 +72,9 @@ lifetime, or 30 days. It is never shorter than the session TTL.
   link:/docs/features/horizontal-scaling/[Horizontal scaling] for the
   shared-state requirement.
 
-== Limits
-
+[[limits]]
+[IMPORTANT]
+====
 * Gate One does not create users, passwords or refresh tokens; that is
   the identity provider's job (or the optional embedded IAM's).
 * A route can bind only one authentication provider. Multi-provider
@@ -82,6 +83,7 @@ lifetime, or 30 days. It is never shorter than the session TTL.
   provider settings are declared once.
 * Applications that need the raw access token must opt in; by default
   tokens are never forwarded.
+====
 
 == Configuration reference
 

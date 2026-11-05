@@ -116,11 +116,14 @@ unknown protected path to produce an `error` event.
 * `X-Gate-One-Subject` on the backend request: opaque, not an email;
 * `SIGHUP` reloads the config and the plugin registration.
 
-== Caveats
-
+[[caveats]]
+[NOTE]
+====
 * The placeholder artefact is not a runnable binary: it only lets the
   configuration validate. Use a real signed artefact for a deployment.
 * `request` and `error` cannot use `fsync: "always"`; use `window_ms`.
 * A plugin that stops acknowledging eventually triggers `onMaxLag`.
 * Long-term retention is the plugin's policy; the core only keeps what
   must be consumed.
+====
+
