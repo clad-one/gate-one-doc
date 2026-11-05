@@ -152,8 +152,9 @@ Injected content must satisfy the policy. A nonce never applies to a
 [[limits]]
 [IMPORTANT]
 ====
-* Injection is a response transform, not a security boundary. The
-  backend must still enforce its own authorization.
+* Injection is a response transform, not a security boundary. Use
+  `auth.identity` for route-level rights; the backend must still enforce
+  resource-level authorization.
 * The guard cannot recover a request that the browser never sent (for
   example a navigation blocked before the request).
 * A page that replaces its DOM can remove injected elements; the guard

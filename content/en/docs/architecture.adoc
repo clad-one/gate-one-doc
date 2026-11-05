@@ -130,8 +130,16 @@ claims and an opaque subject id. It can:
 * emit a strict CSP in `merge`, `hash` or `nonce` mode.
 
 The injected guard is class-based and runs after the gateway has decided
-authentication. It is a UX layer, not an authorization boundary: the
-backend must still enforce its own rights.
+authentication. It is a UX layer, not an authorization boundary: hiding a
+control does not grant or revoke rights.
+
+The authorization check itself is a first-class route setting. Configure
+`auth.identity` with the roles, scopes, claims or user that your backend
+expects, and Gate One returns 403 before forwarding a request that lacks
+them; MCP services get the equivalent scope check. This covers
+route-level rights validation. The backend still enforces its own
+resource-level permissions, because only it knows what a given record or
+action means.
 
 == Usage bus and plugins
 
