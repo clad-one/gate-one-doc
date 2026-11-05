@@ -17,14 +17,14 @@ adds a dark/light toggle and a reading-time badge.
 
 == Files
 
-* link:/examples/siteproxy/routes.json[`routes.json`]
-* link:/examples/siteproxy/injects/bundle.json[`injects/bundle.json`]
-* link:/examples/siteproxy/injects/wikipedia-plus.user.js[`injects/wikipedia-plus.user.js`]
-* link:/examples/siteproxy/injects/wikipedia-plus.html[`injects/wikipedia-plus.html`]
-* link:/examples/siteproxy/README.md[`README.md`]
+The full example lives in the source repository:
 
-The canonical running demo also lives in the source tree under
-`examples/siteproxy/`; this page publishes the documentation copy.
+* link:https://github.com/clad-one/gate-one/tree/main/examples/siteproxy[`examples/siteproxy/`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/routes.json[`routes.json`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/bundle.json[`injects/bundle.json`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.user.js[`injects/wikipedia-plus.user.js`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.html[`injects/wikipedia-plus.html`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/README.md[`README.md`]
 
 The `.user.js` file is the canonical, userscript-manager-installable
 artifact. The `.html` file is its generated `<script>` wrapper, used by
