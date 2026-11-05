@@ -1,6 +1,17 @@
 // Section-specific colors on the landing page.
 
-// Hero title: bold, with the Cladone mark to its left.
+// Top-left brand.
+.navbar-brand__logo img {
+  display: block;
+  height: 2rem;
+  width: auto;
+}
+
+.navbar-brand__name {
+  color: $cladone-green;
+}
+
+// Hero title, with the Cladone mark to its left.
 .td-cover-block h1.display-1 {
   color: #fff;
   font-weight: 400;
