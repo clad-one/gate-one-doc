@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gate-one.example.com/schemas/plugin-trust-store.schema.json",
+  "title": "Gate One plugin trust store",
+  "description": "Local allow-list for signed plugins. Provision it out-of-band (signed lock file, package manager, embedded key); it is never fetched from a plugin. Paths are supplied with usage.trustStore.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "keys"
+  ],
+  "properties": {
+    "keys": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Signing keys: key id -> raw Ed25519 public key, base64 (standard or raw URL encoding)."
+    },
+    "allowedNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Allowed plugin names. Exact names or glob patterns interpreted with path.Match (for example com.cladone.*)."
+    },
+    "allowedDependencies": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Allowed dependency digests: name -> sha256 digest."
+    },
+    "revokedDigests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Artefact digests refused even with a valid signature."
+    },
+    "allowAuth": {
+      "type": "boolean",
+      "description": "Allow manifests with kind=auth (high-trust modules). Default false."
+    },
+    "coreVersion": {
+      "type": "string",
+      "description": "Host API version, for example 1.5.0. Compared with the manifest hostAPI constraint."
+    }
+  }
+}
