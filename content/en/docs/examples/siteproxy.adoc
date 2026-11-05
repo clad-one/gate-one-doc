@@ -110,17 +110,20 @@ This example needs outbound internet access to `*.wikipedia.org`.
 * interlanguage links move between the proxified editions;
 * the route is public: there is no `auth` policy.
 
-== Caveats
+[[caveats]]
+WARNING: **CSP removal is a real weakening.** Only inject trusted code
+into a trusted origin; the userscript runs in the page context with the
+page's full origin.
 
-* **CSP removal is a real weakening.** Only inject trusted code into a
-  trusted origin; the userscript runs in the page context with the
-  page's full origin.
+[NOTE]
+====
 * The userscript must be free-licensed and vetted. The Wikipedia+
   script is MIT licensed and carries the original copyright notice.
 * Keep the generated `.html` in sync with the `.user.js`; edit the
   userscript, then regenerate the wrapper.
 * A `frontend: true` route also carries the Gate One guard; custom
   bundle entries start at `order` 30 (the guard is 10, the PWA is 20).
+====
 
 == See also
 

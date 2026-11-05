@@ -142,10 +142,12 @@ The badge's links are merged by the gateway from connector
 configuration. If the application must show the same links, keep the
 list in the application or expose them through a dedicated API.
 
-== Caveats
+[[caveats]]
+WARNING: The probe is **for display only**. It does not grant rights:
+keep `auth.identity` and backend checks as the security boundary.
 
-* The probe is **for display only**. It does not grant rights: keep
-  `auth.identity` and backend checks as the security boundary.
+[NOTE]
+====
 * Do not cache the probe. The Gate One PWA already excludes
   `/__gate-one/` from its cache.
 * Refresh when the panel opens and after login; the session can expire
@@ -153,8 +155,10 @@ list in the application or expose them through a dedicated API.
 * If the application has a CSP, its own panel script must satisfy that
   policy. Gate One's guard supports `csp.mode` `merge`, `hash` and
   `nonce`.
-* If you cannot modify the application, inject the panel as a bundle
-  instead; see link:/docs/features/injectable-ux/[Injectable UX].
+====
+
+TIP: If you cannot modify the application, inject the panel as a bundle
+instead; see link:/docs/features/injectable-ux/[Injectable UX].
 
 == Configuration reference
 

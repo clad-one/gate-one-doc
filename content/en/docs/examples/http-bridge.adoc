@@ -51,10 +51,16 @@ gate-one -config routes.json
 The bridge must be reachable at `baseUrl`, expose the contract endpoints,
 and return `200` plus identity headers for an authenticated session.
 
-== Caveats
-
+[[caveats]]
+[IMPORTANT]
+====
 * The bridge owns the session; Gate One does not create an RP cookie for
   this provider.
 * A `5xx` from the bridge is an outage (502), not a login failure.
+====
+
+[NOTE]
+====
 * Keep the bridge on the internal network.
 * The legacy type `http` is an alias of `http-bridge`.
+====
