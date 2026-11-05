@@ -31,7 +31,7 @@ function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...walk(full));
-    else if (/\.(md|markdown)$/i.test(entry.name)) out.push(full);
+    else if (/\.(md|markdown|adoc|asciidoc)$/i.test(entry.name)) out.push(full);
   }
   return out;
 }
@@ -41,7 +41,9 @@ async function main() {
   let files = 0;
   for (const file of walk(content)) {
     const text = fs.readFileSync(file, 'utf8');
-    const matches = [...text.matchAll(/```mermaid\n([\s\S]*?)```/g)];
+    const matches = /\.(adoc|asciidoc)$/i.test(file)
+      ? [...text.matchAll(/<pre class="mermaid">\n([\s\S]*?)<\/pre>/g)]
+      : [...text.matchAll(/```mermaid\n([\s\S]*?)```/g)];
     if (!matches.length) continue;
     files++;
     for (const [index, match] of matches.entries()) {

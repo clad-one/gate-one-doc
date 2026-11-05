@@ -4,7 +4,7 @@
     <div class="card h-100">
       <div class="card-body">
         <h2 class="card-title h5"><a href="{{ .url | default (printf "/docs/features/%s/" .slug) | relURL }}">{{ .title }}</a></h2>
-        <p class="card-text"><strong>Useful if you want to:</strong> {{ .usefulIf }}</p>
+        <p class="card-text"><strong>Useful if</strong> {{ .usefulIf }}</p>
         <p class="card-text text-body-secondary">{{ .summary }}</p>
         <p class="card-text">
           <a class="btn btn-sm btn-outline-primary" href="{{ printf "/docs/features/%s/" .slug | relURL }}">Feature</a>

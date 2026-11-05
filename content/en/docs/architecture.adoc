@@ -3,6 +3,7 @@ title: Architecture
 linkTitle: Architecture
 weight: 20
 description: How Gate One sits between the browser, the identity provider, the applications and the plugins.
+mermaid: true
 ---
 
 = Architecture
@@ -14,27 +15,22 @@ and deployment; it does not need an SDK.
 
 == Request path
 
-[source,text]
-----
-browser / API client
-        |
-        v
-+-------------------+        +---------------------+
-| Gate One          | -----> | OIDC / JWT / broker |
-| - route match     |        | identity provider   |
-| - auth + policy   |        +---------------------+
-| - usage admission |
-| - injection       |        +---------------------+
-| - proxy           | -----> | existing application|
-+-------------------+        +---------------------+
-        |
-        | subscribed events (HTTP/JSON)
-        v
-+-------------------+
-| out-of-process    |
-| plugin            |
-+-------------------+
-----
+++++
+<pre class="mermaid">
+flowchart TB
+  C["Browser / API client"] --> G
+  subgraph G["Gate One"]
+    direction TB
+    M["1. match route<br/>host + path"] --> D["2. reserve durable<br/>event space"]
+    D --> A["3. authenticate<br/>+ identity policy"]
+    A --> F["4. proxy, or<br/>401 / 403 / 502 / 503"]
+    F --> E["5. emit subscribed<br/>event after the response"]
+  end
+  G -->|"OIDC / JWT"| I["Identity provider<br/>or Broker"]
+  G -->|"proxied request"| AP["Existing application"]
+  G -.->|"HTTP/JSON event"| P["Out-of-process plugin"]
+</pre>
+++++
 
 The gateway does five things in order:
 
@@ -47,6 +43,29 @@ The gateway does five things in order:
 A failure at step 2 is a **503 before authentication**, so an event the
 operator declared durable is not lost. A failure at step 3 never reaches
 the backend.
+
+== Why run behind a reverse proxy
+
+Gate One protects applications as a reverse proxy, but it should itself
+sit behind a front reverse proxy or ingress controller in most
+deployments (Traefik, nginx, Caddy, a cloud load balancer):
+
+* Gate One listens on plain HTTP and does not manage certificates. The
+  ingress terminates TLS, renews certificates and applies HSTS.
+* One public entry point gives OIDC redirect URIs, cookie domains and MCP
+  metadata a stable URL that is independent of the container address.
+* The ingress load-balances and health-checks the Gate One replicas, so
+  the container port never has to be published.
+* WAF rules, rate limits, request-size limits and access logs stay in
+  front of Gate One instead of competing with its own route policy.
+* Only the ingress needs to know where Gate One runs; clients cannot
+  reach it directly.
+
+Gate One reads the incoming scheme, host and `X-Forwarded-*` headers when
+it rewrites backend redirects and computes rate-limit identities. The
+ingress must set `X-Forwarded-Proto`, `X-Forwarded-Host` and
+`X-Forwarded-For`. Because those headers are trusted from the immediate
+hop, Gate One must not be reachable directly by clients.
 
 == Provider types
 
@@ -142,24 +161,17 @@ link:/docs/config/plugin-manifest/[the manifest reference].
 
 A production deployment looks like this:
 
-[source,text]
-----
-              +------------------+
-              | Redis Sentinel   |
-              | session/revoke   |
-              +------------------+
-                       |
-        +--------------+--------------+
-        |                             |
-  +-----------+                 +-----------+
-  | Gate One  |                 | Gate One  |
-  | replica 1 |                 | replica 2 |
-  +-----------+                 +-----------+
-        |                             |
-        +--------------+--------------+
-                       |
-                 application
-----
+++++
+<pre class="mermaid">
+flowchart TB
+  LB["Load balancer / ingress<br/>TLS termination"] --> R1["Gate One<br/>replica 1"]
+  LB --> R2["Gate One<br/>replica 2"]
+  R1 --> RS[("Redis Sentinel<br/>sessions + revocation")]
+  R2 --> RS
+  R1 --> AP["Existing application"]
+  R2 --> AP
+</pre>
+++++
 
 * **Two replicas** behind a load balancer; no published container port.
 * **Shared state** in Redis (Sentinel + TLS + ACL) with a versioned key
