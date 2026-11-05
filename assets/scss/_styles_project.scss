@@ -200,3 +200,81 @@
   padding: 0;
   background: transparent;
 }
+
+// Documentation navigation: subtle brand scrollbar and a large-view
+// hamburger that collapses the left tree.
+.td-sidebar-nav,
+.td-sidebar-toc {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 124, 89, .5) transparent;
+}
+
+.td-sidebar-nav::-webkit-scrollbar,
+.td-sidebar-toc::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.td-sidebar-nav::-webkit-scrollbar-track,
+.td-sidebar-toc::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.td-sidebar-nav::-webkit-scrollbar-thumb,
+.td-sidebar-toc::-webkit-scrollbar-thumb {
+  background: rgba(74, 124, 89, .45);
+  border-radius: 999px;
+}
+
+.td-sidebar-nav::-webkit-scrollbar-thumb:hover,
+.td-sidebar-toc::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 124, 89, .65);
+}
+
+@media (min-width: 768px) {
+  .td-sidebar__toggle {
+    display: inline-block !important;
+  }
+
+  .td-sidebar {
+    transition: flex-basis .2s ease, width .2s ease, max-width .2s ease;
+  }
+
+  .td-sidebar.td-sidebar--collapsed {
+    flex: 0 0 3.5rem;
+    width: 3.5rem;
+    max-width: 3.5rem;
+    padding-right: 0;
+  }
+
+  .td-sidebar--collapsed .td-sidebar__inner {
+    flex: 1 1 auto;
+    width: 100%;
+    position: sticky;
+    top: 4rem;
+  }
+
+  .td-sidebar--collapsed .td-sidebar__search {
+    justify-content: center;
+    margin: 0;
+  }
+
+  .td-sidebar--collapsed .td-sidebar__search .td-search {
+    display: none;
+  }
+
+  .td-sidebar--collapsed .td-sidebar__toggle {
+    margin: .5rem 0;
+  }
+
+  .td-sidebar--collapsed .td-sidebar-nav {
+    display: none !important;
+  }
+
+  .td-sidebar--collapsed ~ main {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+  }
+}
