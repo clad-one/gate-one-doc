@@ -54,7 +54,6 @@ summaryLength = 40
     backend = "html5"
     extensions = []
     [markup.asciidoc.attributes]
-      "source-highlighter" = "highlight.js"
       "toc" = "left"
       "sectanchors" = "true"
       "idprefix" = ""
@@ -63,6 +62,7 @@ summaryLength = 40
 [params]
   copyright = "Cladone-IT"
   version = "1.0"
+  prism_syntax_highlighting = true
   [params.ui]
     navbar_logo = false
     breadcrumb_disable = false

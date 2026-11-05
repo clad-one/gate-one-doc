@@ -11,3 +11,10 @@
     <script defer src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" crossorigin="anonymous"></script>
   {{ end -}}
 {{ end -}}
+
+{{/* Prism loads before this hook (Docsy scripts.html). The extra grammars
+  must be registered before DOMContentLoaded, when Prism runs highlightAll. */}}
+{{ if .Site.Params.prism_syntax_highlighting -}}
+  <script src="{{ "js/prism-json.min.js" | relURL }}"></script>
+  <script src="{{ "js/prism-http.min.js" | relURL }}"></script>
+{{ end -}}
