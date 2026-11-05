@@ -117,6 +117,22 @@ closing a `details`, resetting a form or returning a value control to
 its OFF value never opens a login. This avoids trapping anonymous users
 in an action they cannot complete.
 
+== Own account UI
+
+If the application owns its navigation, omit `userBadge` and render the
+session in the application's own burger menu or side panel. Gate One
+still injects the guard and exposes the session probe; the account
+markup stays in the application. See
+link:/docs/features/account-panel/[Bring your own account panel] and the
+link:/docs/examples/account-panel/[account panel example].
+
+== External sites
+
+A route with `upstream` can proxy an external site and inject a
+userscript into every HTML page. The browser installs no extension and
+the upstream site contains no Gate One code. See
+link:/docs/examples/siteproxy/[Enhance a proxied site].
+
 == CSP is the real constraint
 
 The guard uses classes and a nonced runtime `<style>`; it does not need

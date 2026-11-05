@@ -5,10 +5,11 @@ weight: 40
 description: Copyable, schema-validated configurations.
 ---
 
-Every example in this section is a real file under
-`examples/` in the product repository. The build validates it against
-the published JSON Schema; local examples are also checked with
-`gate-one -check`.
+Most examples are real files under `examples/` in the product
+repository. The build validates them against the published JSON Schema;
+local examples are also checked with `gate-one -check`. The proxied-site
+example lives in the source repository because it ships a complete
+userscript, and its page links to the files.
 
 | Example | What it shows |
 |---|---|
@@ -19,7 +20,9 @@ the published JSON Schema; local examples are also checked with
 | [Embedded IAM](embedded-iam/) | `cladone-auth` federates Google, maps claims and stores local/federated user grants. |
 | [High Availability](high-availability/) | Several Gate One replicas behind a load balancer with shared Redis state. |
 | [APIs and MCP](api-mcp/) | A browser provider, a JWT provider, an identity-conditioned API route and an MCP service. |
+| [Own account panel](account-panel/) | The application's own burger panel reads the session instead of the built-in user badge. |
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle, 403 banner and a nonce CSP. |
+| [Enhance a proxied site](siteproxy/) | An external site proxied through Gate One with an injected userscript. |
 | [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. |
 | [HTTP bridge](http-bridge/) | An `http-bridge` provider with custom identity headers, linked to the contract. |
 
@@ -34,6 +37,13 @@ The raw files are also served under `/examples/`:
 * [`examples/high-availability/routes.json`](/examples/high-availability/routes.json)
 * [`examples/protect-api-mcp/routes.json`](/examples/protect-api-mcp/routes.json)
 * [`examples/http-bridge/routes.json`](/examples/http-bridge/routes.json)
+* [`examples/account-panel/routes.json`](/examples/account-panel/routes.json),
+  [`panel.js`](/examples/account-panel/panel.js),
+  [`panel.css`](/examples/account-panel/panel.css) and
+  [`index.html`](/examples/account-panel/index.html)
 * [`examples/injectable-ux/routes.json`](/examples/injectable-ux/routes.json)
   and [`bundle.json`](/examples/injectable-ux/bundle.json)
 * [`examples/usage-events/routes.json`](/examples/usage-events/routes.json), [`audit.manifest.json`](/examples/usage-events/audit.manifest.json) and [`trust-store.json`](/examples/usage-events/trust-store.json)
+
+The proxied-site example is kept in the source repository:
+[`examples/siteproxy/`](https://github.com/clad-one/gate-one/tree/main/examples/siteproxy).

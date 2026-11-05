@@ -1,0 +1,163 @@
+---
+title: Bring your own account panel
+linkTitle: Own account panel
+weight: 45
+description: Use the Gate One session in your application's own burger menu instead of the built-in user badge.
+---
+
+= Bring your own account panel
+
+== Useful if you want to…
+
+* remove the top-edge user badge from an application you control;
+* show the signed-in user, roles, scopes or claims inside your own
+  burger menu or side panel;
+* keep Gate One's login guard, SSO session, logout and route policy;
+* keep the account UI consistent with the rest of the application.
+
+Gate One does not need to render the account UI. The built-in badge is
+only a client of the same session probe your application can read.
+
+== Route configuration
+
+Omit `userBadge` from the route. Keep `frontend: true`:
+
+[source,json]
+----
+{
+  "host": "app.example.com",
+  "path": "/*",
+  "frontend": true,
+  "backend": "http://app:8080",
+  "auth": {}
+}
+----
+
+Do not set `userBadge: {}`: an empty object is still a badge policy.
+Omitting the key disables the badge while the guard, the login flow and
+the session API remain active.
+
+== Read the session
+
+The gateway exposes a same-origin probe:
+
+[source,text]
+----
+GET /__gate-one/auth
+200 {"roles": [...], "scopes": [...], "claims": {...}}
+401 when anonymous
+----
+
+In the application:
+
+[source,javascript]
+----
+const res = await fetch("/__gate-one/auth", {
+  cache: "no-store",
+  credentials: "same-origin",
+});
+const session = res.ok ? await res.json() : null;
+
+if (session) {
+  const name = session.claims.preferred_username
+    || session.claims.email
+    || "Account";
+  renderAccount({ name, roles: session.roles, scopes: session.scopes });
+}
+----
+
+The public JavaScript API is also available on `frontend: true` routes:
+
+[source,javascript]
+----
+await window.__cladoneAuth.refresh({ quiet: true });
+const session = await window.__cladoneAuth.session();
+// {roles, scopes, claims} or null
+----
+
+`refresh()` is important: a route with no `userBadge` and no
+`data-gtw-*` markup does not probe automatically, so `session()` alone
+can wait indefinitely. `refresh({quiet:true})` forces the probe without
+showing the reconnection banner.
+
+== Render the panel
+
+The application owns the markup. Typical content:
+
+* `session.claims.preferred_username` and `session.claims.email`;
+* `session.roles` and `session.scopes` as chips or lists;
+* the claim fields your application actually needs;
+* a **Sign in** button and a **Sign out** button.
+
+Use `textContent`, not `innerHTML`, for claim values: they come from the
+identity provider.
+
+The step-by-step version is
+link:/docs/examples/account-panel/[Own account panel]. The complete
+browser files are:
+
+* link:/examples/account-panel/index.html[`index.html`]
+* link:/examples/account-panel/panel.js[`panel.js`]
+* link:/examples/account-panel/panel.css[`panel.css`]
+* link:/examples/account-panel/routes.json[`routes.json`]
+
+== Login and logout
+
+[source,javascript]
+----
+document.querySelector("#account-login").onclick = () => {
+  window.__cladoneAuth.login(); // no-reload login tab
+};
+
+document.querySelector("#account-logout").onclick = () => {
+  window.__cladoneAuth.logout(); // OIDC end_session navigation
+};
+----
+
+Call `login()` from a user gesture, such as the burger menu's sign-in
+button. It resolves `true` when the session is active and `false` when
+the user abandons the login.
+
+== What the badge shows, and what the probe provides
+
+[cols="2,1",options="header"]
+|===
+| Badge content | Available from the probe
+
+| username, email, selected claims
+| yes, `session.claims`
+| roles
+| yes, `session.roles`
+| scopes
+| yes, `session.scopes`
+| logout
+| yes, `__cladoneAuth.logout()`
+| account/services/app links
+| no — define them in the application
+| licence state and details
+| no — badge-specific
+|===
+
+The badge's links are merged by the gateway from connector
+configuration. If the application must show the same links, keep the
+list in the application or expose them through a dedicated API.
+
+== Caveats
+
+* The probe is **for display only**. It does not grant rights: keep
+  `auth.identity` and backend checks as the security boundary.
+* Do not cache the probe. The Gate One PWA already excludes
+  `/__gate-one/` from its cache.
+* Refresh when the panel opens and after login; the session can expire
+  while the page stays loaded.
+* If the application has a CSP, its own panel script must satisfy that
+  policy. Gate One's guard supports `csp.mode` `merge`, `hash` and
+  `nonce`.
+* If you cannot modify the application, inject the panel as a bundle
+  instead; see link:/docs/features/injectable-ux/[Injectable UX].
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-routes-userBadge[`routes[].userBadge`]
+* link:/docs/config/gate-one/#field-routes-authGuard[`routes[].authGuard`]
+* link:/docs/config/gate-one/#field-routes-inject[`routes[].inject`]

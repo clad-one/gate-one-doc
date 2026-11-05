@@ -1,0 +1,122 @@
+---
+title: Own account panel
+linkTitle: Own account panel
+weight: 42
+description: Replace the built-in user badge with a burger side panel owned by the application.
+---
+
+= Own account panel
+
+This example keeps Gate One's frontend guard but removes the built-in
+user badge. The application provides a burger button and a side panel,
+then reads the session from Gate One.
+
+== Files
+
+* link:/examples/account-panel/index.html[`index.html`] — application page and panel markup
+* link:/examples/account-panel/panel.js[`panel.js`] — session, login and logout
+* link:/examples/account-panel/panel.css[`panel.css`] — panel styling
+* link:/examples/account-panel/routes.json[`routes.json`] — route without `userBadge`
+* link:/examples/account-panel/README.md[`README.md`] — run notes
+
+== Route
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "dev",
+    "loginBaseUrl": "http://login.demo.localhost:3000",
+    "cookieDomain": "demo.localhost"
+  },
+  "routes": [{
+    "host": "app.demo.localhost",
+    "path": "/*",
+    "frontend": true,
+    "backend": "http://127.0.0.1:8080",
+    "auth": {}
+  }]
+}
+----
+
+There is no `userBadge` key. `frontend: true` keeps the guard, the login
+flow and `window.__cladoneAuth` available.
+
+== Read the session
+
+[source,javascript]
+----
+await window.__cladoneAuth.refresh({ quiet: true });
+const session = await window.__cladoneAuth.session();
+
+const name = session.claims.preferred_username
+  || session.claims.email
+  || "Account";
+const roles = session.roles;
+const scopes = session.scopes;
+----
+
+`refresh()` forces the probe because this route has neither a badge nor
+`data-gtw-*` markup. `session()` alone would wait for a probe that the
+guard never starts.
+
+The direct probe is equivalent:
+
+[source,javascript]
+----
+const res = await fetch("/__gate-one/auth", {
+  cache: "no-store",
+  credentials: "same-origin",
+});
+const session = res.ok ? await res.json() : null;
+----
+
+== Run it
+
+[source,bash]
+----
+# terminal 1: the application
+cd examples/account-panel
+python3 -m http.server 8080
+
+# terminal 2: Gate One
+gate-one -check -config examples/account-panel/routes.json
+gate-one -config examples/account-panel/routes.json
+----
+
+Open `http://app.demo.localhost:3000/` and sign in with the development
+provider's default users:
+
+[cols="1,1",options="header"]
+|===
+| User | Password
+| `alice` | `alice`
+| `bob` | `bob`
+|===
+
+Open the burger panel: it shows the username, email, roles and scopes.
+The top-edge Gate One badge is absent. **Sign out** calls
+`window.__cladoneAuth.logout()`.
+
+== What to observe
+
+* the route still redirects anonymous visitors to the login page;
+* the panel is rendered by the application, not by Gate One;
+* roles and scopes come from the same session the route policy uses;
+* after logout, the panel offers **Sign in** and the application stays
+  usable.
+
+== Limits
+
+* The probe is display-only; server-side `auth.identity` remains the
+  authorization boundary.
+* Account/services links and licence details are badge-specific and are
+  not part of the probe. Define the links in your application.
+* A full-page reload after login is not required; `login()` resolves
+  once the gateway session is active.
+
+== See also
+
+* link:/docs/features/account-panel/[Bring your own account panel]
+* link:/docs/features/injectable-ux/[Injectable UX]
+* link:/docs/config/gate-one/#field-routes-userBadge[`routes[].userBadge`]

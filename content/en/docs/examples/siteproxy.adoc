@@ -1,0 +1,128 @@
+---
+title: Enhance a proxied site
+linkTitle: Proxied site
+weight: 55
+description: Proxy an external site through Gate One and inject a userscript into every HTML page.
+---
+
+= Enhance a proxied site
+
+This example puts Gate One in front of a real external site and injects
+a userscript into every HTML page. The browser installs no extension and
+the upstream site contains no Gate One code.
+
+The example is the Wikipedia+ demo, moved from the deprecated
+`gate-one` repository. It proxies the language editions of Wikipedia and
+adds a dark/light toggle and a reading-time badge.
+
+== Files
+
+The full example lives in the source repository:
+
+* link:https://github.com/clad-one/gate-one/tree/main/examples/siteproxy[`examples/siteproxy/`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/routes.json[`routes.json`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.json[`injects/wikipedia-plus.json`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.user.js[`injects/wikipedia-plus.user.js`]
+* link:https://github.com/clad-one/gate-one/blob/main/examples/siteproxy/injects/wikipedia-plus.html[`injects/wikipedia-plus.html`]
+
+The `.user.js` file is the canonical, userscript-manager-installable
+artifact. The `.html` file is its generated `<script>` wrapper, used by
+the injection bundle.
+
+== Route
+
+[source,json]
+----
+{
+  "host": "{lang}.wikipedia.demo.localhost",
+  "path": "/*",
+  "backend": "https://{lang}.wikipedia.org",
+  "frontend": true,
+  "upstream": {
+    "host": true,
+    "rewriteRedirects": true,
+    "rewriteBody": { "enabled": true },
+    "responseHeaders": {
+      "remove": [
+        "Content-Security-Policy",
+        "Content-Security-Policy-Report-Only"
+      ]
+    }
+  },
+  "inject": "injects/wikipedia-plus.json",
+  "wildcard": {
+    "lang": ["en", "fr", "de", "ja", "zh", "ru", "es", "it", "pt"]
+  }
+}
+----
+
+The full file lists 29 language editions. The wildcard expands one route
+into one public host per language and compiles the cross-edition
+rewrite map.
+
+* `upstream.host: true` sends the origin its own Host header.
+* `rewriteRedirects` and `rewriteBody` keep the browser behind Gate One.
+* `responseHeaders.remove` removes the origin CSP so the injected script
+  can run. Only do this for a trusted origin and trusted injected code.
+* `inject` points at the bundle; it is relative to `routes.json`.
+* `wildcard.lang` is the allow-list of language labels. A label outside
+  this list has no route.
+
+The bundle is deliberately small:
+
+[source,json]
+----
+{
+  "injects": [{
+    "name": "wikipedia-plus",
+    "target": "head",
+    "order": 30,
+    "file": "./wikipedia-plus.html"
+  }]
+}
+----
+
+The long userscript is not embedded in this page; it lives in the
+example directory.
+
+== Run it
+
+[source,bash]
+----
+cd gate-one-src
+./bin/gate-one -check -config examples/siteproxy/routes.json
+./bin/gate-one -config examples/siteproxy/routes.json
+----
+
+Point the public hosts at the gateway, then open:
+
+```text
+http://en.wikipedia.demo.localhost:3000/wiki/Cat
+```
+
+This example needs outbound internet access to `*.wikipedia.org`.
+
+== What to observe
+
+* the page is served from the real Wikipedia origin, through Gate One;
+* the Wikipedia+ panel appears even though the browser has no extension;
+* interlanguage links move between the proxified editions;
+* the route is public: there is no `auth` policy.
+
+== Caveats
+
+* **CSP removal is a real weakening.** Only inject trusted code into a
+  trusted origin; the userscript runs in the page context with the
+  page's full origin.
+* The userscript must be free-licensed and vetted. The Wikipedia+
+  script is MIT licensed and carries the original copyright notice.
+* Keep the generated `.html` in sync with the `.user.js`; edit the
+  userscript, then regenerate the wrapper.
+* A `frontend: true` route also carries the Gate One guard; custom
+  bundle entries start at `order` 30 (the guard is 10, the PWA is 20).
+
+== See also
+
+* link:/docs/features/injectable-ux/[Injectable UX]
+* link:/docs/config/gate-one/#field-routes-inject[`routes[].inject`]
+* link:/docs/config/gate-one/#field-routes-upstream[`routes[].upstream`]

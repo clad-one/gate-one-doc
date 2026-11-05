@@ -101,6 +101,21 @@
     - label: csp
       url: /docs/config/gate-one/#field-routes-csp
   plugin: false
+- slug: account-panel
+  title: Bring your own account panel
+  linkTitle: Own account panel
+  weight: 45
+  usefulIf: you own the application UI and want the account details in your own burger menu.
+  summary: Read the Gate One session probe and render the user, roles, scopes and claims without the built-in badge.
+  example: /docs/examples/account-panel/
+  configRefs:
+    - label: userBadge
+      url: /docs/config/gate-one/#field-routes-userBadge
+    - label: authGuard
+      url: /docs/config/gate-one/#field-routes-authGuard
+    - label: inject
+      url: /docs/config/gate-one/#field-routes-inject
+  plugin: false
 - slug: usage-events
   title: Usage events and plugins
   linkTitle: Usage events
