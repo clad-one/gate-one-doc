@@ -60,12 +60,14 @@ per-resource policy engine, no admin UI, no multi-identity linking.
 
 == Choosing
 
-| If you… | Use |
-|---|---|
-| Already run Keycloak, Zitadel, Entra or Auth0 | that IAM as the single OIDC issuer |
-| Want federation without another IAM service | `cladone-auth` embedded IAM |
-| Have only one IdP | direct `oidc`, no IAM needed |
-| Need full user lifecycle, admin console and enterprise policies | an external IAM such as Keycloak or Zitadel |
+[cols="2,1",options="header"]
+|===
+| If you… | Use
+| Already run Keycloak, Zitadel, Entra or Auth0 | that IAM as the single OIDC issuer
+| Want federation without another IAM service | `cladone-auth` embedded IAM
+| Have only one IdP | direct `oidc`, no IAM needed
+| Need full user lifecycle, admin console and enterprise policies | an external IAM such as Keycloak or Zitadel
+|===
 
 In both patterns Gate One trusts one issuer and applies route policy
 locally; the difference is where user federation and administration live.
