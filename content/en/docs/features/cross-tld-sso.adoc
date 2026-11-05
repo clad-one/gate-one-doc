@@ -112,10 +112,15 @@ Register every callback:
 * `https://login.app-a.com/auth/callback`
 * `https://login.app-b.fr/auth/callback`
 
-If you use back-channel logout, register both:
+If you use back-channel logout:
 
-* `https://login.app-a.com/backchannel-logout`
-* `https://login.app-b.fr/backchannel-logout`
+* if the IdP allows one URL per client, point it at **one** login host
+  and keep the same issuer and Redis revocation prefix on every
+  provider. The receiving Gate One instance revokes the session in the
+  shared store; the other domain checks that store on the next request;
+* if the IdP supports one URL per client only and the stores are not
+  shared, this single URL cannot cover both domains: use a second
+  client or a group-level subject revocation instead.
 
 Both domains must use the **same issuer** and the same user identity
 (`issuer` + `sub`). If you use different IdPs per domain, the broker's

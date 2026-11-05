@@ -9,10 +9,12 @@ Register both callbacks at the IdP:
 - `https://login.app-a.com/auth/callback`
 - `https://login.app-b.fr/auth/callback`
 
-For a global logout, also register both back-channel logout URLs:
-
-- `https://login.app-a.com/backchannel-logout`
-- `https://login.app-b.fr/backchannel-logout`
+For back-channel logout, many IdPs allow only one URL per client. In
+that case point it at one login host and keep the same issuer and Redis
+revocation prefix on both providers: the receiving Gate One instance
+revokes the session in the shared store, and the other domain checks it
+on the next request. If you have separate stores/clients, register one
+URL per client instead.
 
 The route body is declared once with `hosts[]`; Gate One expands it and
 binds each concrete host to the provider whose `cookieDomain` covers it.
