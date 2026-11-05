@@ -1,0 +1,8 @@
+{{- $type := .Get "type" | default "note" -}}
+{{- $title := .Get "title" | default (title $type) -}}
+<div class="admonitionblock {{ $type }}">
+<table><tbody><tr>
+<td class="icon"><div class="title">{{ $title }}</div></td>
+<td class="content">{{ .Inner | markdownify }}</td>
+</tr></tbody></table>
+</div>
