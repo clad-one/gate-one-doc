@@ -278,3 +278,72 @@
     min-width: 0;
   }
 }
+
+// Mermaid diagrams: keep the inline SVG readable and allow a click/Enter
+// to open the same diagram in a larger overlay.
+.mermaid {
+  overflow-x: auto;
+}
+
+.mermaid-zoomable {
+  cursor: zoom-in;
+}
+
+.mermaid-zoomable:focus-visible {
+  outline: 2px solid $cladone-green;
+  outline-offset: .25rem;
+}
+
+html.mermaid-zoom-open {
+  overflow: hidden;
+}
+
+.mermaid-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(15, 20, 18, .86);
+}
+
+.mermaid-zoom-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 96vw;
+  max-height: 92vh;
+  padding: 1rem;
+  overflow: auto;
+  border-radius: .5rem;
+  background: #fff;
+}
+
+.mermaid-zoom-content svg {
+  width: auto;
+  height: auto;
+  max-width: 94vw;
+  max-height: 90vh;
+}
+
+.mermaid-zoom-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.mermaid-zoom-close:hover,
+.mermaid-zoom-close:focus-visible {
+  background: rgba(255, 255, 255, .22);
+}

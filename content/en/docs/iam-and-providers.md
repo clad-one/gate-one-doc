@@ -29,7 +29,7 @@ Gate One connects to the IAM, and the IAM configures the IdPs it trusts.
 ## Who configures whom
 
 ```mermaid
-flowchart LR
+flowchart TB
   ADMIN["Platform admin"] -->|"tenants, roles, audiences"| IAM["IAM / authorization<br/>cladone-auth (optional)<br/>or Keycloak / Entra / Auth0"]
   IAM -->|"tenants.upstreams"| GOOGLE["Google<br/>IdP"]
   IAM --> MICROSOFT["Microsoft<br/>IdP"]
@@ -122,6 +122,25 @@ There is **no `grpc-bridge` provider type today**. The gRPC binding is
 planned for the broker-side identity adapters, not for `authProvider`.
 If it becomes useful, it will be a new type rather than a silent change
 to `http-bridge`.
+
+### Broker, bridge and token broker
+
+These names are easy to confuse:
+
+| Name | What it is | Gate One talks to it via |
+|---|---|---|
+| `cladone-auth` **Broker** | Optional embedded IAM and OIDC issuer: IdP federation, users, claims, grants and tokens | `authProvider.type: "oidc"` |
+| **`http-bridge`** | Provider type for a service that verifies requests and returns identity/IAM facts | `authProvider.type: "http-bridge"` |
+| **auth-bridge** | Reference implementation of the `http-bridge` contract, often in front of Keycloak | `authProvider.type: "http-bridge"` |
+| **`tokenBroker`** | Internal per-user credential service used by `upstream.delegated` | Internal API, not an `authProvider` |
+
+The Broker does **not** implement the HTTP bridge contract. It speaks
+OIDC and issues tokens; Gate One is the OIDC relying party. The bridge
+contract is a request-verification contract and the bridge owns the
+session for that provider type.
+
+See [Embedded IAM](/docs/features/embedded-iam/) for the Broker and
+[HTTP bridge contract](/docs/bridge-contract/) for the bridge.
 
 ### `dev`
 

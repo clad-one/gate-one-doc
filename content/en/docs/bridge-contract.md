@@ -14,12 +14,11 @@ Gate One never sees the upstream protocol. It only asks the bridge
 whether the request is authenticated and, for MCP, whether the token
 carries the required scope.
 
-[IMPORTANT]
-====
+{{% alert title="Important" color="warning" %}}
 The bridge returns identity facts, not routing decisions. Gate One still
 enforces `auth`, `auth.identity` and MCP scope checks on every request.
 A bridge may return only `X-User-Id`, or also roles, scopes and claims.
-====
+{{% /alert %}}
 
 ```mermaid
 sequenceDiagram
@@ -215,9 +214,12 @@ Configure:
 
 * It is not an OIDC/OAuth discovery endpoint: use `type: "oidc"` for
   that.
-* It is not the broker's identity-adapter contract. The broker has a
-  separate contract for upstream protocols (OIDC today; SAML, LDAP,
-  mTLS and API key later). `http-bridge` is the Gate One-side bridge for
-  a request-verification service.
+* It is not implemented by the `cladone-auth` **Broker**. The Broker is an
+  OIDC issuer/IAM and Gate One connects to it with `type: "oidc"`; it
+  does not expose `/auth`, `/auth/mcp` or `/health`. **auth-bridge** is
+  the reference implementation of this request-verification contract.
+* It is not the `tokenBroker` block. That service supplies per-user
+  upstream credentials for `upstream.delegated`; it is unrelated to
+  authentication provider selection.
 * It is not a gRPC contract. No `grpc-bridge` type exists today; the
   gRPC binding is planned for broker-side identity adapters.

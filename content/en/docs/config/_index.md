@@ -10,7 +10,12 @@ These pages are generated from the JSON Schemas in `schemas/` by
 `npm run docs`; the build fails on a stale diff.
 
 * [Gate One configuration](gate-one/) — `api-routes.json` (`authProvider.type`: `dev`, `http-bridge`, `oidc`, `jwt`)
-* [Broker configuration](broker/) — `cladone-auth`
+* [Broker configuration](broker/) — `cladone-auth` (optional embedded IAM/OIDC issuer)
+
+> **Broker ≠ bridge.** `cladone-auth` is an OIDC issuer/IAM, configured
+> separately and reached through `authProvider.type: "oidc"`. It does not
+> implement the `http-bridge` contract. The `tokenBroker` field is the
+> unrelated per-user credential service used by `upstream.delegated`.
 * [Plugin manifest](plugin-manifest/)
 * [Plugin trust store](plugin-trust-store/)
 * [Usage event](usage-event/)
