@@ -1,0 +1,62 @@
+{
+  "ssoGroups": [
+    {
+      "id": "acme",
+      "type": "oidc",
+      "issuer": "https://idp.example.com/realms/acme",
+      "clientId": "gate-one",
+      "clientSecretEnv": "OIDC_CLIENT_SECRET",
+      "scopes": [
+        "openid",
+        "profile",
+        "email"
+      ],
+      "roleClaims": [
+        "roles"
+      ],
+      "sessionKeyEnv": "OIDC_SESSION_KEY",
+      "sessionStore": {
+        "type": "redis",
+        "url": "redis://redis:6379/0",
+        "passwordEnv": "REDIS_PASSWORD",
+        "prefix": "cladone:auth:v1:"
+      },
+      "backchannelLogout": true,
+      "providers": [
+        {
+          "id": "app-a",
+          "loginBaseUrl": "https://login.app-a.com",
+          "cookieDomain": "app-a.com",
+          "defaultAppUrl": "https://app-a.com/"
+        },
+        {
+          "id": "app-b",
+          "loginBaseUrl": "https://login.app-b.fr",
+          "cookieDomain": "app-b.fr",
+          "defaultAppUrl": "https://app-b.fr/"
+        }
+      ]
+    }
+  ],
+  "defaultAuthProvider": "app-a",
+  "routes": [
+    {
+      "hosts": [
+        "app-a.com",
+        "app-b.fr"
+      ],
+      "path": "/*",
+      "frontend": true,
+      "backend": "http://app:8080",
+      "auth": {},
+      "userBadge": {
+        "position": "right",
+        "claims": [
+          "preferred_username",
+          "email"
+        ],
+        "logoutLabel": "Sign out"
+      }
+    }
+  ]
+}

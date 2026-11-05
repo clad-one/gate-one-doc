@@ -1,0 +1,1097 @@
+<!doctype html><html itemscope itemtype=http://schema.org/WebPage lang=en class=no-js><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=robots content="index, follow"><title>Broker configuration | Gate One</title><meta name=description content="Generated from schemas/broker.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The optional cladone-auth broker configuration. Secrets are read from the environment; a *Env field names the variable.
+Fields Field Type Required Description publicUrl
+string
+yes
+External origin of the broker, without a trailing slash (for example https://auth.example.com).
+listen
+string
+no
+Default listen address for cmd/cladone-auth (for example :8081).
+sessionCookieName
+string
+no
+Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+tenants
+array of object
+yes
+Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.
+redis
+object
+no
+Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+smtp
+object
+no
+Outbound mail relay for local-account verification emails.
+tenants Field Type Required Description id
+string
+yes
+Tenant identifier; also the /t/{tenant} path segment and default audience. Minimum length: 1.
+clientId
+string
+yes
+Gate One OIDC client id registered with this tenant. Minimum length: 1.
+clientSecret
+string
+no
+Inline client secret. Prefer clientSecretEnv so the secret never lands in the file. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the Gate One client secret.
+redirectUris
+array of string
+yes
+Allowed Gate One callback URLs (https, or localhost for tests).
+postLogoutRedirectUris
+array of string
+no
+Allowed post-logout targets. Empty = redirectUris.
+audiences
+array of string
+no
+Audiences allowed for access tokens. Empty = the tenant id.
+google
+object
+no
+Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+upstreams
+object
+no
+Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.
+keyFile
+string
+no
+Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles.
+keyFiles
+array of string
+no
+Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones.
+defaultRoles
+array of string
+no
+Roles granted to every authenticated user.
+allowedDomains
+array of string
+no
+Allowed upstream hosted/email domains. Empty = no restriction.
+adminEmails
+array of string
+no
+Email addresses granted the admin role.
+groupRoles
+object
+no
+Map an upstream group/claim value to broker roles.
+accessTokenTtlSeconds
+integer
+no
+Access token lifetime in seconds. Default 600. Minimum: 1.
+idTokenTtlSeconds
+integer
+no
+ID token lifetime in seconds. Default 600. Minimum: 1.
+refreshTokenTtlSeconds
+integer
+no
+Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation. Minimum: 1.
+sessionTtlSeconds
+integer
+no
+Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
+localAccounts
+boolean
+no
+Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp.
+appOrigins
+array of string
+no
+Allowed application origins for a verification continueUrl.
+registrationSecretEnv
+string
+no
+Environment variable gating POST /register (server-to-server registration).
+mappings
+array of object
+no
+Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
+tenants.google Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+Field Type Required Description issuer
+string
+no
+Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams.
+clientId
+string
+no
+Upstream OIDC client id. Prefer clientIdEnv.
+clientIdEnv
+string
+no
+Environment variable holding the upstream client id.
+clientSecret
+string
+no
+Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the upstream client secret.
+prompt
+string
+no
+Forwarded to the upstream authorize endpoint (for example select_account).
+hostedDomain
+string
+no
+Google Workspace hosted domain (hd) restriction.
+scopes
+array of string
+no
+Upstream scopes. Default openid, profile, email.
+displayName
+string
+no
+Label shown on the identity provider chooser. Default: the upstream key.
+optional
+boolean
+no
+Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+tenants.mappings One claim-to-rights mapping rule.
+Field Type Required Description claim
+string
+yes
+Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles. Minimum length: 1.
+values
+array of string
+no
+Values to match. If omitted, the rule matches when the claim is present and non-empty.
+roles
+array of string
+no
+Broker roles added when the rule matches.
+scopes
+array of string
+no
+Broker scopes added when the rule matches.
+claims
+object
+no
+Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
+redis Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+Field Type Required Description url
+string
+no
+Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode.
+sentinelAddrs
+array of string
+no
+Sentinel addresses (host:port). Required with masterName.
+masterName
+string
+no
+Redis master name for Sentinel discovery.
+sentinelUsername
+string
+no
+ACL user for the Sentinel connections (sentinel mode only).
+sentinelPasswordEnv
+string
+no
+Environment variable holding the Sentinel password (sentinel mode only).
+username
+string
+no
+Redis ACL user.
+passwordEnv
+string
+no
+Environment variable holding the Redis password.
+db
+integer
+no
+Redis database number. Default 0. Minimum: 0.
+prefix
+string
+no
+Key prefix for broker state. Default cladone:broker:v1:.
+authPrefix
+string
+no
+Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.
+dialTimeoutMs
+integer
+no
+Dial timeout in milliseconds. Minimum: 1.
+readTimeoutMs
+integer
+no
+Read timeout in milliseconds. Minimum: 1.
+writeTimeoutMs
+integer
+no
+Write timeout in milliseconds. Minimum: 1.
+poolSize
+integer
+no
+Connection pool size. Minimum: 1.
+tls
+boolean
+no
+Use TLS for the Sentinel and master/replica connections.
+tlsCaFile
+string
+no
+CA bundle for TLS (system roots by default). Requires tls=true.
+tlsServerName
+string
+no
+TLS server name, useful when Sentinels are addressed by IP. Requires tls=true.
+smtp Outbound mail relay for local-account verification emails.
+Field Type Required Description host
+string
+yes
+SMTP host.
+port
+integer
+no
+SMTP port. Default 587 (STARTTLS). Minimum: 1. Maximum: 65535.
+username
+string
+no
+SMTP username. Prefer usernameEnv.
+usernameEnv
+string
+no
+Environment variable holding the SMTP username.
+passwordEnv
+string
+no
+Environment variable holding the SMTP password.
+from
+string
+yes
+From address for verification emails."><meta property="og:url" content="https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/broker/"><meta property="og:site_name" content="Gate One"><meta property="og:title" content="Broker configuration"><meta property="og:description" content="Generated from schemas/broker.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The optional cladone-auth broker configuration. Secrets are read from the environment; a *Env field names the variable.
+Fields Field Type Required Description publicUrl
+string
+yes
+External origin of the broker, without a trailing slash (for example https://auth.example.com).
+listen
+string
+no
+Default listen address for cmd/cladone-auth (for example :8081).
+sessionCookieName
+string
+no
+Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+tenants
+array of object
+yes
+Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.
+redis
+object
+no
+Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+smtp
+object
+no
+Outbound mail relay for local-account verification emails.
+tenants Field Type Required Description id
+string
+yes
+Tenant identifier; also the /t/{tenant} path segment and default audience. Minimum length: 1.
+clientId
+string
+yes
+Gate One OIDC client id registered with this tenant. Minimum length: 1.
+clientSecret
+string
+no
+Inline client secret. Prefer clientSecretEnv so the secret never lands in the file. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the Gate One client secret.
+redirectUris
+array of string
+yes
+Allowed Gate One callback URLs (https, or localhost for tests).
+postLogoutRedirectUris
+array of string
+no
+Allowed post-logout targets. Empty = redirectUris.
+audiences
+array of string
+no
+Audiences allowed for access tokens. Empty = the tenant id.
+google
+object
+no
+Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+upstreams
+object
+no
+Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.
+keyFile
+string
+no
+Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles.
+keyFiles
+array of string
+no
+Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones.
+defaultRoles
+array of string
+no
+Roles granted to every authenticated user.
+allowedDomains
+array of string
+no
+Allowed upstream hosted/email domains. Empty = no restriction.
+adminEmails
+array of string
+no
+Email addresses granted the admin role.
+groupRoles
+object
+no
+Map an upstream group/claim value to broker roles.
+accessTokenTtlSeconds
+integer
+no
+Access token lifetime in seconds. Default 600. Minimum: 1.
+idTokenTtlSeconds
+integer
+no
+ID token lifetime in seconds. Default 600. Minimum: 1.
+refreshTokenTtlSeconds
+integer
+no
+Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation. Minimum: 1.
+sessionTtlSeconds
+integer
+no
+Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
+localAccounts
+boolean
+no
+Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp.
+appOrigins
+array of string
+no
+Allowed application origins for a verification continueUrl.
+registrationSecretEnv
+string
+no
+Environment variable gating POST /register (server-to-server registration).
+mappings
+array of object
+no
+Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
+tenants.google Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+Field Type Required Description issuer
+string
+no
+Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams.
+clientId
+string
+no
+Upstream OIDC client id. Prefer clientIdEnv.
+clientIdEnv
+string
+no
+Environment variable holding the upstream client id.
+clientSecret
+string
+no
+Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the upstream client secret.
+prompt
+string
+no
+Forwarded to the upstream authorize endpoint (for example select_account).
+hostedDomain
+string
+no
+Google Workspace hosted domain (hd) restriction.
+scopes
+array of string
+no
+Upstream scopes. Default openid, profile, email.
+displayName
+string
+no
+Label shown on the identity provider chooser. Default: the upstream key.
+optional
+boolean
+no
+Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+tenants.mappings One claim-to-rights mapping rule.
+Field Type Required Description claim
+string
+yes
+Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles. Minimum length: 1.
+values
+array of string
+no
+Values to match. If omitted, the rule matches when the claim is present and non-empty.
+roles
+array of string
+no
+Broker roles added when the rule matches.
+scopes
+array of string
+no
+Broker scopes added when the rule matches.
+claims
+object
+no
+Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
+redis Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+Field Type Required Description url
+string
+no
+Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode.
+sentinelAddrs
+array of string
+no
+Sentinel addresses (host:port). Required with masterName.
+masterName
+string
+no
+Redis master name for Sentinel discovery.
+sentinelUsername
+string
+no
+ACL user for the Sentinel connections (sentinel mode only).
+sentinelPasswordEnv
+string
+no
+Environment variable holding the Sentinel password (sentinel mode only).
+username
+string
+no
+Redis ACL user.
+passwordEnv
+string
+no
+Environment variable holding the Redis password.
+db
+integer
+no
+Redis database number. Default 0. Minimum: 0.
+prefix
+string
+no
+Key prefix for broker state. Default cladone:broker:v1:.
+authPrefix
+string
+no
+Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.
+dialTimeoutMs
+integer
+no
+Dial timeout in milliseconds. Minimum: 1.
+readTimeoutMs
+integer
+no
+Read timeout in milliseconds. Minimum: 1.
+writeTimeoutMs
+integer
+no
+Write timeout in milliseconds. Minimum: 1.
+poolSize
+integer
+no
+Connection pool size. Minimum: 1.
+tls
+boolean
+no
+Use TLS for the Sentinel and master/replica connections.
+tlsCaFile
+string
+no
+CA bundle for TLS (system roots by default). Requires tls=true.
+tlsServerName
+string
+no
+TLS server name, useful when Sentinels are addressed by IP. Requires tls=true.
+smtp Outbound mail relay for local-account verification emails.
+Field Type Required Description host
+string
+yes
+SMTP host.
+port
+integer
+no
+SMTP port. Default 587 (STARTTLS). Minimum: 1. Maximum: 65535.
+username
+string
+no
+SMTP username. Prefer usernameEnv.
+usernameEnv
+string
+no
+Environment variable holding the SMTP username.
+passwordEnv
+string
+no
+Environment variable holding the SMTP password.
+from
+string
+yes
+From address for verification emails."><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="article:section" content="docs"><meta itemprop=name content="Broker configuration"><meta itemprop=description content="Generated from schemas/broker.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The optional cladone-auth broker configuration. Secrets are read from the environment; a *Env field names the variable.
+Fields Field Type Required Description publicUrl
+string
+yes
+External origin of the broker, without a trailing slash (for example https://auth.example.com).
+listen
+string
+no
+Default listen address for cmd/cladone-auth (for example :8081).
+sessionCookieName
+string
+no
+Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+tenants
+array of object
+yes
+Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.
+redis
+object
+no
+Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+smtp
+object
+no
+Outbound mail relay for local-account verification emails.
+tenants Field Type Required Description id
+string
+yes
+Tenant identifier; also the /t/{tenant} path segment and default audience. Minimum length: 1.
+clientId
+string
+yes
+Gate One OIDC client id registered with this tenant. Minimum length: 1.
+clientSecret
+string
+no
+Inline client secret. Prefer clientSecretEnv so the secret never lands in the file. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the Gate One client secret.
+redirectUris
+array of string
+yes
+Allowed Gate One callback URLs (https, or localhost for tests).
+postLogoutRedirectUris
+array of string
+no
+Allowed post-logout targets. Empty = redirectUris.
+audiences
+array of string
+no
+Audiences allowed for access tokens. Empty = the tenant id.
+google
+object
+no
+Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+upstreams
+object
+no
+Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.
+keyFile
+string
+no
+Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles.
+keyFiles
+array of string
+no
+Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones.
+defaultRoles
+array of string
+no
+Roles granted to every authenticated user.
+allowedDomains
+array of string
+no
+Allowed upstream hosted/email domains. Empty = no restriction.
+adminEmails
+array of string
+no
+Email addresses granted the admin role.
+groupRoles
+object
+no
+Map an upstream group/claim value to broker roles.
+accessTokenTtlSeconds
+integer
+no
+Access token lifetime in seconds. Default 600. Minimum: 1.
+idTokenTtlSeconds
+integer
+no
+ID token lifetime in seconds. Default 600. Minimum: 1.
+refreshTokenTtlSeconds
+integer
+no
+Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation. Minimum: 1.
+sessionTtlSeconds
+integer
+no
+Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
+localAccounts
+boolean
+no
+Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp.
+appOrigins
+array of string
+no
+Allowed application origins for a verification continueUrl.
+registrationSecretEnv
+string
+no
+Environment variable gating POST /register (server-to-server registration).
+mappings
+array of object
+no
+Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
+tenants.google Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+Field Type Required Description issuer
+string
+no
+Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams.
+clientId
+string
+no
+Upstream OIDC client id. Prefer clientIdEnv.
+clientIdEnv
+string
+no
+Environment variable holding the upstream client id.
+clientSecret
+string
+no
+Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the upstream client secret.
+prompt
+string
+no
+Forwarded to the upstream authorize endpoint (for example select_account).
+hostedDomain
+string
+no
+Google Workspace hosted domain (hd) restriction.
+scopes
+array of string
+no
+Upstream scopes. Default openid, profile, email.
+displayName
+string
+no
+Label shown on the identity provider chooser. Default: the upstream key.
+optional
+boolean
+no
+Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+tenants.mappings One claim-to-rights mapping rule.
+Field Type Required Description claim
+string
+yes
+Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles. Minimum length: 1.
+values
+array of string
+no
+Values to match. If omitted, the rule matches when the claim is present and non-empty.
+roles
+array of string
+no
+Broker roles added when the rule matches.
+scopes
+array of string
+no
+Broker scopes added when the rule matches.
+claims
+object
+no
+Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
+redis Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+Field Type Required Description url
+string
+no
+Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode.
+sentinelAddrs
+array of string
+no
+Sentinel addresses (host:port). Required with masterName.
+masterName
+string
+no
+Redis master name for Sentinel discovery.
+sentinelUsername
+string
+no
+ACL user for the Sentinel connections (sentinel mode only).
+sentinelPasswordEnv
+string
+no
+Environment variable holding the Sentinel password (sentinel mode only).
+username
+string
+no
+Redis ACL user.
+passwordEnv
+string
+no
+Environment variable holding the Redis password.
+db
+integer
+no
+Redis database number. Default 0. Minimum: 0.
+prefix
+string
+no
+Key prefix for broker state. Default cladone:broker:v1:.
+authPrefix
+string
+no
+Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.
+dialTimeoutMs
+integer
+no
+Dial timeout in milliseconds. Minimum: 1.
+readTimeoutMs
+integer
+no
+Read timeout in milliseconds. Minimum: 1.
+writeTimeoutMs
+integer
+no
+Write timeout in milliseconds. Minimum: 1.
+poolSize
+integer
+no
+Connection pool size. Minimum: 1.
+tls
+boolean
+no
+Use TLS for the Sentinel and master/replica connections.
+tlsCaFile
+string
+no
+CA bundle for TLS (system roots by default). Requires tls=true.
+tlsServerName
+string
+no
+TLS server name, useful when Sentinels are addressed by IP. Requires tls=true.
+smtp Outbound mail relay for local-account verification emails.
+Field Type Required Description host
+string
+yes
+SMTP host.
+port
+integer
+no
+SMTP port. Default 587 (STARTTLS). Minimum: 1. Maximum: 65535.
+username
+string
+no
+SMTP username. Prefer usernameEnv.
+usernameEnv
+string
+no
+Environment variable holding the SMTP username.
+passwordEnv
+string
+no
+Environment variable holding the SMTP password.
+from
+string
+yes
+From address for verification emails."><meta itemprop=wordCount content="1032"><meta name=twitter:card content="summary"><meta name=twitter:title content="Broker configuration"><meta name=twitter:description content="Generated from schemas/broker.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The optional cladone-auth broker configuration. Secrets are read from the environment; a *Env field names the variable.
+Fields Field Type Required Description publicUrl
+string
+yes
+External origin of the broker, without a trailing slash (for example https://auth.example.com).
+listen
+string
+no
+Default listen address for cmd/cladone-auth (for example :8081).
+sessionCookieName
+string
+no
+Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+tenants
+array of object
+yes
+Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.
+redis
+object
+no
+Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+smtp
+object
+no
+Outbound mail relay for local-account verification emails.
+tenants Field Type Required Description id
+string
+yes
+Tenant identifier; also the /t/{tenant} path segment and default audience. Minimum length: 1.
+clientId
+string
+yes
+Gate One OIDC client id registered with this tenant. Minimum length: 1.
+clientSecret
+string
+no
+Inline client secret. Prefer clientSecretEnv so the secret never lands in the file. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the Gate One client secret.
+redirectUris
+array of string
+yes
+Allowed Gate One callback URLs (https, or localhost for tests).
+postLogoutRedirectUris
+array of string
+no
+Allowed post-logout targets. Empty = redirectUris.
+audiences
+array of string
+no
+Audiences allowed for access tokens. Empty = the tenant id.
+google
+object
+no
+Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+upstreams
+object
+no
+Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.
+keyFile
+string
+no
+Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles.
+keyFiles
+array of string
+no
+Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones.
+defaultRoles
+array of string
+no
+Roles granted to every authenticated user.
+allowedDomains
+array of string
+no
+Allowed upstream hosted/email domains. Empty = no restriction.
+adminEmails
+array of string
+no
+Email addresses granted the admin role.
+groupRoles
+object
+no
+Map an upstream group/claim value to broker roles.
+accessTokenTtlSeconds
+integer
+no
+Access token lifetime in seconds. Default 600. Minimum: 1.
+idTokenTtlSeconds
+integer
+no
+ID token lifetime in seconds. Default 600. Minimum: 1.
+refreshTokenTtlSeconds
+integer
+no
+Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation. Minimum: 1.
+sessionTtlSeconds
+integer
+no
+Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
+localAccounts
+boolean
+no
+Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp.
+appOrigins
+array of string
+no
+Allowed application origins for a verification continueUrl.
+registrationSecretEnv
+string
+no
+Environment variable gating POST /register (server-to-server registration).
+mappings
+array of object
+no
+Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
+tenants.google Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+Field Type Required Description issuer
+string
+no
+Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams.
+clientId
+string
+no
+Upstream OIDC client id. Prefer clientIdEnv.
+clientIdEnv
+string
+no
+Environment variable holding the upstream client id.
+clientSecret
+string
+no
+Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the *Env form.
+clientSecretEnv
+string
+no
+Environment variable holding the upstream client secret.
+prompt
+string
+no
+Forwarded to the upstream authorize endpoint (for example select_account).
+hostedDomain
+string
+no
+Google Workspace hosted domain (hd) restriction.
+scopes
+array of string
+no
+Upstream scopes. Default openid, profile, email.
+displayName
+string
+no
+Label shown on the identity provider chooser. Default: the upstream key.
+optional
+boolean
+no
+Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+tenants.mappings One claim-to-rights mapping rule.
+Field Type Required Description claim
+string
+yes
+Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles. Minimum length: 1.
+values
+array of string
+no
+Values to match. If omitted, the rule matches when the claim is present and non-empty.
+roles
+array of string
+no
+Broker roles added when the rule matches.
+scopes
+array of string
+no
+Broker scopes added when the rule matches.
+claims
+object
+no
+Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
+redis Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.
+Field Type Required Description url
+string
+no
+Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode.
+sentinelAddrs
+array of string
+no
+Sentinel addresses (host:port). Required with masterName.
+masterName
+string
+no
+Redis master name for Sentinel discovery.
+sentinelUsername
+string
+no
+ACL user for the Sentinel connections (sentinel mode only).
+sentinelPasswordEnv
+string
+no
+Environment variable holding the Sentinel password (sentinel mode only).
+username
+string
+no
+Redis ACL user.
+passwordEnv
+string
+no
+Environment variable holding the Redis password.
+db
+integer
+no
+Redis database number. Default 0. Minimum: 0.
+prefix
+string
+no
+Key prefix for broker state. Default cladone:broker:v1:.
+authPrefix
+string
+no
+Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.
+dialTimeoutMs
+integer
+no
+Dial timeout in milliseconds. Minimum: 1.
+readTimeoutMs
+integer
+no
+Read timeout in milliseconds. Minimum: 1.
+writeTimeoutMs
+integer
+no
+Write timeout in milliseconds. Minimum: 1.
+poolSize
+integer
+no
+Connection pool size. Minimum: 1.
+tls
+boolean
+no
+Use TLS for the Sentinel and master/replica connections.
+tlsCaFile
+string
+no
+CA bundle for TLS (system roots by default). Requires tls=true.
+tlsServerName
+string
+no
+TLS server name, useful when Sentinels are addressed by IP. Requires tls=true.
+smtp Outbound mail relay for local-account verification emails.
+Field Type Required Description host
+string
+yes
+SMTP host.
+port
+integer
+no
+SMTP port. Default 587 (STARTTLS). Minimum: 1. Maximum: 65535.
+username
+string
+no
+SMTP username. Prefer usernameEnv.
+usernameEnv
+string
+no
+Environment variable holding the SMTP username.
+passwordEnv
+string
+no
+Environment variable holding the SMTP password.
+from
+string
+yes
+From address for verification emails."><link rel=preload href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/scss/main.min.4a603f464690bd48d0e939fb5cabeb80886b51db9bff3131bb87923876abbe4c.css as=style integrity="sha256-SmA/RkaQvUjQ6Tn7XKvrgIhrUdub/zExu4eSOHarvkw=" crossorigin=anonymous><link href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/scss/main.min.4a603f464690bd48d0e939fb5cabeb80886b51db9bff3131bb87923876abbe4c.css rel=stylesheet integrity="sha256-SmA/RkaQvUjQ6Tn7XKvrgIhrUdub/zExu4eSOHarvkw=" crossorigin=anonymous></head><body class=td-page><header><nav class="td-navbar js-navbar-scroll"><div class="td-navbar-container container-fluid flex-column flex-md-row"><a class=navbar-brand href=https://cladone.com/><span class="navbar-brand__logo navbar-logo"><img src=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/images/cladone-logo.png alt width=32 height=32>
+</span><span class=navbar-brand__name>Cladone</span></a><div class="td-navbar__main td-navbar-nav-scroll td-navbar-nav-scroll--indicator" id=main_navbar><div class="scroll-indicator scroll-left"></div><ul class=navbar-nav><li class=nav-item><a class="nav-link active" href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/><span>Home</span></a></li><li class=nav-item><a class="nav-link active" href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/><span>Docs</span></a></li></ul><div class="scroll-indicator scroll-right"></div></div><div class="td-navbar__search d-none d-lg-block"></div></div></nav></header><div class="container-fluid td-outer"><div class=td-main data-bs-spy=scroll data-bs-target=.td-toc data-bs-root-margin="0px 0px -10%"><div class="row flex-xl-nowrap"><aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none"><div id=td-sidebar-menu class=td-sidebar__inner><form class="td-sidebar__search d-flex align-items-center"><button class="btn btn-link td-sidebar__toggle" type=button data-bs-toggle=collapse data-bs-target=#td-section-nav aria-controls=td-section-nav aria-expanded=false aria-label="Toggle section navigation"></button></form><nav class="td-sidebar-nav collapse" id=td-section-nav><ul class="td-sidebar-nav__section pe-md-3 ul-0"><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-docs-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/ title=Documentation class="align-left ps-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-docs><span>Docs</span></a><ul class=ul-1><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id=m-docsfeatures-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/ class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id=m-docsfeatures><span>Features</span></a><ul class="ul-2 foldable"><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturessso-multi-apps-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/sso-multi-apps/ title="SSO across your apps" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturessso-multi-apps><span>SSO across apps</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturescross-tld-sso-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/cross-tld-sso/ title="SSO across different domains" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturescross-tld-sso><span>Cross-domain SSO</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesmultiple-idps-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/multiple-idps/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesmultiple-idps><span>Multiple identity providers</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesprotect-api-mcp-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/protect-api-mcp/ title="Protect APIs and MCP tools" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesprotect-api-mcp><span>APIs and MCP</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesembedded-iam-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/embedded-iam/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesembedded-iam><span>Embedded IAM</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeatureshorizontal-scaling-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/horizontal-scaling/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeatureshorizontal-scaling><span>Horizontal scaling</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesinjectable-ux-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/injectable-ux/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesinjectable-ux><span>Injectable UX</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesaccount-panel-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/account-panel/ title="Bring your own account panel" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesaccount-panel><span>Own account panel</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesusage-events-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/features/usage-events/ title="Usage events and plugins" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesusage-events><span>Usage events</span></a></li></ul></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsiam-and-providers-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/iam-and-providers/ title="IAM, IdPs and provider types" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsiam-and-providers><span>IAM and providers</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsarchitecture-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/architecture/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsarchitecture><span>Architecture</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsbridge-contract-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/bridge-contract/ title="HTTP bridge contract" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsbridge-contract><span>Bridge contract</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsplugins-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/plugins/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsplugins><span>Plugins</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id=m-docsexamples-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/ class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id=m-docsexamples><span>Examples</span></a><ul class="ul-2 foldable"><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesgetting-started-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/getting-started/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesgetting-started><span>Getting started</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesmulti-app-sso-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/multi-app-sso/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesmulti-app-sso><span>Multi-app SSO</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplescross-tld-sso-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/cross-tld-sso/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplescross-tld-sso><span>Cross-domain SSO</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexampleskeycloak-google-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/keycloak-google/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexampleskeycloak-google><span>Keycloak with Google</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesembedded-iam-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/embedded-iam/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesembedded-iam><span>Embedded IAM</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexampleshigh-availability-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/high-availability/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexampleshigh-availability><span>High Availability</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesapi-mcp-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/api-mcp/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesapi-mcp><span>APIs and MCP</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesaccount-panel-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/account-panel/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesaccount-panel><span>Own account panel</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexampleshttp-bridge-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/http-bridge/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexampleshttp-bridge><span>HTTP bridge</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesinjectable-ux-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/injectable-ux/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesinjectable-ux><span>Injectable UX</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplessiteproxy-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/siteproxy/ title="Enhance a proxied site" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplessiteproxy><span>Proxied site</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesusage-plugin-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/examples/usage-plugin/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesusage-plugin><span>Usage plugin</span></a></li></ul></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-docsconfig-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/ title="Configuration reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id=m-docsconfig><span>Configuration</span></a><ul class="ul-2 foldable"><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfiggate-one-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/gate-one/ title="Gate One configuration" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfiggate-one><span>Gate One</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-docsconfigbroker-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/broker/ title="Broker configuration" class="align-left ps-0 active td-sidebar-link td-sidebar-link__page" id=m-docsconfigbroker><span class=td-sidebar-nav-active-item>Broker</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigplugin-manifest-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/plugin-manifest/ title="Plugin manifest" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigplugin-manifest><span>Manifest</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigplugin-trust-store-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/plugin-trust-store/ title="Plugin trust store" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigplugin-trust-store><span>Trust store</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigusage-event-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/usage-event/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigusage-event><span>Usage event</span></a></li></ul></li></ul></li></ul></nav></div></aside><aside class=td-sidebar-toc><div class="td-page-meta ms-2 pb-1 pt-2 mb-0"></div><div class=td-toc data-proofer-ignore><div class=td-toc-title><span class=td-toc-title__text>On this page</span>
+<a class=td-toc-title__link title="Top of page" href=#></a></div><nav id=TableOfContents><ul><li><a href=#config-root>Fields</a><ul><li><a href=#config-tenants>tenants</a></li><li><a href=#config-redis>redis</a></li><li><a href=#config-smtp>smtp</a></li></ul></li></ul></nav></div></aside><main class="col-12 col-md-9 col-xl-8 ps-md-5" role=main><nav aria-label=breadcrumb class=td-breadcrumbs><ol class=td-breadcrumbs__list><li class=td-breadcrumbs__item><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/>Docs</a></li><li class=td-breadcrumbs__item><a href=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/docs/config/>Configuration</a></li><li class=td-breadcrumbs__item aria-current=page>Broker</li></ol></nav><div class=td-content><h1>Broker configuration</h1><header class=article-meta></header><div id=preamble><div class=sectionbody><div class=paragraph><p>Generated from <code>schemas/broker.schema.json</code> by <code>scripts/gen-config-docs</code>. Do not edit this page: edit the schema or the generator.</p></div><div class=paragraph><p>The optional <code>cladone-auth</code> broker configuration. Secrets are read from the environment; a <code>*Env</code> field names the variable.</p></div></div></div><div class=sect1><h2 id=config-root>Fields</h2><div class=sectionbody><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-publicUrl></a><code>publicUrl</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>External origin of the broker, without a trailing slash (for example <a class=bare href=https://auth.example.com>https://auth.example.com</a>).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-listen></a><code>listen</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Default listen address for cmd/cladone-auth (for example :8081).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-sessionCookieName></a><code>sessionCookieName</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants></a><code>tenants</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of <a href=#config-tenants>object</a></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Isolated issuers. Each tenant has its own key, client, upstream identity providers and policy.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis></a><code>redis</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock><a href=#config-redis>object</a></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp></a><code>smtp</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock><a href=#config-smtp>object</a></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Outbound mail relay for local-account verification emails.</p></td></tr></tbody></table><div class=sect2><h3 id=config-tenants>tenants</h3><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-id></a><code>id</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Tenant identifier; also the /t/{tenant} path segment and default audience. Minimum length: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-clientId></a><code>clientId</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Gate One OIDC client id registered with this tenant. Minimum length: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-clientSecret></a><code>clientSecret</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Inline client secret. Prefer clientSecretEnv so the secret never lands in the file. Write-only; prefer the <code>*Env</code> form.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-clientSecretEnv></a><code>clientSecretEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the Gate One client secret.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-redirectUris></a><code>redirectUris</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Allowed Gate One callback URLs (https, or localhost for tests).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-postLogoutRedirectUris></a><code>postLogoutRedirectUris</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Allowed post-logout targets. Empty = redirectUris.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-audiences></a><code>audiences</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Audiences allowed for access tokens. Empty = the tenant id.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google></a><code>google</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock><a href=#config-tenants-google>object</a></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-upstreams></a><code>upstreams</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>object</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-keyFile></a><code>keyFile</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Active Ed25519 private key file (base64 raw seed). Empty = ephemeral key, tests/dev only. Mutually exclusive with keyFiles.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-keyFiles></a><code>keyFiles</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Published keys, oldest first, newest active. Used to rotate tokens without invalidating old ones.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-defaultRoles></a><code>defaultRoles</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Roles granted to every authenticated user.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-allowedDomains></a><code>allowedDomains</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Allowed upstream hosted/email domains. Empty = no restriction.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-adminEmails></a><code>adminEmails</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Email addresses granted the admin role.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-groupRoles></a><code>groupRoles</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>object</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Map an upstream group/claim value to broker roles.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-accessTokenTtlSeconds></a><code>accessTokenTtlSeconds</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Access token lifetime in seconds. Default 600. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-idTokenTtlSeconds></a><code>idTokenTtlSeconds</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>ID token lifetime in seconds. Default 600. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-refreshTokenTtlSeconds></a><code>refreshTokenTtlSeconds</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Refresh token lifetime in seconds. Default 2592000 (30 days). Gate One reads it from discovery to size revocation. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-sessionTtlSeconds></a><code>sessionTtlSeconds</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-localAccounts></a><code>localAccounts</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>boolean</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Enable the local account lifecycle endpoints (register, verify email) for this tenant. Requires smtp.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-appOrigins></a><code>appOrigins</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Allowed application origins for a verification continueUrl.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-registrationSecretEnv></a><code>registrationSecretEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable gating POST /register (server-to-server registration).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-mappings></a><code>mappings</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of <a href=#config-tenants-mappings>object</a></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.</p></td></tr></tbody></table><div class=sect3><h4 id=config-tenants-google>tenants.google</h4><div class=paragraph><p>Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.</p></div><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-issuer></a><code>issuer</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Upstream OIDC issuer. Default <a class=bare href=https://accounts.google.com>https://accounts.google.com</a> for the google upstream; required for other upstreams.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-clientId></a><code>clientId</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Upstream OIDC client id. Prefer clientIdEnv.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-clientIdEnv></a><code>clientIdEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the upstream client id.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-clientSecret></a><code>clientSecret</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the <code>*Env</code> form.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-clientSecretEnv></a><code>clientSecretEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the upstream client secret.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-prompt></a><code>prompt</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Forwarded to the upstream authorize endpoint (for example select_account).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-hostedDomain></a><code>hostedDomain</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Google Workspace hosted domain (hd) restriction.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-scopes></a><code>scopes</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Upstream scopes. Default openid, profile, email.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-displayName></a><code>displayName</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Label shown on the identity provider chooser. Default: the upstream key.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-google-optional></a><code>optional</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>boolean</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.</p></td></tr></tbody></table></div><div class=sect3><h4 id=config-tenants-mappings>tenants.mappings</h4><div class=paragraph><p>One claim-to-rights mapping rule.</p></div><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-mappings-claim></a><code>claim</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Dot path into the upstream token claims, for example groups, realm_access.roles or resource_access.gate-one.roles. Minimum length: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-mappings-values></a><code>values</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Values to match. If omitted, the rule matches when the claim is present and non-empty.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-mappings-roles></a><code>roles</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Broker roles added when the rule matches.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-mappings-scopes></a><code>scopes</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Broker scopes added when the rule matches.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenants-mappings-claims></a><code>claims</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>object</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.</p></td></tr></tbody></table></div></div><div class=sect2><h3 id=config-redis>redis</h3><div class=paragraph><p>Shared store for flows, codes, refresh tokens and the revocation keyspace read by Gate One. Absent = in-memory store, single instance and tests only.</p></div><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-url></a><code>url</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Redis URL (redis:// or rediss://). Mutually exclusive with sentinel mode.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-sentinelAddrs></a><code>sentinelAddrs</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>array of string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Sentinel addresses (host:port). Required with masterName.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-masterName></a><code>masterName</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Redis master name for Sentinel discovery.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-sentinelUsername></a><code>sentinelUsername</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>ACL user for the Sentinel connections (sentinel mode only).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-sentinelPasswordEnv></a><code>sentinelPasswordEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the Sentinel password (sentinel mode only).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-username></a><code>username</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Redis ACL user.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-passwordEnv></a><code>passwordEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the Redis password.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-db></a><code>db</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Redis database number. Default 0. Minimum: 0.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-prefix></a><code>prefix</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Key prefix for broker state. Default cladone:broker:v1:.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-authPrefix></a><code>authPrefix</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-dialTimeoutMs></a><code>dialTimeoutMs</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Dial timeout in milliseconds. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-readTimeoutMs></a><code>readTimeoutMs</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Read timeout in milliseconds. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-writeTimeoutMs></a><code>writeTimeoutMs</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Write timeout in milliseconds. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-poolSize></a><code>poolSize</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Connection pool size. Minimum: 1.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-tls></a><code>tls</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>boolean</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Use TLS for the Sentinel and master/replica connections.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-tlsCaFile></a><code>tlsCaFile</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>CA bundle for TLS (system roots by default). Requires tls=true.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-redis-tlsServerName></a><code>tlsServerName</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>TLS server name, useful when Sentinels are addressed by IP. Requires tls=true.</p></td></tr></tbody></table></div><div class=sect2><h3 id=config-smtp>smtp</h3><div class=paragraph><p>Outbound mail relay for local-account verification emails.</p></div><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp-host></a><code>host</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>SMTP host.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp-port></a><code>port</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>SMTP port. Default 587 (STARTTLS). Minimum: 1. Maximum: 65535.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp-username></a><code>username</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>SMTP username. Prefer usernameEnv.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp-usernameEnv></a><code>usernameEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the SMTP username.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp-passwordEnv></a><code>passwordEnv</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Environment variable holding the SMTP password.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-smtp-from></a><code>from</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>From address for verification emails.</p></td></tr></tbody></table></div></div></div></div></main></div></div><footer class="td-footer row d-print-none"><div class=container-fluid><div class="row mx-md-2"><div class="td-footer__left col-6 col-sm-4 order-sm-1"><ul class=td-footer__links-list><li class=td-footer__links-item data-bs-toggle=tooltip title=Source aria-label=Source><a href=https://github.com/clad-one/gate-one aria-label=Source target=_blank rel=noopener><i class="fa-brands fa-git-alt"></i></a></li><li class=td-footer__links-item data-bs-toggle=tooltip title=Licence aria-label=Licence><a href=https://github.com/clad-one/gate-one/blob/main/LICENSE aria-label=Licence target=_blank rel=noopener><i class="fa-solid fa-scale-balanced"></i></a></li></ul></div><div class="td-footer__right col-6 col-sm-4 order-sm-3"></div><div class="td-footer__center col-12 col-sm-4 py-2 order-sm-2"><span class=td-footer__copyright>&copy;
+2026
+<span class=td-footer__authors>Cladone-IT</span></span><span class=td-footer__all_rights_reserved>All Rights Reserved</span></div></div></div></footer></div><script src=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/js/main.min.fcc45a17540a2f1b911e922803e40db1d69a73237992f6a42a5ad2e15efb2efa.js integrity="sha256-/MRaF1QKLxuRHpIoA+QNsdaacyN5kvakKlrS4V77Lvo=" crossorigin=anonymous></script><script defer src=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/js/plugins/click-to-copy.3cca71c9acfa59bc8c018d6e77353b6f6a9bc6c577b6e91f31a59c8758c8a036.js integrity="sha256-PMpxyaz6WbyMAY1udzU7b2qbxsV3tukfMaWch1jIoDY=" crossorigin=anonymous></script><script src=https://clad-one.github.io/gate-one-doc/v0.4.0-docs.18/js/plugins/tabpane-persist.d14334f51386faeefb7f976f7df59c450aa780ebb6abe69c77d96f28f9fe2122.js integrity="sha256-0UM09ROG+u77f5dvffWcRQqngOu2q+acd9lvKPn+ISI=" crossorigin=anonymous></script></body></html>
