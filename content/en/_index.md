@@ -5,7 +5,7 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="An overlay to apply your features, once for all." height="med" color="dark" %}}
+{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="The overlay that hold your features, once for all." height="med" color="dark" %}}
 
 Once for all: SSO login with front/back interception,
 PWA, dynamic REST-to-MCP, 
