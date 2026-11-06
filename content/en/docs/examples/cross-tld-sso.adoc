@@ -21,8 +21,8 @@ domain keeps its own Gate One cookie; no cookie crosses the TLD boundary.
 ----
 {
   "ssoGroups": [{
-    "id": "acme",
-    "issuer": "https://idp.example.com/realms/acme",
+    "id": "mycompany",
+    "issuer": "https://idp.example.com/realms/mycompany",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "sessionKeyEnv": "OIDC_SESSION_KEY",

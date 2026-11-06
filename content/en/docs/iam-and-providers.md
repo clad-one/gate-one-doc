@@ -38,7 +38,7 @@ flowchart TB
   GO["Gate One<br/>authProvider + route policy"] -->|"oidc: issuer + JWKS"| IAM
   GO -.->|"oidc direct: issuer + JWKS"| KEYCLOAK
   GO -->|"jwt: bearer + JWKS"| API["API / MCP issuer"]
-  IAM -->|"roles, scopes, claims in the token"| GO
+  IAM -->|"token with roles+scopes+claims"| GO
   KEYCLOAK -.->|"roles, scopes, claims"| GO
   GO -->|"verified identity + policy"| APP["Application"]
 ```

@@ -45,9 +45,9 @@ domain-specific fields are repeated in `providers[]`:
 ----
 {
   "ssoGroups": [{
-    "id": "acme",
+    "id": "mycompany",
     "type": "oidc",
-    "issuer": "https://idp.example.com/realms/acme",
+    "issuer": "https://idp.example.com/realms/mycompany",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "scopes": ["openid", "profile", "email"],
