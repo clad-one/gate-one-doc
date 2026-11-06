@@ -50,12 +50,16 @@ summaryLength = 40
 [markup]
   [markup.goldmark.renderer]
     unsafe = true
-  [markup.asciidoc]
+  # AsciiDoc is rendered by the external asciidoctor. Hugo's key is
+  # `asciidocExt`; `markup.asciidoc` is silently ignored.
+  [markup.asciidocExt]
     backend = "html5"
     extensions = []
-    [markup.asciidoc.attributes]
+    [markup.asciidocExt.attributes]
+      # Any truthy value makes asciidoctor emit a TOC. Hugo strips it from
+      # the body (preserveTOC = false) and Docsy renders .TableOfContents in
+      # the right-hand sidebar, so the value does not control placement.
       "toc" = "left"
-      "sectanchors" = "true"
       "idprefix" = ""
       "idseparator" = "-"
 
