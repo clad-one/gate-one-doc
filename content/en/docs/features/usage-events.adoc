@@ -32,8 +32,16 @@ metering.
 | `auth` | login, logout, callback, back-channel logout, revocation | zero loss
 | `error` | 401/403/502/5xx, provider unavailable | window
 | `billing` | a billable unit (reserved for a later plugin) | zero loss
-| `audit` | admin, reload, plugin load/revoke, 403 | reserved
+| `audit` | reload, plugin load/revoke | best effort
 |===
+
+`audit` records control-plane events: `action` is `reload`,
+`reload_failed` or `plugin_load`, with `detail` carrying the plugin name
+or the reload error. It is **best effort and never blocks** the
+operation it records: if the type is unsubscribed, no plugin matches, or
+the WAL is full, the event is dropped and logged — a reload is never
+refused for lack of audit space. Admin `403`s surface as `error`
+events.
 
 `request` and `error` cannot use `fsync: "always"`: the proxy emitter
 cannot fsync before a streaming response. Use `window_ms` for them.

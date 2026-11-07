@@ -93,7 +93,12 @@ The flat event delivered to subscribed out-of-process plugins. No token, cookie,
 | [[field-action]] `action`
 | string
 | no
-| Auth action: login, login_failed, logout, backchannel_logout, revocation. Maximum length: 64.
+| Auth action: login, login_failed, logout, backchannel_logout, revocation. Audit action: reload, reload_failed, plugin_load. Maximum length: 64.
+
+| [[field-detail]] `detail`
+| string
+| no
+| Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.
 
 | [[field-sessionId]] `sessionId`
 | string
