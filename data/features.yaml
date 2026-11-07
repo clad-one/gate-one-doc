@@ -84,6 +84,21 @@
     - label: mcp
       url: /docs/config/gate-one/#field-routes-mcp
   plugin: false
+- slug: delegated-credentials
+  title: Call services with the user's credentials
+  linkTitle: Delegated credentials
+  weight: 55
+  usefulIf: your MCP tools or API routes must call an external service as the signed-in user.
+  summary: The token broker stores a per-user token; upstream.delegated injects it into API and MCP requests, and the user badge links to the connections page.
+  example: /docs/examples/delegated-credentials/
+  configRefs:
+    - label: tokenBroker
+      url: /docs/config/gate-one/#field-tokenBroker
+    - label: upstream.delegated
+      url: /docs/config/gate-one/#field-routes-upstream-delegated
+    - label: mcp
+      url: /docs/config/gate-one/#field-routes-mcp
+  plugin: false
 - slug: injectable-ux
   title: Injectable UX
   linkTitle: Injectable UX

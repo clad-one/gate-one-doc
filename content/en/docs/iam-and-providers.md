@@ -139,8 +139,10 @@ OIDC and issues tokens; Gate One is the OIDC relying party. The bridge
 contract is a request-verification contract and the bridge owns the
 session for that provider type.
 
-See [Embedded IAM](/docs/features/embedded-iam/) for the Broker and
-[HTTP bridge contract](/docs/bridge-contract/) for the bridge.
+See [Embedded IAM](/docs/features/embedded-iam/) for the Broker,
+[Delegated credentials](/docs/features/delegated-credentials/) for the
+token broker, and [HTTP bridge contract](/docs/bridge-contract/) for the
+bridge.
 
 ### `dev`
 

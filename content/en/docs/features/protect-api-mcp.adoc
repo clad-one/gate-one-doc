@@ -105,6 +105,11 @@ Gate One then serves:
 An external MCP server can also be proxied with `mcp.upstream.url`
 instead of declared operations.
 
+An MCP tool that must call an external API **as the user** (GitHub,
+GitLab, …) uses delegated credentials: `upstream.delegated` injects the
+caller's per-user token from the token broker into every tool call. See
+link:/docs/features/delegated-credentials/[Delegated credentials].
+
 == Complete example
 
 link:/examples/protect-api-mcp/routes.json[`examples/protect-api-mcp/routes.json`]
