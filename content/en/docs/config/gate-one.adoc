@@ -70,6 +70,11 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | no
 | Named groups of MCP services exposed with their own access rights (resource/scope/identity) and per-member tool filters. A member endpoint is set.host + set.endpoint + member.path.
 
+| [[field-publisherFeed]] `publisherFeed`
+| <<config-publisherFeed,object>>
+| no
+| Optional signed publisher feed: compatible Gate One versions, external components and plugins, with their revocation status. Loaded and verified at startup; the operator's trust store stays authoritative. Absent = no feed is consulted.
+
 | [[field-usage]] `usage`
 | <<config-usage,object>>
 | no
@@ -794,6 +799,32 @@ One service mounted under a set.
 | boolean
 | no
 | Expose this member (default true). false = not materialized, and its service is neither compiled (no OpenAPI fetch) nor provider-validated.
+
+|===
+
+[[config-publisherFeed]]
+=== publisherFeed
+
+Optional signed publisher feed: compatible Gate One versions, external components and plugins, with their revocation status. Loaded and verified at startup; the operator's trust store stays authoritative. Absent = no feed is consulted.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-publisherFeed-file]] `file`
+| string
+| yes
+| Feed path, relative to the config file. Minimum length: 1.
+
+| [[field-publisherFeed-keys]] `keys`
+| object
+| yes
+| Feed signing keys: key id -> base64 Ed25519 public key. The feed's signature key id must be present. Provisioned out-of-band.
+
+| [[field-publisherFeed-mode]] `mode`
+| string (one of: `warn`, `enforce`)
+| no
+| warn (default): report revocations and incompatibilities only. enforce: apply the feed's revocations (digest and key) to the plugin trust store, so a revoked plugin refuses to load.
 
 |===
 

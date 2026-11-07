@@ -18,6 +18,7 @@ These pages are generated from the JSON Schemas in `schemas/` by
 > unrelated per-user credential service used by `upstream.delegated`.
 * [Plugin manifest](plugin-manifest/)
 * [Plugin trust store](plugin-trust-store/)
+* [Publisher feed](publisher-feed/)
 * [Usage event](usage-event/)
 
 The schemas are also published for editor autocompletion and external
@@ -27,5 +28,6 @@ validation:
 * [`broker.schema.json`](/schemas/broker.schema.json)
 * [`plugin-manifest.schema.json`](/schemas/plugin-manifest.schema.json)
 * [`plugin-trust-store.schema.json`](/schemas/plugin-trust-store.schema.json)
+* [`publisher-feed.schema.json`](/schemas/publisher-feed.schema.json)
 * [`usage-event.schema.json`](/schemas/usage-event.schema.json)
 * [`inject-bundle.schema.json`](/schemas/inject-bundle.schema.json)

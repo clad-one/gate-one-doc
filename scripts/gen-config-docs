@@ -34,6 +34,10 @@ PAGES = [
     ("plugin-trust-store.schema.json", "plugin-trust-store.adoc", "Plugin trust store", "Trust store", 40,
      "The local allow-list referenced by `usage.trustStore`. It is "
      "provisioned out-of-band and never fetched from a plugin."),
+    ("publisher-feed.schema.json", "publisher-feed.adoc", "Publisher feed", "Publisher feed", 45,
+     "The signed document referenced by `publisherFeed.file`: compatible "
+     "Gate One versions, external components and plugins, with their "
+     "version-compatibility rules and revocation status."),
     ("usage-event.schema.json", "usage-event.adoc", "Usage event", "Usage event", 50,
      "The flat event delivered to subscribed out-of-process plugins. "
      "No token, cookie, raw query string, email or username is present."),

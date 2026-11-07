@@ -1,0 +1,223 @@
+---
+title: Publisher feed
+linkTitle: Publisher feed
+weight: 45
+---
+
+= Publisher feed
+:toc: left
+:toclevels: 3
+:icons: font
+
+Generated from `schemas/publisher-feed.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+
+The signed document referenced by `publisherFeed.file`: compatible Gate One versions, external components and plugins, with their version-compatibility rules and revocation status.
+
+[[config-root]]
+== Fields
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-schemaVersion]] `schemaVersion`
+| integer (fixed: `1`)
+| yes
+| Feed schema version. Always 1.
+
+| [[field-kind]] `kind`
+| string (fixed: `publisher-feed`)
+| yes
+| Document kind. Always publisher-feed.
+
+| [[field-publisher]] `publisher`
+| string
+| no
+| Publisher identity.
+
+| [[field-generatedAt]] `generatedAt`
+| string
+| no
+| RFC 3339 timestamp of generation.
+
+| [[field-validUntil]] `validUntil`
+| string
+| no
+| RFC 3339 timestamp after which the feed is stale. In enforce mode a stale feed refuses new plugin loads.
+
+| [[field-hosts]] `hosts`
+| array of <<config-hosts,object>>
+| no
+| Compatible Gate One releases.
+
+| [[field-externalComponents]] `externalComponents`
+| array of <<config-externalComponents,object>>
+| no
+| Compatible non-Gate-One components (Redis, an IdP, …).
+
+| [[field-plugins]] `plugins`
+| array of <<config-plugins,object>>
+| no
+| Known plugin releases and their status.
+
+| [[field-revocations]] `revocations`
+| array of <<config-revocations,object>>
+| no
+| Revoked artefact digests or signing keys.
+
+| [[field-signature]] `signature`
+| <<config-signature,object>>
+| yes
+| —
+
+|===
+
+[[config-hosts]]
+=== hosts
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-hosts-name]] `name`
+| string
+| yes
+| Component name (for example gate-one).
+
+| [[field-hosts-version]] `version`
+| string
+| no
+| Known-good version.
+
+| [[field-hosts-hostAPI]] `hostAPI`
+| string
+| no
+| Host API constraint, for example >=1.0 <2.0.
+
+|===
+
+[[config-externalComponents]]
+=== externalComponents
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-externalComponents-name]] `name`
+| string
+| yes
+| Component name (for example redis).
+
+| [[field-externalComponents-role]] `role`
+| string
+| no
+| Role in the deployment (session-store, idp, …).
+
+| [[field-externalComponents-constraint]] `constraint`
+| string
+| no
+| Supported version constraint.
+
+|===
+
+[[config-plugins]]
+=== plugins
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-plugins-name]] `name`
+| string
+| yes
+| Reverse-DNS plugin name.
+
+| [[field-plugins-version]] `version`
+| string
+| no
+| Plugin version.
+
+| [[field-plugins-digest]] `digest`
+| string
+| no
+| Artefact digest (sha256:<hex>).
+
+| [[field-plugins-hostAPI]] `hostAPI`
+| string
+| no
+| Host API constraint, for example >=1.0 <2.0.
+
+| [[field-plugins-capabilities]] `capabilities`
+| array of string
+| no
+| Declared capabilities.
+
+| [[field-plugins-status]] `status`
+| string (one of: `active`, `deprecated`, `revoked`)
+| no
+| Release status. revoked refuses the plugin in enforce mode (when a digest is present).
+
+| [[field-plugins-requires]] `requires`
+| object
+| no
+| Version constraints on other components, for example {"gate-one": ">=1.4 <2.0"}.
+
+|===
+
+[[config-revocations]]
+=== revocations
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-revocations-digest]] `digest`
+| string
+| no
+| Revoked artefact digest.
+
+| [[field-revocations-keyId]] `keyId`
+| string
+| no
+| Revoked signing key id.
+
+| [[field-revocations-reason]] `reason`
+| string
+| no
+| misbehaviour, key-compromise, author-request, superseded, …
+
+| [[field-revocations-severity]] `severity`
+| string
+| no
+| low, medium, high.
+
+| [[field-revocations-revokedAt]] `revokedAt`
+| string
+| no
+| RFC 3339 timestamp.
+
+|===
+
+[[config-signature]]
+=== signature
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-signature-alg]] `alg`
+| string (fixed: `ed25519`)
+| yes
+| Signature algorithm. Always ed25519.
+
+| [[field-signature-keyId]] `keyId`
+| string
+| yes
+| Signing key id; must be in publisherFeed.keys.
+
+| [[field-signature-value]] `value`
+| string
+| yes
+| Ed25519 signature (base64 raw URL) over the JCS canonical form of the feed with the signature removed.
+
+|===

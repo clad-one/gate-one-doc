@@ -144,6 +144,11 @@ channel.
 
 See link:/docs/config/plugin-trust-store/[the trust-store reference].
 
+The publisher can also publish a signed **publisher feed** listing
+compatible components and revocations; the operator adopts it with
+`publisherFeed`. See
+link:/docs/publish-a-plugin/[Publish and trust a plugin].
+
 == Configuration
 
 [source,json]

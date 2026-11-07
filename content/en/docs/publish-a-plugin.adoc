@@ -140,24 +140,37 @@ only when there is no manifest.
 
 === Signing the manifest
 
-The signature is Ed25519 over the **canonical manifest** (the manifest
-JSON with `signature` zeroed) followed by a newline and the artefact
-digest:
+The signature is Ed25519 over the **JCS canonical form** (RFC 8785) of
+the document with the `signature` member removed, followed by a newline
+and the artefact digest:
 
 [source,text]
 ----
-payload = canonical_json(manifest without signature) + "\n" + artifact.digest
+payload = JCS(manifest without the "signature" member) + "\n" + artifact.digest
 signature.value = base64url(ed25519_sign(private_key, payload))
 ----
 
-The canonical JSON is the one produced by `pluginmanifest.SigningPayload`
-in the source repository. There is **no signing CLI yet**: sign with that
-Go helper (or reproduce the manifest struct exactly), then put the public
-key in the operator's trust store.
+JCS is a standard canonicalization (sorted keys, compact, defined number
+formatting), so any language with a JCS library can sign — the publisher
+does not have to be in Go.
 
-[NOTE]
-A signing CLI (`gate-one plugin sign`) is planned so publishers do not
-have to link the Go package.
+The CLI does it for you:
+
+[source,bash]
+----
+# generate a key pair (Ed25519); prints the public key for the trust store
+gate-one keygen -out acme-2026.json -keyId acme-2026
+
+# sign: fills artifact.digest/size and signature, writes the signed manifest
+gate-one sign -in manifest.json -key acme-2026.json \
+  -artifact acme-audit -out manifest.signed.json
+
+# check a signature (or a whole document) later
+gate-one verify -in manifest.signed.json -key acme-2026.json -artifact acme-audit
+----
+
+The same `gate-one sign`/`verify` sign the publisher feed (a feed has no
+separate artefact, so no `-artifact` is passed).
 
 == Trust lifecycle
 
@@ -184,8 +197,8 @@ sequenceDiagram
 
 == Revocation
 
-Trust can be withdrawn after deployment. Three mechanisms, all applied by
-the operator (the trust store is provisioned out-of-band and never
+Trust can be withdrawn after deployment. Three local mechanisms, applied
+by the operator (the trust store is provisioned out-of-band and never
 fetched from a plugin):
 
 * **Revoke an artefact** — add its `sha256` digest to
@@ -196,13 +209,53 @@ fetched from a plugin):
 * **Reload** — `SIGHUP` re-reads the trust store and the configuration;
   the next load of the plugin fails closed.
 
-[NOTE]
-A **publisher-signed revocation feed** (and, more broadly, a publisher
-feed listing compatible Gate One versions, external components and
-plugins with their revocation status) is the planned evolution: the
-publisher publishes a signed document the operator adopts, so trust can
-be withdrawn without a manual edit. Until then, revocation is an
-operator action.
+== The publisher feed
+
+A revocation should not have to wait for every operator to edit a file.
+The **publisher feed** is a signed document the publisher maintains,
+listing the components that fit together and their revocation status:
+
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "kind": "publisher-feed",
+  "publisher": "Cladone-IT",
+  "generatedAt": "2026-11-07T00:00:00Z",
+  "validUntil":  "2026-12-07T00:00:00Z",
+  "hosts": [ { "name": "gate-one", "version": "1.5.0", "hostAPI": ">=1.0 <2.0" } ],
+  "externalComponents": [ { "name": "redis", "role": "session-store", "constraint": ">=7.0 <8.0" } ],
+  "plugins": [ { "name": "com.acme.audit", "version": "1.0.0", "digest": "sha256:…", "status": "active" } ],
+  "revocations": [ { "digest": "sha256:…", "reason": "misbehaviour", "severity": "high" } ],
+  "signature": { "alg": "ed25519", "keyId": "cladone-2026", "value": "…" }
+}
+----
+
+The operator points at it and pins the publisher key:
+
+[source,json]
+----
+"publisherFeed": {
+  "file": "publisher-feed.json",
+  "keys": { "cladone-2026": "<base64 Ed25519 public key>" },
+  "mode": "enforce"
+}
+----
+
+* **`mode: warn`** (default) — revocations and incompatibilities are
+  reported by `gate-one -check` and `doctor`; nothing is blocked.
+* **`mode: enforce`** — the feed's revocations (by digest and by key) are
+  merged into the plugin trust store, so a revoked plugin **refuses to
+  load**; a plugin the feed marks `revoked` is refused when a digest is
+  given. A stale (`validUntil` passed) feed refuses new loads rather than
+  failing open.
+* The feed only **narrows** trust and **advises** (compatibility); the
+  local trust store stays authoritative, and the operator can always
+  override.
+
+This is how the publisher — or the plugin author asking them — pulls a
+plugin out of production after experience shows it misbehaves, without
+waiting for a manual edit on every deployment.
 
 == Differences by plugin type
 
@@ -254,8 +307,10 @@ link:/docs/examples/usage-plugin/[the usage-plugin example].
 * link:/docs/config/gate-one/#field-usage-plugins[`usage.plugins`]
 * link:/docs/config/gate-one/#field-usage-requireSigned[`usage.requireSigned`]
 * link:/docs/config/gate-one/#field-usage-trustStore[`usage.trustStore`]
+* link:/docs/config/gate-one/#field-publisherFeed[`publisherFeed`]
 * link:/docs/config/plugin-manifest/[Plugin manifest]
 * link:/docs/config/plugin-trust-store/[Trust store]
+* link:/docs/config/publisher-feed/[Publisher feed]
 
 == Read next
 
