@@ -141,9 +141,9 @@ contract is a request-verification contract and the bridge owns the
 session for that provider type.
 
 See [Embedded IAM](/docs/features/embedded-iam/) for the Broker,
-[Delegated credentials](/docs/features/delegated-credentials/) for the
-token broker, and [HTTP bridge contract](/docs/bridge-contract/) for the
-bridge.
+[Delegated credentials](/docs/features/delegated-credentials/) and
+[Token broker](/docs/token-broker/) for the per-user credential service,
+and [HTTP bridge contract](/docs/bridge-contract/) for the bridge.
 
 ### `dev`
 

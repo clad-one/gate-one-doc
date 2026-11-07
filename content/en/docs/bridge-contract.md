@@ -217,7 +217,8 @@ Configure:
 * It is not implemented by the `cladone-auth` **Broker**. The Broker is an
   OIDC issuer/IAM and Gate One connects to it with `type: "oidc"`; it
   does not expose `/auth`, `/auth/mcp` or `/health`. **auth-bridge** is
-  the reference implementation of this request-verification contract.
+  the reference implementation of this request-verification contract;
+  its source is `services/auth-bridge` in the Gate One source repository.
 * It is not the `tokenBroker` block. That service supplies per-user
   upstream credentials for `upstream.tokenBroker`; it is unrelated to
   authentication provider selection.

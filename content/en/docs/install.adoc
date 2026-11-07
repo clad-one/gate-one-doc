@@ -1,0 +1,102 @@
+---
+title: Components and installation
+linkTitle: Install
+weight: 5
+description: What the components are, where they come from, and how to install Gate One with the optional services.
+---
+
+= Components and installation
+
+Gate One is one binary in front of your applications. Everything else —
+an identity provider, the optional broker, the token broker, Redis — is a
+separate component you choose to run.
+
+== The components
+
+[cols="1,2,2,1",options="header"]
+|===
+| Component | Role | Shipped as | Required?
+
+| **Gate One** | The gateway: route policy, session, proxy, MCP, injection | Signed release binary `gate-one` | yes
+| **Identity provider** | Identification and (optionally) authorization claims | External (Keycloak, Entra ID, Auth0, …) | yes
+| **Reverse proxy** | TLS termination, routing, load balancing | External (Traefik, nginx, Caddy, …) | recommended
+| **`cladone-auth`** | Optional embedded IAM / OIDC issuer (IdP federation, grants) | Signed release binary `cladone-auth` | optional
+| **Token broker** | Per-user delegated credentials for upstream calls | Source `services/token-broker` | optional
+| **auth-bridge** | Reference implementation of the `http-bridge` contract | Source `services/auth-bridge` | optional
+| **Redis** | Shared session/revocation state for several replicas | External (Sentinel) | only for HA
+|===
+
+All releases attach a single `services_<version>_src.tar.gz` containing
+the token broker and auth-bridge sources. They are **not** part of the
+`gate-one` binary: each runs as its own container.
+
+== Minimal install
+
+Gate One + one OIDC provider + a TLS reverse proxy.
+
+. **Download a release** (`gate-one_<version>_<os>_<arch>.tar.gz` from the
+  release page or a signed `dist/`), verify it (see
+  link:/docs/publish-a-plugin/[Publish and trust a plugin] for the trust
+  model), and extract it.
+. **Write `api-routes.json`** — start from
+  link:/docs/examples/direct-oidc/[Direct OIDC] or
+  link:/docs/examples/keycloak-google/[Keycloak with Google].
+. **Validate, then start**:
++
+[source,bash]
+----
+export OIDC_CLIENT_SECRET=...        # the authProvider.clientSecretEnv variable
+gate-one -check -config api-routes.json
+gate-one -config api-routes.json      # listens on :3000
+----
+. **Put it behind the reverse proxy** — TLS, the public host, and the
+  OIDC callback URL (see link:/docs/architecture/[Architecture]).
+. **Probe it** — `/healthz` (liveness) and `/readyz` (readiness).
+
+== Add the optional components
+
+=== Embedded IAM (`cladone-auth`)
+
+A single Go binary, shipped signed with each release. Configure it and
+point Gate One at it with `authProvider.type: "oidc"`. See
+link:/docs/features/embedded-iam/[Embedded IAM] and
+link:/docs/config/broker/[the broker configuration].
+
+=== Token broker
+
+The service behind
+link:/docs/features/delegated-credentials/[delegated credentials]. It is
+a separate Node container on the internal network; Gate One declares it
+in `tokenBroker` and references a provider per route. Build it from
+`services/token-broker` and follow
+link:/docs/token-broker/#install-it[its installation]. The browser routes
+(`/connections`, `/connect/`, `/oauth/`) are published through the login
+host, not the broker.
+
+=== auth-bridge
+
+The reference implementation of the
+link:/docs/bridge-contract/[HTTP bridge contract]. Build it from
+`services/auth-bridge` and use `authProvider.type: "http-bridge"`. Gate
+One still enforces `auth`, `auth.identity` and MCP scope checks.
+
+=== Redis (several replicas)
+
+A single instance uses bbolt. Two or more Gate One replicas need shared
+state in Redis (Sentinel + TLS + ACL) and the same session key. See
+link:/docs/features/horizontal-scaling/[Horizontal scaling] and the
+link:/docs/examples/high-availability/[High Availability example].
+
+== What is not a component
+
+* A **Backend-For-Frontend** is your application behind a `backend:`
+  route, not a Gate One service.
+* **Keycloak**, **Postgres** and other platform services are yours to
+  run; Gate One only needs an OIDC issuer (and Redis for HA).
+
+== Read next
+
+* link:/docs/features/sso-multi-apps/[SSO across your apps]
+* link:/docs/iam-and-providers/[IAM, IdPs and provider types]
+* link:/docs/architecture/[Architecture]
+* link:/docs/config/gate-one/[Gate One configuration]

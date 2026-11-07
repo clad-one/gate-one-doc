@@ -1,0 +1,176 @@
+---
+title: Token broker
+linkTitle: Token broker
+weight: 37
+description: The optional service behind delegated credentials — endpoints, provider registry, environment and installation.
+---
+
+= Token broker
+
+The token broker is the optional companion service behind
+link:/docs/features/delegated-credentials/[Delegated credentials]. It
+holds a registry of OAuth 2.0 providers and an encrypted **per-user**
+token store, and hands Gate One the access token of one authenticated
+user for one provider.
+
+It is deliberately **not** an identity provider and **not** a reverse
+proxy: Gate One keeps its own identity; the broker only obtains and
+stores the user's token for an upstream service.
+
+== Where the code lives
+
+The reference implementation is
+link:https://github.com/clad-one/gate-one/tree/main/services/token-broker[`services/token-broker/`]
+in the Gate One source repository, and it ships as
+`services_<version>_src.tar.gz` in each release. It is a small Node.js
+service with its own `Dockerfile`; it is not part of the `gate-one`
+binary.
+
+== Install it
+
+The broker runs as a **separate container**, reachable only from the
+internal network:
+
+[source,bash]
+----
+docker build -t gate-one-token-broker services/token-broker
+
+docker run -d --name token-broker \
+  --network internal \
+  --read-only --tmpfs /tmp:size=16m,mode=1777 \
+  --cap-drop ALL --security-opt no-new-privileges \
+  -e TOKEN_BROKER_SHARED_SECRET=... \
+  -e TOKEN_BROKER_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
+  -e TOKEN_BROKER_PUBLIC_BASE_URL=https://login.example.com \
+  -e TOKEN_BROKER_RETURN_TO_HOSTS=.example.com \
+  -e GITHUB_CLIENT_SECRET=... \
+  -v token_broker_data:/data \
+  gate-one-token-broker
+----
+
+* **No published port and no ingress route**: the broker is on the
+  internal network only. Gate One reaches it at `tokenBroker.url`
+  (default `http://token-broker:4000`).
+* **Browser routes** (`/connections`, `/connect/`, `/oauth/`) are
+  published through the **login host** by the auth layer (in the
+  reference stack, `auth-bridge` proxies them). Do not expose the broker
+  itself.
+* **State**: the encrypted SQLite store lives on the `/data` volume; the
+  key is in the environment, so a backup needs both the volume and the
+  key.
+* **Hardening**: read-only root, dropped capabilities, non-root user.
+
+[[env]]
+[NOTE]
+====
+Environment variables (all optional unless marked):
+
+|===
+| Variable | Required | Purpose
+
+| `TOKEN_BROKER_SHARED_SECRET` | yes | internal `X-Broker-Secret` shared with Gate One
+| `TOKEN_BROKER_ENCRYPTION_KEY` | yes | AES-256-GCM key, 32 bytes base64
+| `TOKEN_BROKER_PUBLIC_BASE_URL` | no | public login origin (callback/connect URLs)
+| `TOKEN_BROKER_RETURN_TO_HOSTS` | no | comma list of allowed `returnTo` hosts
+| `TOKEN_BROKER_DB_PATH` | no | SQLite path (default `/data/token-broker.db`)
+| `TOKEN_BROKER_PROVIDERS_FILE` | no | registry path (default `/app/providers.json`)
+| `TOKEN_BROKER_STATE_TTL_SECONDS` | no | authorization state lifetime (default 600)
+| `TOKEN_BROKER_REFRESH_SKEW_SECONDS` | no | refresh this long before expiry (default 60)
+| `TOKEN_BROKER_HTTP_TIMEOUT_SECONDS` | no | provider HTTP timeout (default 15)
+|===
+====
+
+== Add a delegation service
+
+A provider is a **registry entry, not code**. Edit `providers.json`:
+
+[source,json]
+----
+{
+  "providers": {
+    "github": {
+      "enabled": true,
+      "display_name": "GitHub",
+      "type": "oauth2",
+      "authorization_endpoint": "https://github.com/login/oauth/authorize",
+      "token_endpoint": "https://github.com/login/oauth/access_token",
+      "client_id": "Iv23li...",
+      "client_secret_env": "GITHUB_CLIENT_SECRET",
+      "scopes": [],
+      "pkce": false,
+      "refresh": true,
+      "token_auth_method": "client_secret_post"
+    }
+  }
+}
+----
+
+|===
+| Field | Meaning
+
+| `enabled` | disabled providers are neither advertised nor require a secret
+| `type` | `oauth2`
+| `authorization_endpoint`, `token_endpoint` | HTTPS (HTTP only on loopback)
+| `client_id` | provider client id
+| `client_secret_env` | environment variable holding the secret (never inline)
+| `scopes` | requested scopes; `[]` for GitHub App permissions
+| `pkce` | send S256 PKCE (default `true`)
+| `refresh` | allow the refresh-token grant (default `true`)
+| `token_auth_method` | `client_secret_post` (default), `client_secret_basic` or `none`
+| `revocation_endpoint` | optional RFC 7009 endpoint
+| `authorization_params` | extra string parameters; protocol params cannot be overridden
+|===
+
+Adding Google, Slack or an internal OAuth service is a registry entry,
+not a code change. Only genuinely non-standard providers need an
+adapter.
+
+Gate One references the provider **name**
+(`routes[].upstream.tokenBroker.provider`) and never sees its secret.
+
+== Endpoints
+
+[cols="1,2,2",options="header"]
+|===
+| Method | Path | Purpose
+
+| `GET` | `/health` | liveness/readiness (no auth)
+| `GET` | `/providers` | enabled provider names and connection status
+| `GET` | `/connections` | browser page (HTML/JSON): connect/disconnect
+| `POST` | `/connections/{provider}/disconnect` | delete the local token (and revoke)
+| `GET` | `/connect/{provider}` | start the authorization-code flow
+| `GET` | `/oauth/{provider}/callback` | exchange the code, store the tokens
+| `GET` | `/token/{provider}` | fresh access token for Gate One, or an explicit error
+| `DELETE` | `/token/{provider}` | disconnect / delete
+|===
+
+`/token/{provider}` answers `200` with the access token, `404`
+`not_connected`, `409` `reauthorization_required` (refresh rejected; the
+row is deleted) or `502` `upstream_unavailable` — each non-200 with a
+`connect_url`.
+
+== Link it to Gate One
+
+Gate One declares the broker once and a provider per route:
+
+[source,json]
+----
+"tokenBroker": {
+  "url": "http://token-broker:4000",
+  "secretEnv": "TOKEN_BROKER_SHARED_SECRET",
+  "links": { "services": { "label": "Services", "url": "https://login.example.com/connections" } }
+},
+"routes": [{
+  "host": "api.example.com", "path": "/github/*", "backend": "https://api.github.com",
+  "auth": {}, "upstream": { "tokenBroker": { "provider": "github" } }
+}]
+----
+
+See link:/docs/features/delegated-credentials/[Delegated credentials] for
+the route details and link:/docs/config/gate-one/#field-tokenBroker[the
+`tokenBroker` reference].
+
+== Licence
+
+The broker is part of the Gate One distribution and follows the
+repository licence (BSL-CUSTOM). It is not an authentication adapter.
