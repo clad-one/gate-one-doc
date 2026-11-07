@@ -75,10 +75,7 @@
         "type": "string",
         "enum": [
           "events",
-          "handler",
           "inject",
-          "assets",
-          "guard",
           "auth"
         ]
       },

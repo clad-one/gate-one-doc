@@ -18,14 +18,22 @@ provider and never calls a plugin on the authentication path.
 | Family | Runs in | Transport | Decides auth? | Licence
 
 | Auth adapter | broker | HTTP/JSON (gRPC later) | yes, in the broker | Gate One licence
-| Route handler / aggregator | Gate One | sidecar route or out-of-process | no, after auth | extension licence
-| Injection / userscript / UI | Gate One | signed inject bundle at startup | no | extension licence
-| Event consumer | Gate One | HTTP/JSON | no | extension licence
+| Injection / userscript / UI | Gate One | route `inject` bundle (config) | no | extension licence
+| Event consumer | Gate One | HTTP/JSON, signed manifest | no | extension licence
 | WASM transform | Gate One | wazero (later) | no | extension licence
 |===
 
-Only the last four are extensions. Auth adapters stay in the broker and
-remain under the Gate One licence.
+The injection bundle, the event consumer and the WASM transform are
+extensions; auth adapters stay in the broker and remain under the Gate
+One licence.
+
+A **Backend-For-Frontend is not a plugin**: it is a proxied `backend:`
+route, post-auth by definition (it receives the identity DTO /
+`X-Gate-One-Subject`), and can be written in any language. Gate One
+never loads it. Response transforms are the gateway's native injector
+chain (`inject`, `rewriteBody`, `responseHeaders`, `rewriteRedirects`,
+the guard); bespoke logic belongs in the backend or the edge proxy, not
+in a plugin.
 
 == Invariants
 

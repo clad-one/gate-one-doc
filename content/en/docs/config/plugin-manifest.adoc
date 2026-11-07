@@ -71,7 +71,7 @@ The signed manifest shipped with an out-of-process plugin. The operator referenc
 | Other artefacts this plugin depends on. Each digest must be allow-listed in the trust store.
 
 | [[field-capabilities]] `capabilities`
-| array of string (one of: `events`, `handler`, `inject`, `assets`, `guard`, `auth`)
+| array of string (one of: `events`, `inject`, `auth`)
 | no
 | Declared capabilities. An extension cannot declare auth; events requires the events capability.
 

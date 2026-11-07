@@ -21,14 +21,16 @@ develop, sign, install and revoke.
 
 | Event consumer | `GET /health` + `POST /events` (HTTP/JSON) | manifest, `capabilities: ["events"]` | implemented
 | Injection / UI | `route.inject` bundle (`inject-bundle.schema.json`) | route config, not a signed plugin | implemented
-| Route handler / aggregator | sidecar or out-of-process | manifest, `handler` | planned
-| Assets | static files | manifest, `assets` | planned
-| Guard | built into Gate One | — | not a plugin
 | Auth adapter | broker only | `kind: auth` | Gate One licence, not an extension
 |===
 
-Only the **event consumer** is a fully signed extension today; the other
-manifest capabilities are declared but not wired yet.
+Only the **event consumer** is a fully signed extension today.
+
+A **Backend-For-Frontend is not a plugin**: it is a proxied `backend:`
+route, post-auth by definition, written in any language. Response
+transforms are the gateway's native injector chain (`inject`,
+`rewriteBody`, `responseHeaders`, `rewriteRedirects`, the guard); bespoke
+logic belongs in the backend or the edge proxy.
 
 == The trust model
 
@@ -209,10 +211,13 @@ operator action.
   client-side patches), referenced by `route.inject` and validated
   against `inject-bundle.schema.json`. It is a configuration file, not a
   signed plugin; a signed-bundle path is planned.
-* **Route handler / aggregator** (`handler`) and **assets** (`assets`) —
-  declared in the manifest schema, not wired yet.
 * **Auth adapter** (`kind: auth`) — broker-only and under the Gate One
   licence; it is not an extension and cannot be signed by a third party.
+
+There is deliberately no “route handler” plugin: a Backend-For-Frontend
+is a proxied `backend:` route, and response transforms are the gateway's
+native injector chain. Adding an out-of-process transform would buffer
+the response and sit on the hot path, which Gate One avoids.
 
 == Install on the operator side
 
