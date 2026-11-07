@@ -60,6 +60,11 @@ The flat event delivered to subscribed out-of-process plugins. No token, cookie,
 | no
 | Normalized route pattern, never the raw URL/query. Maximum length: 512.
 
+| [[field-host]] `host`
+| string
+| no
+| Request host, without port. Routes are keyed by (host, path): this disambiguates the same path served on several hosts. Maximum length: 256.
+
 | [[field-method]] `method`
 | string
 | no

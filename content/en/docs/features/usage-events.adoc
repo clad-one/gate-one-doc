@@ -59,6 +59,8 @@ pollute, or depend on, the event bus.
 
 == Event shape
 
+An `auth` event:
+
 [source,json]
 ----
 {
@@ -69,9 +71,32 @@ pollute, or depend on, the event bus.
   "epoch": "2026-11-02T11:00:00Z",
   "tenant": "company",
   "subjectId": "v1....",
+  "host": "app.company.example",
   "action": "login",
   "sessionId": "...",
   "status": 200,
+  "authResult": "ok"
+}
+----
+
+A `request` event additionally carries the route, host and method:
+
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "type": "request",
+  "ts": "2026-11-02T12:00:01Z",
+  "instanceId": "gw-1",
+  "epoch": "2026-11-02T11:00:00Z",
+  "tenant": "company",
+  "subjectId": "v1....",
+  "host": "app.company.example",
+  "route": "/api/orders",
+  "method": "GET",
+  "status": 200,
+  "durationMs": 12,
+  "bytes": 1024,
   "authResult": "ok"
 }
 ----
@@ -80,6 +105,9 @@ Rules:
 
 * no token, cookie, raw query string, email or username;
 * `route` is the normalized pattern, never the raw URL;
+* `host` is the request host, **without port**. Routes are keyed by
+  (host, path): `host` + `route` identify the route, so the same path
+  served on two hosts is not ambiguous;
 * the user is an opaque `subjectId`:
   `v1.` + base64url(HMAC-SHA256(secret, issuer "\x00" sub));
 * the secret is per deployment, shared by every instance, and held only
