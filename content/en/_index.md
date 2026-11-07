@@ -5,12 +5,14 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="The overlay that hold your features, once for all." height="med" color="dark" %}}
+{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="Brings all your features together, once and for all." height="med" color="dark" %}}
 
-Once for all: SSO login with front/back interception,
-PWA, dynamic REST-to-MCP, 
-service aggregation and filtering, front proxy, usage events.  
-Custom injectable UX. 
+Once and for all: 
+SSO with front-end/back-end interception,
+PWA and REST to MCP, dynamic.  
+Service aggregation and filtering, front-end proxy, usage events.  
+Customizable and injectable user interface. 
+All combinations are possible. 
 
 No SDK, no fork, no frontend rewrite.
 
