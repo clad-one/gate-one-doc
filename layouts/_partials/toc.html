@@ -1,0 +1,28 @@
+{{/*
+
+  Project override of Docsy's layouts/_partials/toc.html (v0.18.1).
+
+  It reproduces the "On this page" block unchanged and appends the
+  "Referenced by" block, so both share the same sidebar shape. Keep in
+  sync when upgrading Docsy.
+
+  Always render the td-toc element. ScrollSpy is counting on it to exist,
+  even if it's empty.
+
+  cSpell:ignore notoc
+*/ -}}
+
+<div class="td-toc" data-proofer-ignore>
+{{ if not .Params.notoc -}}
+  {{ $toc := .TableOfContents -}}
+  {{ if and $toc (ne $toc `<nav id="TableOfContents"></nav>`) -}}
+    <div class="td-toc-title">
+      <span class="td-toc-title__text">{{ i18n "toc_on_this_page" }}</span>
+      <a class="td-toc-title__link" title="{{ i18n "toc_top_of_page" }}" href="#"></a>
+    </div>
+    {{ $toc | safeHTML }}
+  {{ end -}}
+{{ end -}}
+</div>
+{{ partial "references.html" . -}}
+{{/* */ -}}

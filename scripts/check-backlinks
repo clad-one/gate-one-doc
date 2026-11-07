@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# CI guard: the committed backlinks index must match the content links.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+"$PWD/scripts/gen-backlinks" >/dev/null
+if [ -n "$(git status --porcelain -- data/backlinks.json)" ]; then
+	echo "check-backlinks: data/backlinks.json is stale" >&2
+	echo "  run npm run backlinks and commit the result" >&2
+	exit 1
+fi
+echo "check-backlinks: backlinks index is up to date"

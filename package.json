@@ -7,9 +7,10 @@
     "build": "./scripts/build-site",
     "serve": "./scripts/serve-site",
     "docs": "./scripts/gen-config-docs",
+    "backlinks": "./scripts/gen-backlinks",
     "validate": "./scripts/validate-examples",
-    "test": "npm run docs && npm run validate && npm run mermaid && npm run build",
-    "check": "./scripts/check-generated && ./scripts/validate-examples && ./scripts/validate-mermaid",
+    "test": "npm run docs && npm run backlinks && npm run validate && npm run mermaid && npm run build",
+    "check": "./scripts/check-generated && ./scripts/check-backlinks && ./scripts/validate-examples && ./scripts/validate-mermaid",
     "mermaid": "./scripts/validate-mermaid"
   },
   "license": "SEE LICENSE IN https://github.com/clad-one/gate-one",

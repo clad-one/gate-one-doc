@@ -1,0 +1,179 @@
+{
+  "/docs/architecture": [
+    "/",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/bridge-contract": [
+    "/docs/examples/http-bridge",
+    "/docs/features/delegated-credentials",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/config/broker": [
+    "/docs/config",
+    "/docs/features/embedded-iam",
+    "/docs/features/multiple-idps",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/config/gate-one": [
+    "/",
+    "/docs/config",
+    "/docs/examples/account-panel",
+    "/docs/examples/getting-started",
+    "/docs/examples/high-availability",
+    "/docs/examples/siteproxy",
+    "/docs/features/account-panel",
+    "/docs/features/cross-tld-sso",
+    "/docs/features/delegated-credentials",
+    "/docs/features/horizontal-scaling",
+    "/docs/features/injectable-ux",
+    "/docs/features/mcp-tools",
+    "/docs/features/multiple-idps",
+    "/docs/features/protect-api-mcp",
+    "/docs/features/sso-multi-apps",
+    "/docs/features/usage-events"
+  ],
+  "/docs/config/plugin-manifest": [
+    "/docs/architecture",
+    "/docs/config",
+    "/docs/features/usage-events",
+    "/docs/plugins"
+  ],
+  "/docs/config/plugin-trust-store": [
+    "/docs/config",
+    "/docs/features/usage-events",
+    "/docs/plugins"
+  ],
+  "/docs/config/usage-event": [
+    "/docs/config",
+    "/docs/features/usage-events",
+    "/docs/plugins"
+  ],
+  "/docs/examples": [
+    "/"
+  ],
+  "/docs/examples/account-panel": [
+    "/docs/examples",
+    "/docs/features/account-panel",
+    "/docs/features/injectable-ux"
+  ],
+  "/docs/examples/api-mcp": [
+    "/docs/examples"
+  ],
+  "/docs/examples/cross-tld-sso": [
+    "/docs/examples"
+  ],
+  "/docs/examples/direct-oidc": [
+    "/docs/examples",
+    "/docs/features/multiple-idps",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/examples/embedded-iam": [
+    "/docs/examples",
+    "/docs/examples/direct-oidc",
+    "/docs/examples/keycloak-google",
+    "/docs/examples/multi-app-sso",
+    "/docs/features/embedded-iam",
+    "/docs/features/multiple-idps",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/examples/getting-started": [
+    "/docs/examples"
+  ],
+  "/docs/examples/high-availability": [
+    "/docs/examples",
+    "/docs/examples/multi-app-sso",
+    "/docs/features/horizontal-scaling"
+  ],
+  "/docs/examples/http-bridge": [
+    "/docs/examples"
+  ],
+  "/docs/examples/injectable-ux": [
+    "/docs/examples"
+  ],
+  "/docs/examples/keycloak-google": [
+    "/docs/examples",
+    "/docs/examples/direct-oidc",
+    "/docs/examples/embedded-iam",
+    "/docs/examples/multi-app-sso",
+    "/docs/features/multiple-idps"
+  ],
+  "/docs/examples/mcp-tools": [
+    "/docs/examples",
+    "/docs/features/delegated-credentials",
+    "/docs/features/mcp-tools"
+  ],
+  "/docs/examples/multi-app-sso": [
+    "/docs/examples",
+    "/docs/examples/getting-started",
+    "/docs/examples/high-availability",
+    "/docs/features/sso-multi-apps"
+  ],
+  "/docs/examples/siteproxy": [
+    "/docs/examples",
+    "/docs/features/injectable-ux"
+  ],
+  "/docs/examples/usage-plugin": [
+    "/docs/examples"
+  ],
+  "/docs/features/account-panel": [
+    "/docs/examples/account-panel",
+    "/docs/features/injectable-ux"
+  ],
+  "/docs/features/cross-tld-sso": [
+    "/docs/architecture",
+    "/docs/features/sso-multi-apps"
+  ],
+  "/docs/features/delegated-credentials": [
+    "/docs/examples/mcp-tools",
+    "/docs/features/mcp-tools",
+    "/docs/features/protect-api-mcp",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/features/embedded-iam": [
+    "/docs/features/multiple-idps",
+    "/docs/features/sso-multi-apps",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/features/horizontal-scaling": [
+    "/docs/features/sso-multi-apps"
+  ],
+  "/docs/features/injectable-ux": [
+    "/docs/architecture",
+    "/docs/examples/account-panel",
+    "/docs/examples/siteproxy",
+    "/docs/features/account-panel"
+  ],
+  "/docs/features/mcp-tools": [
+    "/docs/examples/mcp-tools",
+    "/docs/features/delegated-credentials",
+    "/docs/features/protect-api-mcp"
+  ],
+  "/docs/features/multiple-idps": [
+    "/docs/architecture",
+    "/docs/examples/direct-oidc",
+    "/docs/examples/keycloak-google",
+    "/docs/features/embedded-iam",
+    "/docs/iam-and-providers"
+  ],
+  "/docs/features/protect-api-mcp": [
+    "/docs/architecture",
+    "/docs/examples/mcp-tools",
+    "/docs/features/delegated-credentials",
+    "/docs/features/mcp-tools"
+  ],
+  "/docs/features/sso-multi-apps": [
+    "/docs/architecture"
+  ],
+  "/docs/features/usage-events": [
+    "/docs/architecture",
+    "/docs/plugins"
+  ],
+  "/docs/iam-and-providers": [
+    "/",
+    "/docs/features/delegated-credentials"
+  ],
+  "/docs/plugins": [
+    "/docs/architecture",
+    "/docs/iam-and-providers"
+  ]
+}

@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Generate data/backlinks.json: for each page, the pages that link to it.
+
+Links are extracted from AsciiDoc (`link:target[text]` and `link:target`)
+and Markdown (`[text](target)`). Only internal links that resolve to a
+known content page are kept; fragments and query strings are dropped
+(page-level backlinks).
+
+The generator is deterministic: running it twice produces the same file.
+The CI target (`scripts/check-backlinks`) runs it and fails on a diff.
+"""
+from __future__ import annotations
+
+import json
+import posixpath
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+CONTENT = ROOT / "content" / "en"
+OUT = ROOT / "data" / "backlinks.json"
+
+ADOC_LINK = re.compile(r"link:([^\s\[]+)")
+MD_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+FENCE_ADOC = re.compile(r"^----+\s*$")
+FENCE_MD = re.compile(r"^```")
+
+
+def iter_files() -> list[Path]:
+    files = sorted(CONTENT.rglob("*.md")) + sorted(CONTENT.rglob("*.adoc"))
+    return [f for f in files if f.is_file()]
+
+
+def page_path(rel: Path) -> str:
+    """Hugo-style logical path for a content file (leading slash, no ext)."""
+    parts = list(rel.with_suffix("").parts)
+    if parts and parts[-1] in ("index", "_index"):
+        parts = parts[:-1]
+    return "/" + "/".join(parts) if parts else "/"
+
+
+def strip_front_matter(text: str) -> str:
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            nl = text.find("\n", end + 1)
+            return text[nl + 1 :] if nl != -1 else ""
+    return text
+
+
+def strip_code(text: str) -> str:
+    """Remove fenced code blocks so example snippets are not parsed."""
+    out: list[str] = []
+    fence: str | None = None
+    for line in text.splitlines():
+        if fence is None:
+            if FENCE_ADOC.match(line):
+                fence = "adoc"
+                continue
+            if FENCE_MD.match(line):
+                fence = "md"
+                continue
+            out.append(line)
+        else:
+            if (fence == "adoc" and FENCE_ADOC.match(line)) or (
+                fence == "md" and FENCE_MD.match(line)
+            ):
+                fence = None
+    return "\n".join(out)
+
+
+def extract_links(body: str) -> list[str]:
+    hrefs = [m.group(1) for m in ADOC_LINK.finditer(body)]
+    hrefs += [m.group(1) for m in MD_LINK.finditer(body)]
+    return hrefs
+
+
+def clean(href: str) -> str | None:
+    href = href.strip().split()[0] if href.strip() else ""
+    if not href or href.startswith("#"):
+        return None
+    if href.startswith("//") or SCHEME.match(href):
+        return None
+    href = href.split("#", 1)[0].split("?", 1)[0]
+    return href or None
+
+
+def resolve(source_path: str, href: str) -> str:
+    if href.startswith("/"):
+        p = href
+    else:
+        p = source_path.rstrip("/") + "/" + href
+    p = posixpath.normpath(p)
+    return p if p == "/" else p.rstrip("/")
+
+
+def main() -> int:
+    pages: dict[str, Path] = {}
+    for f in iter_files():
+        pages[page_path(f.relative_to(CONTENT))] = f
+
+    backlinks: dict[str, set[str]] = {}
+    for path, f in pages.items():
+        body = strip_code(strip_front_matter(f.read_text(encoding="utf-8", errors="ignore")))
+        for href in extract_links(body):
+            target = clean(href)
+            if target is None:
+                continue
+            target = resolve(path, target)
+            if target == path or target not in pages:
+                continue
+            backlinks.setdefault(target, set()).add(path)
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(
+        json.dumps(
+            {k: sorted(v) for k, v in sorted(backlinks.items())},
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    total = sum(len(v) for v in backlinks.values())
+    print(f"gen-backlinks: {len(backlinks)} page(s), {total} reference(s) -> {OUT.relative_to(ROOT)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

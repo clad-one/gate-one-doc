@@ -55,7 +55,7 @@ content/en/          English documentation (Markdown + AsciiDoc)
 data/features.yaml   Feature claims rendered on /docs/features/
 examples/            Copyable, validated configuration examples
 schemas/             Published JSON Schemas (source: gate-one-src/testdata)
-scripts/             build-site, gen-config-docs, validate-examples, publish-pages
+scripts/             build-site, gen-config-docs, gen-backlinks, validate-examples, publish-pages
 static/              Static assets and hosting headers
 ```
 
@@ -70,6 +70,23 @@ npm run docs
 
 The build fails if the generated files are stale (CI runs
 `./scripts/check-generated`).
+
+## Backlinks
+
+Every documentation page shows a **Referenced by** block in the right
+sidebar, under "On this page". It lists the pages that link to the
+current one, with the same shape as the table of contents.
+
+The index is generated from the content links (AsciiDoc `link:` and
+Markdown links) into `data/backlinks.json`:
+
+```bash
+npm run backlinks
+```
+
+The build fails if the index is stale (CI runs
+`./scripts/check-backlinks`). Backlinks are page-level: fragments and
+query strings are dropped.
 
 ## Repositories
 
