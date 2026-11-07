@@ -1,0 +1,74 @@
+{
+  "authProviders": [
+    {
+      "id": "company",
+      "type": "oidc",
+      "issuer": "https://auth.example.com/t/company",
+      "clientId": "gate-one",
+      "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
+      "loginBaseUrl": "https://login.example.com",
+      "cookieDomain": "example.com",
+      "sessionKeyEnv": "MYCOMPANY_SESSION_KEY",
+      "sessionStore": {
+        "type": "redis",
+        "url": "redis://redis:6379/0",
+        "passwordEnv": "REDIS_PASSWORD",
+        "prefix": "cladone:auth:v1:"
+      }
+    },
+    {
+      "id": "company-api",
+      "type": "jwt",
+      "issuer": "https://auth.example.com/t/company",
+      "jwksUrl": "https://auth.example.com/t/company/jwks.json",
+      "audience": "https://api.example.com"
+    }
+  ],
+  "defaultAuthProvider": "company",
+  "mcpDefaults": {
+    "scope": "mcp-tools"
+  },
+  "routes": [
+    {
+      "host": "app.example.com",
+      "path": "/*",
+      "frontend": true,
+      "backend": "http://app:8080",
+      "auth": {}
+    },
+    {
+      "host": "api.example.com",
+      "path": "/v1/*",
+      "backend": "http://api:8080",
+      "auth": {
+        "provider": "company-api",
+        "identity": {
+          "scopes": [
+            "read:things"
+          ]
+        }
+      }
+    },
+    {
+      "host": "mcp.example.com",
+      "path": "/mcp",
+      "backend": "http://mcp:8080",
+      "auth": {
+        "provider": "company-api"
+      },
+      "mcp": {
+        "enabled": true,
+        "path": "/mcp",
+        "name": "things",
+        "resource": "https://mcp.example.com",
+        "scope": "mcp-tools",
+        "operations": [
+          {
+            "name": "list_things",
+            "operationId": "listThings"
+          }
+        ]
+      }
+    }
+  ]
+}
