@@ -1,0 +1,18 @@
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://auth.example.com/realms/company",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "roleClaims": ["realm_access.roles", "groups"]
+  },
+  "routes": [{
+    "host": "app.example.com",
+    "path": "/*",
+    "frontend": true,
+    "backend": "http://app:8080",
+    "auth": {}
+  }]
+}
