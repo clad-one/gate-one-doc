@@ -38,6 +38,19 @@ metering.
 `request` and `error` cannot use `fsync: "always"`: the proxy emitter
 cannot fsync before a streaming response. Use `window_ms` for them.
 
+[[auth-fail-closed]]
+[IMPORTANT]
+====
+Subscribing to **`auth` makes sign-in depend on the event bus**. On a
+login, `auth` is **fail-closed**: if the event cannot be written (WAL
+full, `onMaxLag: block`, plugin behind, disk error), Gate One returns
+**503 before creating the session** — the user cannot log in. Do **not**
+subscribe to `auth` in production unless you explicitly accept that a
+full or unavailable WAL blocks login. For a demo, an audit trail, or any
+non-critical use, subscribe to **`request`** and **`error`** instead:
+they are window/best-effort and never block a request.
+====
+
 == Event shape
 
 [source,json]
