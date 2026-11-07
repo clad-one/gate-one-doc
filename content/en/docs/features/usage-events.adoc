@@ -181,6 +181,10 @@ export GATE_ONE_PLUGIN_SECRET=...
 go run ./cmd/plugin-audit-echo -addr :9100 -name com.cladone.audit
 ----
 
+How to sign, install and revoke a plugin — and the unsigned development
+flow with `usage.requireSigned` — is in
+link:/docs/publish-a-plugin/[Publish and trust a plugin].
+
 == Licensing
 
 The core is source-available under BSL-CUSTOM. Non-auth, non-broker

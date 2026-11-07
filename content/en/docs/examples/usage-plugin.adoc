@@ -91,6 +91,10 @@ the canonical manifest plus the artefact digest.
 
 == Run it
 
+The plugin is a **separate service**: Gate One verifies its manifest but
+never launches it, so you start it first. The reference plugin lives at
+`cmd/plugin-audit-echo` in the source repository.
+
 [source,bash]
 ----
 # terminal 1: the reference plugin
@@ -121,6 +125,9 @@ unknown protected path to produce an `error` event.
 ====
 * The placeholder artefact is not a runnable binary: it only lets the
   configuration validate. Use a real signed artefact for a deployment.
+* The manifest is signed by the **publisher**; the operator only adds the
+  public key to the trust store. The full walkthrough is in
+  link:/docs/publish-a-plugin/[Publish and trust a plugin].
 * `request` and `error` cannot use `fsync: "always"`; use `window_ms`.
 * A plugin that stops acknowledging eventually triggers `onMaxLag`.
 * Long-term retention is the plugin's policy; the core only keeps what

@@ -182,6 +182,9 @@ go run ./cmd/plugin-audit-echo -addr :9100 -name com.cladone.audit
 The complete signed example is
 link:/examples/usage-events/routes.json[`routes.json`], link:/examples/usage-events/audit.manifest.json[`audit.manifest.json`], link:/examples/usage-events/trust-store.json[`trust-store.json`].
 
+The publisher/operator walkthrough — develop unsigned, sign, install and
+revoke — is in link:/docs/publish-a-plugin/[Publish and trust a plugin].
+
 == What is not a plugin
 
 * an authentication provider inside Gate One (`type: "plugin"` is

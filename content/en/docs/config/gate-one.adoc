@@ -836,6 +836,11 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | no
 | Path of the signed plugin trust store (JSON: keys, allowedNames, allowedDependencies, revokedDigests, allowAuth, coreVersion). Required when a plugin declares a signed manifest. Relative paths are resolved from the config file.
 
+| [[field-usage-requireSigned]] `requireSigned`
+| boolean
+| no
+| Refuse any plugin without a signed manifest. Default false: an unsigned plugin is allowed for development and logged as a warning.
+
 | [[field-usage-types]] `types`
 | map of <<config-usage-types,object>>
 | no

@@ -1,0 +1,259 @@
+---
+title: Publish and trust a plugin
+linkTitle: Publish a plugin
+weight: 35
+description: Develop, sign, install and revoke an out-of-process plugin, and the trust model behind it.
+mermaid: true
+---
+
+= Publish and trust a plugin
+
+Gate One extensions are **out-of-process services**. They are trusted
+through a **signed manifest** and a local **trust store**; code is never
+loaded into the gateway. This page is the publisher/operator walkthrough:
+develop, sign, install and revoke.
+
+== Plugin families
+
+[cols="1,2,1,1",options="header"]
+|===
+| Family | Contract | Signed | Status
+
+| Event consumer | `GET /health` + `POST /events` (HTTP/JSON) | manifest, `capabilities: ["events"]` | implemented
+| Injection / UI | `route.inject` bundle (`inject-bundle.schema.json`) | route config, not a signed plugin | implemented
+| Route handler / aggregator | sidecar or out-of-process | manifest, `handler` | planned
+| Assets | static files | manifest, `assets` | planned
+| Guard | built into Gate One | — | not a plugin
+| Auth adapter | broker only | `kind: auth` | Gate One licence, not an extension
+|===
+
+Only the **event consumer** is a fully signed extension today; the other
+manifest capabilities are declared but not wired yet.
+
+== The trust model
+
+Three roles:
+
+* the **plugin author** writes the plugin;
+* the **publisher** holds a signing key and signs the manifest;
+* the **operator** runs Gate One and provisions the trust store.
+
+The publisher signs the manifest **once**. The operator never re-signs:
+they only decide which keys and names they accept. The signature attests
+**provenance and integrity** — “this artefact is the one I signed and it
+is unchanged” — not quality.
+
+[NOTE]
+Signing is not a quality gate. A valid signature says nothing about
+whether the plugin behaves. The lever that matters after deployment is
+**revocation** (see below): the publisher can withdraw trust once
+experience shows the plugin is wrong, on their own initiative or at the
+plugin author's request (a bug, or a move to another model).
+
+Why it is useful: it **enforces trust between parties**. The operator
+trusts one publisher key instead of every developer; the publisher
+attests to what it signed; a swapped or tampered artefact fails closed
+(signature + digest); and `revokedDigests` gives recall.
+
+== Develop and test unsigned
+
+You do not need a signature to develop. Register the plugin with just
+`name` and `url` (plus `types` when there is no manifest):
+
+[source,json]
+----
+"usage": {
+  "dir": "./usage-wal",
+  "subjectSecretEnv": "GATE_ONE_SUBJECT_SECRET",
+  "pluginSecretEnv": "GATE_ONE_PLUGIN_SECRET",
+  "types": { "error": { "shareBytes": 10485760, "fsync": "window_ms" } },
+  "plugins": [{
+    "name": "com.acme.audit",
+    "url": "http://127.0.0.1:9100",
+    "types": ["error"]
+  }]
+}
+----
+
+Gate One loads it and delivers events; nothing is verified. So a
+developer can iterate without a key pair.
+
+[[unsigned-warning]]
+[IMPORTANT]
+====
+An unsigned plugin is **never silent**. Gate One logs a
+`CONFIG WARNING usage.plugins[<name>]: unsigned plugin (no manifest)` at
+startup and in `gate-one -check`. The warning is for the **operator**
+only — end users are not shown plugin trust state, because they cannot
+act on it and it would leak deployment details.
+
+Set `usage.requireSigned: true` in production: an unsigned plugin then
+becomes a **hard load error** instead of a warning.
+====
+
+== Publish step by step (event consumer)
+
+. **Implement the service.** It exposes `GET /health` and `POST /events`,
+  and verifies the `X-Gate-One-Assertion` on every call (see
+  link:/docs/plugins/[the plugin contract]).
+. **Build the artefact** and compute its `sha256:<hex>` digest (and
+  optional size).
+. **Write the manifest** — `name`, `version`, `hostAPI`, `artifact`,
+  `capabilities: ["events"]`, and the `events` subscription.
+. **Sign the manifest** with the publisher key.
+. **Distribute** the artefact, the signed manifest and the public key.
+
+=== The manifest
+
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "kind": "extension",
+  "name": "com.acme.audit",
+  "version": "1.0.0",
+  "apiVersion": "v1",
+  "hostAPI": ">=1.0 <2.0",
+  "keyId": "acme-2026",
+  "artifact": {
+    "type": "binary",
+    "digest": "sha256:…",
+    "size": 10485760,
+    "platform": "linux/amd64"
+  },
+  "capabilities": ["events"],
+  "events": {
+    "types": ["auth", "error"],
+    "filters": { "statusClasses": ["4xx", "5xx"] },
+    "maxLagBytes": 5000000,
+    "onMaxLag": "block"
+  },
+  "signature": { "alg": "ed25519", "keyId": "acme-2026", "value": "…" }
+}
+----
+
+The manifest is authoritative for the subscription; the fields on the
+plugin entry (`types`, `filters`, `maxLagBytes`, `onMaxLag`) are used
+only when there is no manifest.
+
+=== Signing the manifest
+
+The signature is Ed25519 over the **canonical manifest** (the manifest
+JSON with `signature` zeroed) followed by a newline and the artefact
+digest:
+
+[source,text]
+----
+payload = canonical_json(manifest without signature) + "\n" + artifact.digest
+signature.value = base64url(ed25519_sign(private_key, payload))
+----
+
+The canonical JSON is the one produced by `pluginmanifest.SigningPayload`
+in the source repository. There is **no signing CLI yet**: sign with that
+Go helper (or reproduce the manifest struct exactly), then put the public
+key in the operator's trust store.
+
+[NOTE]
+A signing CLI (`gate-one plugin sign`) is planned so publishers do not
+have to link the Go package.
+
+== Trust lifecycle
+
+++++
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant Dev as Plugin author
+  participant Pub as Publisher (signer)
+  participant Op as Operator
+  participant GO as Gate One
+  participant Pl as Plugin service
+  Dev->>Pub: artefact + manifest draft + tests
+  Pub->>Pub: sign manifest (Ed25519)
+  Pub-->>Op: artefact + signed manifest + public key
+  Op->>Op: trust store (key, allowedNames, allowedDependencies)
+  Op->>GO: usage.plugins + usage.requireSigned
+  GO->>GO: verify signature, digest, name, host API
+  GO->>Pl: POST /events (signed assertion)
+  Pl-->>GO: ack offsets
+  Pub-->>Op: revoke (digest) if the plugin misbehaves
+</pre>
+++++
+
+== Revocation
+
+Trust can be withdrawn after deployment. Three mechanisms, all applied by
+the operator (the trust store is provisioned out-of-band and never
+fetched from a plugin):
+
+* **Revoke an artefact** — add its `sha256` digest to
+  `trust-store.revokedDigests`. It is refused **even with a valid
+  signature**.
+* **Revoke a key** — remove the key from `trust-store.keys`; everything
+  that key signed is refused.
+* **Reload** — `SIGHUP` re-reads the trust store and the configuration;
+  the next load of the plugin fails closed.
+
+[NOTE]
+A **publisher-signed revocation feed** (and, more broadly, a publisher
+feed listing compatible Gate One versions, external components and
+plugins with their revocation status) is the planned evolution: the
+publisher publishes a signed document the operator adopts, so trust can
+be withdrawn without a manual edit. Until then, revocation is an
+operator action.
+
+== Differences by plugin type
+
+* **Event consumer** (`events`) — the implemented path; this page.
+* **Injection / UI** — today a per-route `inject` bundle (HTML/JS/CSS and
+  client-side patches), referenced by `route.inject` and validated
+  against `inject-bundle.schema.json`. It is a configuration file, not a
+  signed plugin; a signed-bundle path is planned.
+* **Route handler / aggregator** (`handler`) and **assets** (`assets`) —
+  declared in the manifest schema, not wired yet.
+* **Auth adapter** (`kind: auth`) — broker-only and under the Gate One
+  licence; it is not an extension and cannot be signed by a third party.
+
+== Install on the operator side
+
+[source,json]
+----
+"usage": {
+  "dir": "./usage-wal",
+  "subjectSecretEnv": "GATE_ONE_SUBJECT_SECRET",
+  "pluginSecretEnv": "GATE_ONE_PLUGIN_SECRET",
+  "trustStore": "trust-store.json",
+  "requireSigned": true,
+  "types": { "auth": { "shareBytes": 10485760, "fsync": "always" } },
+  "plugins": [{
+    "name": "com.acme.audit",
+    "url": "http://127.0.0.1:9100",
+    "manifest": "acme-audit.manifest.json",
+    "artifact": "acme-audit"
+  }]
+}
+----
+
+* a signed manifest requires `usage.trustStore`;
+* `artifact` is the file whose digest the manifest signs (Gate One
+  verifies it, it does **not** launch it — the service must be running at
+  `url`);
+* relative paths are resolved from the configuration file;
+* `SIGHUP` reloads the configuration, including plugins.
+
+The complete signed example is
+link:/docs/examples/usage-plugin/[the usage-plugin example].
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-usage-plugins[`usage.plugins`]
+* link:/docs/config/gate-one/#field-usage-requireSigned[`usage.requireSigned`]
+* link:/docs/config/gate-one/#field-usage-trustStore[`usage.trustStore`]
+* link:/docs/config/plugin-manifest/[Plugin manifest]
+* link:/docs/config/plugin-trust-store/[Trust store]
+
+== Read next
+
+* link:/docs/plugins/[Plugins]
+* link:/docs/features/usage-events/[Usage events and plugins]
+* link:/docs/examples/usage-plugin/[Usage plugin example]
