@@ -116,6 +116,15 @@ not an authentication token.
   evictable, the plugin is marked degraded);
 * a new subscriber starts at the tail; there is no historical replay.
 
+[NOTE]
+====
+`usage.dir` is **local to each replica**: it is that node's own WAL. With
+several replicas behind a load balancer, give **every node its own
+directory** (and its own `nodeId`) — two writers on one directory would
+corrupt it. Each node delivers its events independently; there is no
+cross-node aggregation.
+====
+
 On a login, `auth` is **fail-closed**: if the event cannot be written,
 Gate One returns 503 before creating the session. Logout and back-channel
 logout are best effort: the revocation must succeed even if auditing
