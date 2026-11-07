@@ -58,6 +58,13 @@ per-resource policy engine, no admin UI, no multi-identity linking.
 * Feature: link:/docs/features/embedded-iam/[Embedded IAM]
 * Example: link:/docs/examples/embedded-iam/[Embedded IAM example]
 
+== The simplest case: one IdP, direct OIDC
+
+If you have a single identity provider that already carries the roles and
+scopes your routes need, point Gate One straight at it: one `oidc`
+provider, no federation, no broker. See the
+link:/docs/examples/direct-oidc/[Direct OIDC example].
+
 == Choosing
 
 [cols="2,1",options="header"]
@@ -65,7 +72,7 @@ per-resource policy engine, no admin UI, no multi-identity linking.
 | If you… | Use
 | Already run Keycloak, Zitadel, Entra or Auth0 | that IAM as the single OIDC issuer
 | Want federation without another IAM service | `cladone-auth` embedded IAM
-| Have only one IdP | direct `oidc`, no IAM needed
+| Have only one IdP | direct `oidc`, no IAM needed (link:/docs/examples/direct-oidc/[example])
 | Need full user lifecycle, admin console and enterprise policies | an external IAM such as Keycloak or Zitadel
 |===
 

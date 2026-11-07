@@ -53,7 +53,8 @@ Two valid shapes:
    provider that acts as both the IdP and the IAM/authorization server.
    It authenticates the user and emits the roles, scopes and claims Gate
    One enforces. This is simpler, but the provider must supply the claims
-   your routes need.
+   your routes need. See the
+   [Direct OIDC example](/docs/examples/direct-oidc/).
 
 In both shapes, Gate One enforces `auth.identity` per route; the IAM does
 not decide which application route a user may call. An IdP that only

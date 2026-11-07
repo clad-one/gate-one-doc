@@ -1,0 +1,103 @@
+---
+title: Direct OIDC with one IdP
+linkTitle: Direct OIDC
+weight: 15
+description: Point Gate One straight at a single OIDC issuer, with no federation and no broker.
+---
+
+= Direct OIDC with one IdP
+
+This example points Gate One straight at **one OIDC issuer**: no external
+IAM to federate, no embedded broker. Gate One is the relying party; the
+issuer is the IdP and, because it also carries roles and scopes, the
+authorization source for that deployment.
+
+A single **Keycloak realm** is used here, but the same shape works for
+any one issuer — Zitadel, Entra ID, Okta or Auth0.
+
+== Useful if you want to…
+
+* authenticate users from exactly one identity provider;
+* use its roles, scopes and claims directly, with no extra service;
+* keep the Gate One configuration as small as possible.
+
+If you must federate several IdPs, use an external IAM
+(link:/docs/examples/keycloak-google/[Keycloak with Google]) or the
+embedded broker (link:/docs/examples/embedded-iam/[Embedded IAM]).
+
+== File
+
+link:/examples/direct-oidc/routes.json[`examples/direct-oidc/routes.json`]
+
+[source,json]
+----
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://idp.example.com/realms/mycompany",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "scopes": ["openid", "profile", "email"],
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "backchannelLogout": true
+  },
+  "routes": [
+    {
+      "host": "app.example.com", "path": "/*", "frontend": true,
+      "backend": "http://app:8080", "auth": {}
+    },
+    {
+      "host": "app.example.com", "path": "/admin/*",
+      "backend": "http://app:8080",
+      "auth": { "identity": { "roles": ["app-admin"] } }
+    }
+  ]
+}
+----
+
+== Why direct, and what you give up
+
+* **No claim mapping.** Gate One's default `roleClaims` and `scopesClaim`
+  are Keycloak-shaped, so `realm_access.roles`,
+  `resource_access.<clientId>.roles`, `groups` and `scope` are read with
+  no configuration.
+* **One provider, one session, no broker, no federation.** The file above
+  is the whole authentication setup.
+* **You reuse the IAM you already run** — user lifecycle, groups, client
+  scopes, audience mappers (for MCP), back-channel logout.
+
+What you give up is federating several upstream IdPs behind one issuer;
+add that with an external IAM or the broker when you need it.
+
+== If your one provider is Google
+
+Google's ID token carries possibly only an `hd` (hosted domain) claim,
+useful to restrict a route to your organization's domain:
+
+[source,json]
+----
+"auth": { "identity": { "claims": { "hd": "yourcompany.com" } } }
+----
+
+If you need Google-issued tokens with roles, that is Google Cloud
+Identity Platform custom claims; otherwise put an IAM (Keycloak, Entra,
+Okta) or the broker in front of Google.
+
+== Run it
+
+[source,bash]
+----
+export OIDC_CLIENT_SECRET=...
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+Register `https://login.example.com/auth/callback` at the issuer.
+
+== See also
+
+* link:/docs/features/multiple-idps/[Multiple identity providers]
+* link:/docs/examples/keycloak-google/[Keycloak with Google]
+* link:/docs/examples/embedded-iam/[Embedded IAM]

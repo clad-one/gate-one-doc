@@ -14,13 +14,15 @@ userscript live.
 | Example | What it shows |
 |---|---|
 | [Getting started](getting-started/) | A local demo with the embedded development identity provider, its default users and a user badge. |
+| [Direct OIDC](direct-oidc/) | One OIDC issuer used directly, with roles and scopes read from that issuer and no federation or broker. |
 | [Multi-app SSO](multi-app-sso/) | A second application added to the same provider and cookie domain, reusing the login session. |
 | [Cross-domain SSO](cross-tld-sso/) | Two unrelated domains using one IdP session, one provider per domain and a single shared route body. |
 | [Keycloak with Google](keycloak-google/) | A classical external IAM: Keycloak federates Google, Gate One trusts one Keycloak issuer. |
 | [Embedded IAM](embedded-iam/) | `cladone-auth` federates Google, maps claims and stores local/federated user grants. |
 | [High Availability](high-availability/) | Several Gate One replicas behind a load balancer with shared Redis state. |
 | [APIs and MCP](api-mcp/) | A browser provider, a JWT provider, an identity-conditioned API route and an MCP service. |
-| [MCP tools](mcp-tools/) | A REST-derived MCP service, a proxied MCP server and an aggregating set, with delegated credentials. || [Own account panel](account-panel/) | The application's own burger panel reads the session instead of the built-in user badge. |
+| [MCP tools](mcp-tools/) | A REST-derived MCP service, a proxied MCP server and an aggregating set, with delegated credentials. |
+| [Own account panel](account-panel/) | The application's own burger panel reads the session instead of the built-in user badge. |
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle, 403 banner and a nonce CSP. |
 | [Enhance a proxied site](siteproxy/) | An external site proxied through Gate One with an injected userscript. |
 | [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. |
@@ -29,6 +31,7 @@ userscript live.
 The raw files are also served under `/examples/`:
 
 * [`examples/getting-started/routes.json`](/examples/getting-started/routes.json)
+* [`examples/direct-oidc/routes.json`](/examples/direct-oidc/routes.json)
 * [`examples/sso-multi-apps/routes.json`](/examples/sso-multi-apps/routes.json)
 * [`examples/cross-tld-sso/routes.json`](/examples/cross-tld-sso/routes.json)
 * [`examples/keycloak-google/routes.json`](/examples/keycloak-google/routes.json)

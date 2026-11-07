@@ -1,0 +1,45 @@
+{
+  "authProvider": {
+    "type": "oidc",
+    "issuer": "https://idp.example.com/realms/mycompany",
+    "clientId": "gate-one",
+    "clientSecretEnv": "OIDC_CLIENT_SECRET",
+    "loginBaseUrl": "https://login.example.com",
+    "cookieDomain": "example.com",
+    "scopes": [
+      "openid",
+      "profile",
+      "email"
+    ],
+    "sessionKeyEnv": "OIDC_SESSION_KEY",
+    "backchannelLogout": true
+  },
+  "routes": [
+    {
+      "host": "app.example.com",
+      "path": "/*",
+      "frontend": true,
+      "backend": "http://app:8080",
+      "auth": {},
+      "userBadge": {
+        "position": "right",
+        "claims": [
+          "preferred_username",
+          "email"
+        ]
+      }
+    },
+    {
+      "host": "app.example.com",
+      "path": "/admin/*",
+      "backend": "http://app:8080",
+      "auth": {
+        "identity": {
+          "roles": [
+            "app-admin"
+          ]
+        }
+      }
+    }
+  ]
+}
