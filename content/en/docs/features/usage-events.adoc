@@ -51,6 +51,12 @@ non-critical use, subscribe to **`request`** and **`error`** instead:
 they are window/best-effort and never block a request.
 ====
 
+A route can opt out of the bus entirely with `"usage": false` (default
+`true`): it is served normally but produces **no** event — no WAL
+reservation and no admission 503 on that route. Use it for control or
+monitoring routes (a status page, an events viewer) that must not
+pollute, or depend on, the event bus.
+
 == Event shape
 
 [source,json]
