@@ -84,20 +84,33 @@
     - label: mcp
       url: /docs/config/gate-one/#field-routes-mcp
   plugin: false
+- slug: mcp-tools
+  title: Expose REST APIs and MCP servers as MCP tools
+  linkTitle: MCP tools
+  weight: 55
+  usefulIf: you want MCP clients to reach services that do not speak MCP.
+  summary: Derive tools from an OpenAPI document, proxy an existing MCP server, and aggregate several services under one endpoint with its own audience, scope and identity.
+  example: /docs/examples/mcp-tools/
+  configRefs:
+    - label: mcp.operations
+      url: /docs/config/gate-one/#field-routes-mcp-operations
+    - label: mcp.upstream
+      url: /docs/config/gate-one/#field-routes-mcp-upstream
+    - label: mcpSets
+      url: /docs/config/gate-one/#field-mcpSets
+  plugin: false
 - slug: delegated-credentials
   title: Call services with the user's credentials
   linkTitle: Delegated credentials
-  weight: 55
-  usefulIf: your MCP tools or API routes must call an external service as the signed-in user.
+  weight: 56
+  usefulIf: a route or an MCP tool must call an external service as the signed-in user.
   summary: The token broker stores a per-user token; upstream.delegated injects it into API and MCP requests, and the user badge links to the connections page.
-  example: /docs/examples/delegated-credentials/
+  example: /docs/examples/mcp-tools/
   configRefs:
     - label: tokenBroker
       url: /docs/config/gate-one/#field-tokenBroker
     - label: upstream.delegated
       url: /docs/config/gate-one/#field-routes-upstream-delegated
-    - label: mcp
-      url: /docs/config/gate-one/#field-routes-mcp
   plugin: false
 - slug: injectable-ux
   title: Injectable UX

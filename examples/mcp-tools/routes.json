@@ -25,6 +25,33 @@
       }
     }
   },
+  "mcpSets": {
+    "developer-tools": {
+      "host": "mcp.example.com",
+      "endpoint": "/developer-tools",
+      "resource": "https://mcp.example.com/developer-tools",
+      "scope": "mcp-tools",
+      "identity": {
+        "roles": [
+          "developer"
+        ]
+      },
+      "members": [
+        {
+          "service": "github",
+          "path": "/github",
+          "tools": [
+            "list_repos",
+            "get_repo"
+          ]
+        },
+        {
+          "service": "metrics",
+          "path": "/metrics"
+        }
+      ]
+    }
+  },
   "routes": [
     {
       "host": "api.example.com",
@@ -41,7 +68,7 @@
     },
     {
       "host": "mcp.example.com",
-      "path": "/internal-github",
+      "path": "/github",
       "backend": "https://api.github.com",
       "auth": {},
       "upstream": {
@@ -56,6 +83,7 @@
       "mcp": {
         "enabled": true,
         "name": "github",
+        "standalone": false,
         "operations": [
           {
             "name": "list_repos",
@@ -70,6 +98,29 @@
             "operationId": "list_issues"
           }
         ]
+      }
+    },
+    {
+      "host": "mcp.example.com",
+      "path": "/metrics",
+      "backend": "http://metrics-mcp:8080",
+      "auth": {},
+      "mcp": {
+        "enabled": true,
+        "name": "metrics",
+        "standalone": false,
+        "upstream": {
+          "url": "http://metrics-mcp:8080/mcp",
+          "tools": {
+            "include": [
+              "list_*",
+              "get_*"
+            ],
+            "exclude": [
+              "*_secret"
+            ]
+          }
+        }
       }
     }
   ]

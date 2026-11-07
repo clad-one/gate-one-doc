@@ -66,7 +66,7 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | Optional defaults shared by every MCP access unit.
 
 | [[field-mcpSets]] `mcpSets`
-| object
+| map of <<config-mcpSets,object>>
 | no
 | Named groups of MCP services exposed with their own access rights (resource/scope/identity) and per-member tool filters. A member endpoint is set.host + set.endpoint + member.path.
 
@@ -689,6 +689,114 @@ Optional defaults shared by every MCP access unit.
 
 |===
 
+[[config-mcpSets]]
+=== mcpSets
+
+An MCP access unit grouping services under one endpoint; carries the audience (resource), scope and identity of the group.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-mcpSets-host]] `host`
+| string
+| yes
+| Public host serving the set.
+
+| [[field-mcpSets-endpoint]] `endpoint`
+| string
+| yes
+| Mount path of the set on that host ("/" allowed).
+
+| [[field-mcpSets-resource]] `resource`
+| string
+| no
+| OAuth protected-resource identifier (audience) of the set. Empty = the set endpoint URL.
+
+| [[field-mcpSets-scope]] `scope`
+| string
+| no
+| MCP scope required from clients of this set. Default: mcpDefaults.scope, else mcp-tools.
+
+| [[field-mcpSets-identity]] `identity`
+| <<config-mcpSets-identity,object>>
+| no
+| Identity policy conditions, evaluated AFTER authentication on the verified token (failure = 403 forbidden). All conditions combine with AND.
+
+| [[field-mcpSets-enabled]] `enabled`
+| boolean
+| no
+| Expose the set (default true). false = the whole set is skipped (no endpoint, no validation).
+
+| [[field-mcpSets-members]] `members`
+| array of <<config-mcpSets-members,object>>
+| yes
+| —
+
+|===
+
+[[config-mcpSets-identity]]
+==== mcpSets.identity
+
+Identity policy conditions, evaluated AFTER authentication on the verified token (failure = 403 forbidden). All conditions combine with AND.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-mcpSets-identity-roles]] `roles`
+| array of string
+| no
+| Required Keycloak roles (realm roles + flattened client roles, see auth-bridge's X-Roles). AND between them. Example of a fixed name: offline_access (realm role granted to every user via default-roles-<realm>).
+
+| [[field-mcpSets-identity-scopes]] `scopes`
+| array of string
+| no
+| Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
+
+| [[field-mcpSets-identity-claims]] `claims`
+| object
+| no
+| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+
+| [[field-mcpSets-identity-user]] `user`
+| string
+| no
+| Exact username required (preferred_username).
+
+|===
+
+[[config-mcpSets-members]]
+==== mcpSets.members
+
+One service mounted under a set.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-mcpSets-members-service]] `service`
+| string
+| yes
+| mcp.name of the referenced service.
+
+| [[field-mcpSets-members-path]] `path`
+| string
+| yes
+| Path relative to the set endpoint ("/" = the set endpoint itself).
+
+| [[field-mcpSets-members-tools]] `tools`
+| array of string
+| no
+| Optional glob allow-list restricting the service's tools inside this set.
+
+| [[field-mcpSets-members-enabled]] `enabled`
+| boolean
+| no
+| Expose this member (default true). false = not materialized, and its service is neither compiled (no OpenAPI fetch) nor provider-validated.
+
+|===
+
 [[config-usage]]
 === usage
 
@@ -729,7 +837,7 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | Path of the signed plugin trust store (JSON: keys, allowedNames, allowedDependencies, revokedDigests, allowAuth, coreVersion). Required when a plugin declares a signed manifest. Relative paths are resolved from the config file.
 
 | [[field-usage-types]] `types`
-| object
+| map of <<config-usage-types,object>>
 | no
 | Durable event type -> WAL policy. A plugin can only subscribe to a configured type.
 
@@ -737,6 +845,35 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | array of <<config-usage-plugins,object>>
 | no
 | Out-of-process event consumers (HTTP/JSON), each with its own subscription or signed manifest.
+
+|===
+
+[[config-usage-types]]
+==== usage.types
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-types-shareBytes]] `shareBytes`
+| integer
+| yes
+| Maximum size of this type's WAL on this node. Minimum: 1.
+
+| [[field-usage-types-fsync]] `fsync`
+| string (one of: `none`, `window_ms`, `always`)
+| no
+| Durability: none, group commit every windowMs, or fsync before the response (zero_loss). always is refused for request/error (the proxy emitter cannot fsync before a streaming response).
+
+| [[field-usage-types-windowMs]] `windowMs`
+| integer
+| no
+| Group-commit interval for fsync=window_ms. Default 100. Minimum: 1.
+
+| [[field-usage-types-segmentBytes]] `segmentBytes`
+| integer
+| no
+| Append-file rotation size. 0 = share/4 capped at 8 MiB. Minimum: 0.
 
 |===
 

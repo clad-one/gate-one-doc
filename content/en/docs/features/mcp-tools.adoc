@@ -1,0 +1,167 @@
+---
+title: Expose REST APIs and MCP servers as MCP tools
+linkTitle: MCP tools
+weight: 35
+description: Turn documented REST APIs and existing MCP servers into a governed MCP surface, and aggregate them under one endpoint.
+---
+
+= Expose REST APIs and MCP servers as MCP tools
+
+== Useful if you want to…
+
+* give MCP clients (an assistant, an IDE, an agent) a governed tool
+  surface over services that do not speak MCP;
+* expose a documented REST API as MCP tools without writing a server;
+* proxy an existing MCP server and restrict which tools it exposes;
+* aggregate several services under **one** endpoint with its own
+  audience, scope and identity rules.
+
+== One endpoint, three sources
+
+An MCP route (`mcp.enabled`) builds its tool list one of three ways:
+
+[cols="1,2",options="header"]
+|===
+| Source | What you declare
+
+| Derive from REST | `mcp.operations` names the tools; `openapi.url` resolves each `operationId`
+| Proxy an MCP server | `mcp.upstream.url` forwards to an existing Streamable-HTTP MCP server
+| Aggregate | `mcpSets` groups named services under one endpoint
+|===
+
+The tools are derived from the route policy and the upstream OpenAPI
+document, not hard-coded per API: the same binary exposes any documented
+REST service as MCP.
+
+== Derive tools from an OpenAPI document
+
+[source,json]
+----
+{
+  "host": "mcp.example.com",
+  "path": "/github",
+  "backend": "https://api.github.com",
+  "auth": {},
+  "openapi": { "url": "http://landing/github-openapi.json", "public": false },
+  "mcp": {
+    "enabled": true,
+    "name": "github",
+    "operations": [
+      { "name": "list_repos", "operationId": "list_repos" },
+      { "name": "get_repo", "operationId": "get_repo" }
+    ]
+  }
+}
+----
+
+Gate One resolves each `operationId` in the OpenAPI document to the
+method, path template, parameters and JSON body schema, and turns them
+into the tool's arguments. An unresolved `operationId` refuses the
+configuration at load, so a typo never ships as a silently missing tool.
+
+== Proxy an existing MCP server
+
+Instead of deriving local tools, forward to a server that already speaks
+MCP over Streamable HTTP:
+
+[source,json]
+----
+{
+  "host": "mcp.example.com",
+  "path": "/metrics",
+  "backend": "http://metrics-mcp:8080",
+  "auth": {},
+  "mcp": {
+    "enabled": true,
+    "name": "metrics",
+    "upstream": {
+      "url": "http://metrics-mcp:8080/mcp",
+      "tools": { "include": ["list_*", "get_*"], "exclude": ["*_secret"] }
+    }
+  }
+}
+----
+
+`include` and `exclude` are glob patterns over tool names; `exclude`
+always wins, and a hidden tool is refused on both `tools/list` and
+`tools/call`.
+
+== Aggregate services under one endpoint
+
+`mcpSets` groups named services (`mcp.name`) under a single endpoint. The
+set carries the access rights; each member keeps its own path and tool
+filter:
+
+[source,json]
+----
+{
+  "mcpSets": {
+    "developer-tools": {
+      "host": "mcp.example.com",
+      "endpoint": "/developer-tools",
+      "resource": "https://mcp.example.com/developer-tools",
+      "scope": "mcp-tools",
+      "identity": { "roles": ["developer"] },
+      "members": [
+        { "service": "github", "path": "/github",
+          "tools": ["list_repos", "get_repo"] },
+        { "service": "metrics", "path": "/metrics" }
+      ]
+    }
+  }
+}
+----
+
+* a member endpoint is `host` + `endpoint` + `path`;
+* `tools` is an allow-list; omit it to expose every tool of the service;
+* `enabled: false` skips a member entirely (its service is not even
+  compiled), which is how you stage a service without removing it;
+* set `mcp.standalone: false` on a service that must exist **only**
+  through a set, never on its own endpoint.
+
+[[notes]]
+[NOTE]
+====
+* `mcp.operations` and `mcp.upstream` are mutually exclusive on a route.
+* The audience check fails closed: if the issuer does not put the
+  resource in `aud`, configure an audience mapper (or `mcpAudience`).
+* A tool name must be unique per route; an unresolved `operationId`
+  refuses the configuration at load.
+====
+
+== Authenticate the upstream
+
+The tool call reaches the backend with one of:
+
+* **static** headers — `upstream.headers`, one shared value;
+* **delegated** credentials — `upstream.delegated` injects the caller's
+  per-user token from the token broker.
+
+The upstream never receives the Gate One bearer. Delegation is what lets
+a tool call GitHub or GitLab **as the user**; see
+link:/docs/features/delegated-credentials/[Delegated credentials].
+
+== Metadata, scope and audience
+
+Each endpoint serves `/.well-known/oauth-protected-resource` with its
+resource (audience), scope and tool list, and Gate One checks the bearer
+`aud` and `scope` before any tool runs. The rules are shared with
+protected APIs: see
+link:/docs/features/protect-api-mcp/[Protect APIs and MCP tools].
+
+== Complete example
+
+link:/docs/examples/mcp-tools/[MCP tools] shows a REST-derived service, a
+proxied MCP server, an aggregating set and delegated credentials.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-routes-mcp[`routes[].mcp`]
+* link:/docs/config/gate-one/#field-routes-mcp-operations[`routes[].mcp.operations`]
+* link:/docs/config/gate-one/#field-routes-mcp-upstream[`routes[].mcp.upstream`]
+* link:/docs/config/gate-one/#field-mcpSets[`mcpSets`]
+
+== Read next
+
+* link:/docs/features/protect-api-mcp/[Protect APIs and MCP tools]
+* link:/docs/features/delegated-credentials/[Delegated credentials]

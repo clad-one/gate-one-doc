@@ -20,8 +20,7 @@ userscript live.
 | [Embedded IAM](embedded-iam/) | `cladone-auth` federates Google, maps claims and stores local/federated user grants. |
 | [High Availability](high-availability/) | Several Gate One replicas behind a load balancer with shared Redis state. |
 | [APIs and MCP](api-mcp/) | A browser provider, a JWT provider, an identity-conditioned API route and an MCP service. |
-| [Delegated credentials](delegated-credentials/) | A token broker, an API route and an MCP service that call GitHub as the signed-in user. |
-| [Own account panel](account-panel/) | The application's own burger panel reads the session instead of the built-in user badge. |
+| [MCP tools](mcp-tools/) | A REST-derived MCP service, a proxied MCP server and an aggregating set, with delegated credentials. || [Own account panel](account-panel/) | The application's own burger panel reads the session instead of the built-in user badge. |
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle, 403 banner and a nonce CSP. |
 | [Enhance a proxied site](siteproxy/) | An external site proxied through Gate One with an injected userscript. |
 | [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. |
@@ -37,7 +36,7 @@ The raw files are also served under `/examples/`:
   and [`routes.json`](/examples/embedded-iam/routes.json)
 * [`examples/high-availability/routes.json`](/examples/high-availability/routes.json)
 * [`examples/protect-api-mcp/routes.json`](/examples/protect-api-mcp/routes.json)
-* [`examples/delegated-credentials/routes.json`](/examples/delegated-credentials/routes.json)
+* [`examples/mcp-tools/routes.json`](/examples/mcp-tools/routes.json)
 * [`examples/http-bridge/routes.json`](/examples/http-bridge/routes.json)
 * [`examples/account-panel/routes.json`](/examples/account-panel/routes.json),
   [`panel.js`](/examples/account-panel/panel.js),

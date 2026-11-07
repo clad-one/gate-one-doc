@@ -100,7 +100,7 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
 
 | [[field-tenants-upstreams]] `upstreams`
-| object
+| map of <<config-tenants-upstreams,object>>
 | no
 | Named OIDC upstreams (google, microsoft, …). The key is the idp authorize parameter and the chooser label.
 
@@ -231,6 +231,67 @@ Upstream OIDC identity provider configuration. The google key defaults to the Go
 | Label shown on the identity provider chooser. Default: the upstream key.
 
 | [[field-tenants-google-optional]] `optional`
+| boolean
+| no
+| Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.
+
+|===
+
+[[config-tenants-upstreams]]
+==== tenants.upstreams
+
+Upstream OIDC identity provider configuration. The google key defaults to the Google issuer; other keys require issuer, clientId/Env and clientSecret/Env.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-upstreams-issuer]] `issuer`
+| string
+| no
+| Upstream OIDC issuer. Default https://accounts.google.com for the google upstream; required for other upstreams.
+
+| [[field-tenants-upstreams-clientId]] `clientId`
+| string
+| no
+| Upstream OIDC client id. Prefer clientIdEnv.
+
+| [[field-tenants-upstreams-clientIdEnv]] `clientIdEnv`
+| string
+| no
+| Environment variable holding the upstream client id.
+
+| [[field-tenants-upstreams-clientSecret]] `clientSecret`
+| string
+| no
+| Inline upstream client secret. Prefer clientSecretEnv. Write-only; prefer the `*Env` form.
+
+| [[field-tenants-upstreams-clientSecretEnv]] `clientSecretEnv`
+| string
+| no
+| Environment variable holding the upstream client secret.
+
+| [[field-tenants-upstreams-prompt]] `prompt`
+| string
+| no
+| Forwarded to the upstream authorize endpoint (for example select_account).
+
+| [[field-tenants-upstreams-hostedDomain]] `hostedDomain`
+| string
+| no
+| Google Workspace hosted domain (hd) restriction.
+
+| [[field-tenants-upstreams-scopes]] `scopes`
+| array of string
+| no
+| Upstream scopes. Default openid, profile, email.
+
+| [[field-tenants-upstreams-displayName]] `displayName`
+| string
+| no
+| Label shown on the identity provider chooser. Default: the upstream key.
+
+| [[field-tenants-upstreams-optional]] `optional`
 | boolean
 | no
 | Skip this upstream when its client id/secret environment variables are empty, instead of refusing startup.

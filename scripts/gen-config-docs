@@ -173,21 +173,33 @@ def object_section(
         typ = type_label(root, prop)
         child = None
         child_path = ""
+        container = ""
         if isinstance(resolved, dict) and resolved.get("type") in ("object", "array"):
             if resolved.get("type") == "array":
                 item = resolve(root, resolved.get("items", {}))
                 if item.get("type") == "object":
                     child = resolved.get("items", {})
+                    container = "array"
             elif resolved.get("properties"):
                 child = prop
+            elif isinstance(resolved.get("additionalProperties"), dict):
+                # A map: {name: object}. Document the value schema as one
+                # section (e.g. mcpSets -> mcpSet), like an array of object.
+                value = resolve(root, resolved["additionalProperties"])
+                if value.get("type") == "object":
+                    child = resolved["additionalProperties"]
+                    container = "map"
             if child is not None:
-                suffix = "[]" if resolved.get("type") == "array" else ""
+                suffix = "[]" if container in ("array", "map") else ""
                 child_path = (f"{path}.{name}{suffix}" if path
                               else f"{name}{suffix}")
                 child_anchor = slug(child_path)
-                typ = (f"array of <<{child_anchor},object>>"
-                       if resolved.get("type") == "array"
-                       else f"<<{child_anchor},object>>")
+                if container == "array":
+                    typ = f"array of <<{child_anchor},object>>"
+                elif container == "map":
+                    typ = f"map of <<{child_anchor},object>>"
+                else:
+                    typ = f"<<{child_anchor},object>>"
         rows.append((
             field_anchor(path, name), name, typ,
             "yes" if name in required else "no",

@@ -1,0 +1,128 @@
+---
+title: MCP tools
+linkTitle: MCP tools
+weight: 45
+description: A REST-derived MCP service, a proxied MCP server and an aggregating set, with delegated credentials.
+---
+
+= MCP tools
+
+This example builds one MCP surface from three sources: a documented REST
+API (**derived** into tools), an existing MCP server (**proxied**) and an
+**aggregating** set that groups both under one endpoint with its own
+audience, scope and identity.
+
+== File
+
+link:/examples/mcp-tools/routes.json[`examples/mcp-tools/routes.json`]
+
+[source,json]
+----
+{
+  "mcpSets": {
+    "developer-tools": {
+      "host": "mcp.example.com",
+      "endpoint": "/developer-tools",
+      "resource": "https://mcp.example.com/developer-tools",
+      "scope": "mcp-tools",
+      "identity": { "roles": ["developer"] },
+      "members": [
+        { "service": "github", "path": "/github",
+          "tools": ["list_repos", "get_repo"] },
+        { "service": "metrics", "path": "/metrics" }
+      ]
+    }
+  },
+  "routes": [
+    {
+      "host": "mcp.example.com",
+      "path": "/github",
+      "backend": "https://api.github.com",
+      "auth": {},
+      "upstream": { "delegated": { "provider": "github" } },
+      "openapi": { "url": "http://landing/github-openapi.json", "public": false },
+      "mcp": {
+        "enabled": true,
+        "name": "github",
+        "standalone": false,
+        "operations": [
+          { "name": "list_repos", "operationId": "list_repos" },
+          { "name": "get_repo", "operationId": "get_repo" },
+          { "name": "list_issues", "operationId": "list_issues" }
+        ]
+      }
+    },
+    {
+      "host": "mcp.example.com",
+      "path": "/metrics",
+      "backend": "http://metrics-mcp:8080",
+      "auth": {},
+      "mcp": {
+        "enabled": true,
+        "name": "metrics",
+        "standalone": false,
+        "upstream": {
+          "url": "http://metrics-mcp:8080/mcp",
+          "tools": { "include": ["list_*", "get_*"], "exclude": ["*_secret"] }
+        }
+      }
+    }
+  ]
+}
+----
+
+== How it fits together
+
+. **github** is a REST-derived service: `mcp.operations` names three
+  tools, `openapi` resolves their method, path, parameters and body.
+. **metrics** is a proxied MCP server: `mcp.upstream.url` forwards to it,
+  and `tools` keeps only `list_*`/`get_*` (never `*_secret`).
+. Both declare `standalone: false`, so they are reachable **only**
+  through the set.
+4. **developer-tools** aggregates them at
+  `https://mcp.example.com/developer-tools`; the set enforces the
+  `developer` role, the audience and the `mcp-tools` scope, and limits
+  the github member to two tools.
+. The github tools call `https://api.github.com` with the caller's
+  **delegated** token from the token broker, never the Gate One bearer.
+
+== Try it
+
+[source,bash]
+----
+# The set advertises its own protected-resource metadata.
+curl -s https://mcp.example.com/developer-tools/.well-known/oauth-protected-resource | jq
+
+# List the aggregated tools, then call one.
+curl -s https://mcp.example.com/developer-tools \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+curl -s https://mcp.example.com/developer-tools \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call",
+       "params":{"name":"list_repos","arguments":{}}}'
+----
+
+The github tools answer with a `connect_url` until the user connects
+GitHub on the connections page; the metrics tools need no per-user
+credential.
+
+[[notes]]
+[NOTE]
+====
+* `mcp.operations` and `mcp.upstream` are mutually exclusive on a route.
+* `tools.include`/`exclude` (upstream) and a member's `tools` (set) are
+  both allow-lists; `exclude` always wins.
+* A member with `enabled: false` is skipped, and its service is not even
+  compiled (no OpenAPI fetch).
+* Delegation needs `auth`; the token broker is internal-only.
+====
+
+== See also
+
+* link:/docs/features/mcp-tools/[MCP tools]
+* link:/docs/features/delegated-credentials/[Delegated credentials]
+* link:/docs/features/protect-api-mcp/[Protect APIs and MCP tools]
