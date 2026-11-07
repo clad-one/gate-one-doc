@@ -2,13 +2,18 @@
   plugin is disabled in hugo.toml; the theme's render-codeblock-mermaid
   hook still sets "hasmermaid" and emits <pre class="mermaid">. */}}
 {{ if or (.Page.Store.Get "hasmermaid") (.Page.Params.mermaid) -}}
+  {{ $shared := site.Params.sharedAssetsURL -}}
   {{ with resources.Get "js/mermaid/mermaid.min.js" -}}
     {{ $js := . | fingerprint -}}
-    <script defer src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" crossorigin="anonymous"></script>
+    {{ $src := $js.RelPermalink -}}
+    {{ with $shared -}}{{ $src = printf "%s/js/%s" (strings.TrimSuffix "/" .) (path.Base $js.RelPermalink) }}{{ end -}}
+    <script defer src="{{ $src }}" integrity="{{ $js.Data.Integrity }}" crossorigin="anonymous"></script>
   {{ end -}}
   {{ with resources.Get "js/mermaid-init.js" -}}
     {{ $js := . | fingerprint -}}
-    <script defer src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" crossorigin="anonymous"></script>
+    {{ $src := $js.RelPermalink -}}
+    {{ with $shared -}}{{ $src = printf "%s/js/%s" (strings.TrimSuffix "/" .) (path.Base $js.RelPermalink) }}{{ end -}}
+    <script defer src="{{ $src }}" integrity="{{ $js.Data.Integrity }}" crossorigin="anonymous"></script>
   {{ end -}}
 {{ end -}}
 

@@ -67,6 +67,11 @@ summaryLength = 40
   copyright = "Cladone-IT"
   version = "1.0"
   prism_syntax_highlighting = true
+  # Absolute URL of the non-versioned shared asset directory. Set by
+  # scripts/publish-pages (HUGO_PARAMS_SHAREDASSETSURL) so the large
+  # Mermaid bundle is published once instead of once per release. Empty
+  # for local builds, which then use the per-version asset path.
+  sharedAssetsURL = ""
   [params.ui]
     navbar_logo = false
     breadcrumb_disable = false

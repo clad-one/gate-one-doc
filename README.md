@@ -153,9 +153,11 @@ tag:
 https://clad-one.github.io/gate-one-doc/v0.3.1-docs.1/
 ```
 
-Old folders are kept, so versioned documentation stays available. The
-site root redirects to the newest published release and lists the
-others.
+The site root redirects to the newest published release and lists the
+others. Retention keeps the newest release of every minor version, the
+last five releases of the current minor, and at most ten minor versions
+(`scripts/prune-pages`); the large Mermaid bundle is stored once in
+`_shared/js/` instead of once per release.
 
 The publishing branch is `gh-pages`; GitHub Pages must be configured to
 deploy from that branch at `/` (Settings → Pages → Deploy from a branch).
@@ -181,10 +183,14 @@ token.
 
 The script:
 
-1. builds with `--baseURL https://clad-one.github.io/gate-one-doc/<tag>/`;
-2. copies `public/` to `<tag>/` in a temporary `gh-pages` worktree;
-3. regenerates the root redirect and version list;
-4. commits and pushes `gh-pages`.
+1. builds with `--baseURL https://clad-one.github.io/gate-one-doc/<tag>/`
+   and `HUGO_PARAMS_SHAREDASSETSURL=…/_shared` (so Mermaid loads from the
+   shared path);
+2. copies `public/` to `<tag>/` in a temporary `gh-pages` worktree, and
+   moves the fingerprinted `mermaid*.js` to `_shared/js/`;
+3. prunes old release folders (`scripts/prune-pages`);
+4. regenerates the root redirect and version list;
+5. commits and pushes `gh-pages`.
 
 `PAGES_REMOTE`, `PAGES_BRANCH` and `SITE_BASE_URL` override the
 defaults. The same release label is used by `../gate-one-src/release.sh`

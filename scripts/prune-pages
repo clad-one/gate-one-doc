@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Prune old versioned folders from a gh-pages worktree.
+
+Retention policy:
+- keep the newest release of every minor version (vX.Y);
+- keep the last KEEP_LAST releases of the current minor (the tag published);
+- keep at most MAX_MINORS minor versions (the most recent ones);
+- `_shared/`, `index.html`, `.nojekyll` and any non-version folder are
+  never touched.
+
+Usage: scripts/prune-pages <worktree> <current-tag>
+"""
+from __future__ import annotations
+
+import re
+import shutil
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+KEEP_LAST = 5
+MAX_MINORS = 10
+TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-docs\.(\d+))?$")
+
+
+def parse(name: str) -> tuple[int, int, int, int] | None:
+    m = TAG_RE.match(name)
+    return None if not m else (int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4) or 0))
+
+
+def minor(name: str) -> tuple[int, int] | None:
+    m = TAG_RE.match(name)
+    return None if not m else (int(m.group(1)), int(m.group(2)))
+
+
+def main() -> int:
+    root = Path(sys.argv[1])
+    current = sys.argv[2]
+
+    groups: dict[tuple[int, int], list[str]] = defaultdict(list)
+    for p in root.iterdir():
+        if p.is_dir() and parse(p.name) is not None:
+            groups[minor(p.name)].append(p.name)
+
+    cur_minor = minor(current)
+    minors = sorted(groups)
+    kept_minors = set(minors[-MAX_MINORS:])
+
+    keep: set[str] = set()
+    for m in minors:
+        if m not in kept_minors:
+            continue
+        names = sorted(groups[m], key=parse)
+        take = KEEP_LAST if m == cur_minor else 1
+        keep.update(names[-take:])
+
+    removed: list[str] = []
+    for names in groups.values():
+        for n in names:
+            if n not in keep:
+                shutil.rmtree(root / n)
+                removed.append(n)
+
+    ordered = lambda xs: sorted(xs, key=parse)
+    print("prune-pages: keep " + (", ".join(ordered(keep)) or "none"))
+    if removed:
+        print("prune-pages: removed " + ", ".join(ordered(removed)))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

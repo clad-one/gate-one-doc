@@ -48,10 +48,13 @@ fi
 REMOTE="${PAGES_REMOTE:-origin}"
 BRANCH="${PAGES_BRANCH:-gh-pages}"
 BASE_URL="${SITE_BASE_URL:-https://clad-one.github.io/gate-one-doc/$TAG/}"
+# Non-versioned directory for shared assets (large Mermaid bundle).
+SHARED_URL="${PAGES_SHARED_URL:-${BASE_URL%$TAG/}_shared}"
 
 echo "publish-pages: building $TAG for $BASE_URL"
 rm -rf public
-./scripts/build-site --baseURL "$BASE_URL"
+HUGO_PARAMS_SHAREDASSETSURL="$SHARED_URL" \
+	./scripts/build-site --baseURL "$BASE_URL"
 
 WORKTREE="$(mktemp -d "${TMPDIR:-/tmp}/gate-one-pages.XXXXXX")"
 cleanup() {
@@ -77,6 +80,22 @@ rm -rf "$WORKTREE/$TAG"
 mkdir -p "$WORKTREE/$TAG"
 cp -R public/. "$WORKTREE/$TAG/"
 touch "$WORKTREE/.nojekyll"
+
+# Shared assets: publish the large Mermaid bundle once under _shared/js/
+# instead of once per release. The pages reference it through
+# params.sharedAssetsURL (HUGO_PARAMS_SHAREDASSETSURL at build time).
+mkdir -p "$WORKTREE/_shared/js"
+shopt -s nullglob
+for f in "$WORKTREE/$TAG"/js/mermaid/mermaid.min.*.js \
+	"$WORKTREE/$TAG"/js/mermaid-init.*.js; do
+	mv "$f" "$WORKTREE/_shared/js/"
+done
+shopt -u nullglob
+rmdir "$WORKTREE/$TAG/js/mermaid" 2>/dev/null || true
+
+# Retention: newest of every minor, last 5 of the current minor, <=10
+# minors. Must run before the root index lists the releases.
+./scripts/prune-pages "$WORKTREE" "$TAG"
 
 versions=()
 for dir in "$WORKTREE"/v*/; do
