@@ -872,6 +872,11 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | no
 | Refuse any plugin without a signed manifest. Default false: an unsigned plugin is allowed for development and logged as a warning.
 
+| [[field-usage-pluginsDir]] `pluginsDir`
+| string
+| no
+| Directory scanned for plugin descriptors: every *.json file is a plugin entry (same shape as usage.plugins[]). Manifest and artifact paths are relative to the descriptor. Merged with usage.plugins; duplicate names are refused. Rescanned on SIGHUP.
+
 | [[field-usage-types]] `types`
 | map of <<config-usage-types,object>>
 | no

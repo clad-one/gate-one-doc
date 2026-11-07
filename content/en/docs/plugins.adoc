@@ -178,6 +178,15 @@ resolved from the configuration file. After editing, `SIGHUP` reloads
 the configuration and recreates the gateway, including its plugins; an
 invalid file is refused.
 
+A plugin can also be installed as a **descriptor file** instead of an
+inline entry: set `usage.pluginsDir` (conventional name `plugins.d`) and
+every `*.json` file in it is one plugin entry, merged with
+`usage.plugins` (inline first). Relative `manifest`/`artifact` paths are
+resolved from the descriptor, so a plugin directory is self-contained.
+Duplicate names are refused, and `usage.requireSigned` applies to
+discovered plugins exactly as to inline ones. The directory is rescanned
+on `SIGHUP`.
+
 == Reference plugin
 
 `cmd/plugin-audit-echo` is the reference consumer. It verifies the

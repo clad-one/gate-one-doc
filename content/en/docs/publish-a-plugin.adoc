@@ -337,6 +337,10 @@ the response and sit on the hot path, which Gate One avoids.
   verifies it, it does **not** launch it — the service must be running at
   `url`);
 * relative paths are resolved from the configuration file;
+* instead of inline entries, `usage.pluginsDir` (conventionally
+  `plugins.d`) scans every `*.json` descriptor in a directory; a
+  descriptor has the same shape as one `usage.plugins[]` entry, and its
+  `manifest`/`artifact` paths are relative to the descriptor;
 * `SIGHUP` reloads the configuration, including plugins.
 
 The complete signed example is
@@ -345,6 +349,7 @@ link:/docs/examples/usage-plugin/[the usage-plugin example].
 == Configuration reference
 
 * link:/docs/config/gate-one/#field-usage-plugins[`usage.plugins`]
+* link:/docs/config/gate-one/#field-usage-pluginsDir[`usage.pluginsDir`]
 * link:/docs/config/gate-one/#field-usage-requireSigned[`usage.requireSigned`]
 * link:/docs/config/gate-one/#field-usage-trustStore[`usage.trustStore`]
 * link:/docs/config/gate-one/#field-publisherFeed[`publisherFeed`]
