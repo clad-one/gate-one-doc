@@ -61,7 +61,7 @@
       "auth": {},
       "upstream": {
         "host": true,
-        "delegated": {
+        "tokenBroker": {
           "provider": "github"
         }
       }
@@ -72,7 +72,7 @@
       "backend": "https://api.github.com",
       "auth": {},
       "upstream": {
-        "delegated": {
+        "tokenBroker": {
           "provider": "github"
         }
       },

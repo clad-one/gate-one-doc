@@ -219,7 +219,7 @@ Configure:
   does not expose `/auth`, `/auth/mcp` or `/health`. **auth-bridge** is
   the reference implementation of this request-verification contract.
 * It is not the `tokenBroker` block. That service supplies per-user
-  upstream credentials for `upstream.delegated`; it is unrelated to
+  upstream credentials for `upstream.tokenBroker`; it is unrelated to
   authentication provider selection.
 * It is not a gRPC contract. No `grpc-bridge` type exists today; the
   gRPC binding is planned for broker-side identity adapters.

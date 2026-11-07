@@ -33,6 +33,11 @@ The tools are derived from the route policy and the upstream OpenAPI
 document, not hard-coded per API: the same binary exposes any documented
 REST service as MCP.
 
+[NOTE]
+The JSON below is a **partial extract** (one route or set), not a
+complete file. The runnable file is
+link:/examples/mcp-tools/routes.json[`examples/mcp-tools/routes.json`].
+
 == Derive tools from an OpenAPI document
 
 [source,json]
@@ -134,8 +139,10 @@ filter:
 The tool call reaches the backend with one of:
 
 * **static** headers — `upstream.headers`, one shared value;
-* **delegated** credentials — `upstream.delegated` injects the caller's
-  per-user token from the token broker.
+* **delegated** credentials — `upstream.tokenBroker` injects the caller's
+  per-user token from the token broker. It **requires the top-level
+  `tokenBroker` block** (the same name, at the root of the file); a route
+  that declares `upstream.tokenBroker` without it refuses to load.
 
 The upstream never receives the Gate One bearer. Delegation is what lets
 a tool call GitHub or GitLab **as the user**; see

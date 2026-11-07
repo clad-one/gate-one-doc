@@ -58,7 +58,7 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | [[field-tokenBroker]] `tokenBroker`
 | <<config-tokenBroker,object>>
 | no
-| Internal per-user credential broker. Required only when a route declares upstream.delegated. The shared secret is read from the named environment variable at load (never from this file) and is never logged.
+| Internal per-user credential broker. Required only when a route declares upstream.tokenBroker. The shared secret is read from the named environment variable at load (never from this file) and is never logged.
 
 | [[field-mcpDefaults]] `mcpDefaults`
 | <<config-mcpDefaults,object>>
@@ -613,7 +613,7 @@ LEGACY platform IdP block. When authProvider is absent, it is translated into an
 [[config-tokenBroker]]
 === tokenBroker
 
-Internal per-user credential broker. Required only when a route declares upstream.delegated. The shared secret is read from the named environment variable at load (never from this file) and is never logged.
+Internal per-user credential broker. Required only when a route declares upstream.tokenBroker. The shared secret is read from the named environment variable at load (never from this file) and is never logged.
 
 [cols="2,2,1,5",options="header"]
 |===
@@ -632,14 +632,14 @@ Internal per-user credential broker. Required only when a route declares upstrea
 | [[field-tokenBroker-links]] `links`
 | <<config-tokenBroker-links,object>>
 | no
-| Links owned by the token broker, displayed in the user badge. services is the connections page (auth-bridge proxies it today): it is rendered only when an exposed route declares upstream.delegated (computed by the gateway).
+| Links owned by the token broker, displayed in the user badge. services is the connections page (auth-bridge proxies it today): it is rendered only when an exposed route declares upstream.tokenBroker (computed by the gateway).
 
 |===
 
 [[config-tokenBroker-links]]
 ==== tokenBroker.links
 
-Links owned by the token broker, displayed in the user badge. services is the connections page (auth-bridge proxies it today): it is rendered only when an exposed route declares upstream.delegated (computed by the gateway).
+Links owned by the token broker, displayed in the user badge. services is the connections page (auth-bridge proxies it today): it is rendered only when an exposed route declares upstream.tokenBroker (computed by the gateway).
 
 [cols="2,2,1,5",options="header"]
 |===
@@ -1171,10 +1171,10 @@ Join to a backend outside the internal network (proxified external site — e.g.
 | no
 | HTTP-cache orientation to the BROWSER for assets the origin serves with no Cache-Control (and no Last-Modified either: without these two headers the browser has no heuristic cache — every re-view re-fetches or revalidates each asset, one full round-trip each). Only 200 responses of content-type image/*, Cache-Control absent only: the origin's own declarations pass untouched. Sent as "private, max-age=…" — private: resources under authentication stay out of any shared cache; the origin's ETag remains for revalidation after expiry. Default: absent (headers preserved as-is).
 
-| [[field-routes-upstream-delegated]] `delegated`
-| <<config-routes-upstream-delegated,object>>
+| [[field-routes-upstream-tokenBroker]] `tokenBroker`
+| <<config-routes-upstream-tokenBroker,object>>
 | no
-| Per-user credentials supplied by the token broker for the authenticated caller. Requires route.auth (the broker needs an authenticated user id). A missing connection produces a 401/409 with a connect_url (or a redirect for frontend routes), never a request without credentials. The same policy applies to REST tool calls produced by an MCP route.
+| Per-user credentials supplied by the token broker for the authenticated caller. Requires the top-level tokenBroker block and route.auth (the broker needs an authenticated user id). A missing connection produces a 401/409 with a connect_url (or a redirect for frontend routes), never a request without credentials. The same policy applies to REST tool calls produced by an MCP route.
 
 |===
 
@@ -1262,26 +1262,26 @@ HTTP-cache orientation to the BROWSER for assets the origin serves with no Cache
 
 |===
 
-[[config-routes-upstream-delegated]]
-===== routes.upstream.delegated
+[[config-routes-upstream-tokenBroker]]
+===== routes.upstream.tokenBroker
 
-Per-user credentials supplied by the token broker for the authenticated caller. Requires route.auth (the broker needs an authenticated user id). A missing connection produces a 401/409 with a connect_url (or a redirect for frontend routes), never a request without credentials. The same policy applies to REST tool calls produced by an MCP route.
+Per-user credentials supplied by the token broker for the authenticated caller. Requires the top-level tokenBroker block and route.auth (the broker needs an authenticated user id). A missing connection produces a 401/409 with a connect_url (or a redirect for frontend routes), never a request without credentials. The same policy applies to REST tool calls produced by an MCP route.
 
 [cols="2,2,1,5",options="header"]
 |===
 | Field | Type | Required | Description
 
-| [[field-routes-upstream-delegated-provider]] `provider`
+| [[field-routes-upstream-tokenBroker-provider]] `provider`
 | string
 | yes
 | Broker provider name (e.g. github). Validated against GET /providers at startup; Gate One never stores the provider's client secret. Pattern: `^[a-z0-9][a-z0-9_-]{0,63}$`.
 
-| [[field-routes-upstream-delegated-header]] `header`
+| [[field-routes-upstream-tokenBroker-header]] `header`
 | string
 | no
 | Backend request header receiving the access token. Default Authorization. Host, Cookie, X-User-*, X-Forwarded-* and X-Gate-One-* names are refused.
 
-| [[field-routes-upstream-delegated-prefix]] `prefix`
+| [[field-routes-upstream-tokenBroker-prefix]] `prefix`
 | string
 | no
 | Value prepended to the access token. Default "Bearer ". An explicit empty string sends the raw token.
@@ -1567,7 +1567,7 @@ Expose a route as an MCP service: protected-resource identifier, scope, tools an
 | [[field-routes-mcp-upstream]] `upstream`
 | <<config-routes-mcp-upstream,object>>
 | no
-| Proxy an external MCP server over Streamable HTTP instead of deriving local REST tools. The upstream receives the per-user token of upstream.delegated (or static upstream.headers), never the Gate One bearer. Tool filtering is enforced on both tools/list and tools/call.
+| Proxy an external MCP server over Streamable HTTP instead of deriving local REST tools. The upstream receives the per-user token of upstream.tokenBroker (or static upstream.headers), never the Gate One bearer. Tool filtering is enforced on both tools/list and tools/call.
 
 |===
 
@@ -1593,7 +1593,7 @@ Expose a route as an MCP service: protected-resource identifier, scope, tools an
 [[config-routes-mcp-upstream]]
 ===== routes.mcp.upstream
 
-Proxy an external MCP server over Streamable HTTP instead of deriving local REST tools. The upstream receives the per-user token of upstream.delegated (or static upstream.headers), never the Gate One bearer. Tool filtering is enforced on both tools/list and tools/call.
+Proxy an external MCP server over Streamable HTTP instead of deriving local REST tools. The upstream receives the per-user token of upstream.tokenBroker (or static upstream.headers), never the Gate One bearer. Tool filtering is enforced on both tools/list and tools/call.
 
 [cols="2,2,1,5",options="header"]
 |===

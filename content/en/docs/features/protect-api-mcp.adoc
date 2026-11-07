@@ -110,7 +110,7 @@ tools from an OpenAPI document, proxying an MCP server, aggregating with
 `mcpSets` — is in link:/docs/features/mcp-tools/[MCP tools].
 
 An MCP tool that must call an external API **as the user** (GitHub,
-GitLab, …) uses delegated credentials: `upstream.delegated` injects the
+GitLab, …) uses delegated credentials: `upstream.tokenBroker` injects the
 caller's per-user token from the token broker into every tool call. See
 link:/docs/features/delegated-credentials/[Delegated credentials].
 

@@ -16,6 +16,9 @@ audience, scope and identity.
 
 link:/examples/mcp-tools/routes.json[`examples/mcp-tools/routes.json`]
 
+Abridged (the `authProviders` and `tokenBroker` blocks are omitted here;
+they are in the file):
+
 [source,json]
 ----
 {
@@ -39,7 +42,7 @@ link:/examples/mcp-tools/routes.json[`examples/mcp-tools/routes.json`]
       "path": "/github",
       "backend": "https://api.github.com",
       "auth": {},
-      "upstream": { "delegated": { "provider": "github" } },
+      "upstream": { "tokenBroker": { "provider": "github" } },
       "openapi": { "url": "http://landing/github-openapi.json", "public": false },
       "mcp": {
         "enabled": true,

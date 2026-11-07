@@ -133,7 +133,7 @@ These names are easy to confuse:
 | `cladone-auth` **Broker** | Optional embedded IAM and OIDC issuer: IdP federation, users, claims, grants and tokens | `authProvider.type: "oidc"` |
 | **`http-bridge`** | Provider type for a service that verifies requests and returns identity/IAM facts | `authProvider.type: "http-bridge"` |
 | **auth-bridge** | Reference implementation of the `http-bridge` contract, often in front of Keycloak | `authProvider.type: "http-bridge"` |
-| **`tokenBroker`** | Internal per-user credential service used by `upstream.delegated` | Internal API, not an `authProvider` |
+| **`tokenBroker`** | Internal per-user credential service used by `upstream.tokenBroker` | Internal API, not an `authProvider` |
 
 The Broker does **not** implement the HTTP bridge contract. It speaks
 OIDC and issues tokens; Gate One is the OIDC relying party. The bridge

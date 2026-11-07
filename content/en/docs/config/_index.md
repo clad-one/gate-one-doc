@@ -15,7 +15,7 @@ These pages are generated from the JSON Schemas in `schemas/` by
 > **Broker ≠ bridge.** `cladone-auth` is an OIDC issuer/IAM, configured
 > separately and reached through `authProvider.type: "oidc"`. It does not
 > implement the `http-bridge` contract. The `tokenBroker` field is the
-> unrelated per-user credential service used by `upstream.delegated`.
+> unrelated per-user credential service used by `upstream.tokenBroker`.
 * [Plugin manifest](plugin-manifest/)
 * [Plugin trust store](plugin-trust-store/)
 * [Publisher feed](publisher-feed/)
