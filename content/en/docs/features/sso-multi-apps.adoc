@@ -63,7 +63,7 @@ lifetime, or 30 days. It is never shorter than the session TTL.
 == Operational notes
 
 * **Same parent domain required.** `cookieDomain` must cover every
-  application host. `app.mycompany.com` and `app.other.com` cannot share a
+  application host. `app.company.com` and `app.other.com` cannot share a
   cookie. For unrelated domains, use
   link:/docs/features/cross-tld-sso/[cross-domain SSO]: each domain keeps
   its own cookie and the IdP session provides the single login.

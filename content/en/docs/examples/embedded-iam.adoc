@@ -30,7 +30,7 @@ Google claims into the roles/scopes/claims Gate One enforces.
     "authPrefix": "cladone:auth:v1:"
   },
   "tenants": [{
-    "id": "mycompany",
+    "id": "company",
     "clientId": "gate-one",
     "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
     "redirectUris": ["https://login.example.com/auth/callback"],
@@ -60,9 +60,9 @@ legacy `groupRoles` block is still accepted for the `groups` claim.
 ----
 {
   "authProviders": [{
-    "id": "mycompany",
+    "id": "company",
     "type": "oidc",
-    "issuer": "https://auth.example.com/t/mycompany",
+    "issuer": "https://auth.example.com/t/company",
     "clientId": "gate-one",
     "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
     "loginBaseUrl": "https://login.example.com",
@@ -76,10 +76,10 @@ legacy `groupRoles` block is still accepted for the `groups` claim.
       "prefix": "cladone:auth:v1:"
     }
   }],
-  "defaultAuthProvider": "mycompany",
+  "defaultAuthProvider": "company",
   "routes": [{
     "host": "app.example.com", "path": "/*", "frontend": true,
-    "backend": "http://app:8080", "auth": { "provider": "mycompany" }
+    "backend": "http://app:8080", "auth": { "provider": "company" }
   }]
 }
 ----
@@ -96,12 +96,12 @@ admin then assigns roles/scopes/claims:
 [source,bash]
 ----
 # inspect the JIT user (issuer/subject come from the IdP token)
-cladone-auth user list -config broker.json -tenant mycompany
-cladone-auth user show -config broker.json -tenant mycompany \
+cladone-auth user list -config broker.json -tenant company
+cladone-auth user show -config broker.json -tenant company \
   -issuer https://accounts.google.com -sub 'google-sub-1'
 
 # assign common rights
-cladone-auth user set -config broker.json -tenant mycompany \
+cladone-auth user set -config broker.json -tenant company \
   -issuer https://accounts.google.com -sub 'google-sub-1' \
   -roles support -scopes read:things \
   -claims '{"department":"support"}'

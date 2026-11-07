@@ -25,7 +25,7 @@ link:/examples/sso-multi-apps/routes.json[`examples/sso-multi-apps/routes.json`]
 {
   "authProvider": {
     "type": "oidc",
-    "issuer": "https://auth.example.com/realms/mycompany",
+    "issuer": "https://auth.example.com/realms/company",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",
@@ -80,7 +80,7 @@ provider. Point DNS (or your test hosts file) for `app.example.com`,
 [[caveats]]
 [NOTE]
 ====
-* The applications must share a parent domain. `app.mycompany.com` and
+* The applications must share a parent domain. `app.company.com` and
   `app.other.com` cannot share a cookie.
 * On a single instance, a logout revokes the session for the next
   request. For several replicas, see

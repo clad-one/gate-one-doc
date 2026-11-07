@@ -175,7 +175,7 @@ rights or local policy, but do not need a full IAM suite.
 
 ```mermaid
 flowchart LR
-  GO["Gate One<br/>authProvider + route policy"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant mycompany"]
+  GO["Gate One<br/>authProvider + route policy"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant company"]
   BROKER -->|"upstream login"| G["Google"]
   BROKER -->|"upstream login"| M["Microsoft"]
   BROKER -.->|"optional local password"| L["Local account<br/>PBKDF2"]

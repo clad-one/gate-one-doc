@@ -127,6 +127,14 @@
           "type": "string",
           "description": "Artefact digest (sha256:<hex>)."
         },
+        "publisher": {
+          "type": "string",
+          "description": "Author/company that published the plugin (shown in a registry page)."
+        },
+        "distribution": {
+          "type": "string",
+          "description": "URL where the plugin (artefact + signed manifest + public key) is distributed."
+        },
         "hostAPI": {
           "type": "string",
           "description": "Host API constraint, for example >=1.0 <2.0."

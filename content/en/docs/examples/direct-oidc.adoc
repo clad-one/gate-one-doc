@@ -34,7 +34,7 @@ link:/examples/direct-oidc/routes.json[`examples/direct-oidc/routes.json`]
 {
   "authProvider": {
     "type": "oidc",
-    "issuer": "https://idp.example.com/realms/mycompany",
+    "issuer": "https://idp.example.com/realms/company",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",

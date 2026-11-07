@@ -142,6 +142,16 @@ The signed document referenced by `publisherFeed.file`: compatible Gate One vers
 | no
 | Artefact digest (sha256:<hex>).
 
+| [[field-plugins-publisher]] `publisher`
+| string
+| no
+| Author/company that published the plugin (shown in a registry page).
+
+| [[field-plugins-distribution]] `distribution`
+| string
+| no
+| URL where the plugin (artefact + signed manifest + public key) is distributed.
+
 | [[field-plugins-hostAPI]] `hostAPI`
 | string
 | no

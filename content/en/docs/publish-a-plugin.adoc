@@ -70,7 +70,7 @@ You do not need a signature to develop. Register the plugin with just
   "pluginSecretEnv": "GATE_ONE_PLUGIN_SECRET",
   "types": { "error": { "shareBytes": 10485760, "fsync": "window_ms" } },
   "plugins": [{
-    "name": "com.acme.audit",
+    "name": "com.company.audit",
     "url": "http://127.0.0.1:9100",
     "types": ["error"]
   }]
@@ -112,11 +112,11 @@ becomes a **hard load error** instead of a warning.
 {
   "schemaVersion": 1,
   "kind": "extension",
-  "name": "com.acme.audit",
+  "name": "com.company.audit",
   "version": "1.0.0",
   "apiVersion": "v1",
   "hostAPI": ">=1.0 <2.0",
-  "keyId": "acme-2026",
+  "keyId": "company-2026",
   "artifact": {
     "type": "binary",
     "digest": "sha256:…",
@@ -130,7 +130,7 @@ becomes a **hard load error** instead of a warning.
     "maxLagBytes": 5000000,
     "onMaxLag": "block"
   },
-  "signature": { "alg": "ed25519", "keyId": "acme-2026", "value": "…" }
+  "signature": { "alg": "ed25519", "keyId": "company-2026", "value": "…" }
 }
 ----
 
@@ -159,18 +159,58 @@ The CLI does it for you:
 [source,bash]
 ----
 # generate a key pair (Ed25519); prints the public key for the trust store
-gate-one keygen -out acme-2026.json -keyId acme-2026
+gate-one keygen -out company-2026.json -keyId company-2026
 
 # sign: fills artifact.digest/size and signature, writes the signed manifest
-gate-one sign -in manifest.json -key acme-2026.json \
-  -artifact acme-audit -out manifest.signed.json
+gate-one sign -in manifest.json -key company-2026.json \
+  -artifact company-audit -out manifest.signed.json
+
+# also register it in a publisher feed (registry): author + distribution URL
+gate-one sign -in manifest.json -key company-2026.json \
+  -artifact company-audit -out manifest.signed.json \
+  --feed registry.json --publisher "Company Ltd" \
+  --distribution https://company.example/plugins/audit
 
 # check a signature (or a whole document) later
-gate-one verify -in manifest.signed.json -key acme-2026.json -artifact acme-audit
+gate-one verify -in manifest.signed.json -key company-2026.json -artifact company-audit
 ----
 
 The same `gate-one sign`/`verify` sign the publisher feed (a feed has no
-separate artefact, so no `-artifact` is passed).
+separate artefact, so no `-artifact` is passed). With `--feed`, `sign`
+also upserts this plugin into the feed and re-signs it, so a registry
+page can link the author and the distribution URL.
+
+== Distribute and advertise
+
+There is **no Gate One-operated registry or marketplace** today.
+Publishing is out-of-band, and the reverse-DNS **name** is the discovery
+key: an operator allow-lists it in `trust-store.allowedNames` (for
+example `com.company.*`) and registers the plugin in `usage.plugins`.
+
+The **publisher feed** doubles as the registry. Each entry carries the
+plugin's name, version, digest, **publisher** (author/company) and
+**distribution** URL, so it can be rendered as a page:
+
+[source,json]
+----
+"plugins": [
+  {
+    "name": "com.company.audit",
+    "version": "1.0.0",
+    "digest": "sha256:…",
+    "publisher": "Company Ltd",
+    "distribution": "https://company.example/plugins/audit",
+    "status": "active"
+  }
+]
+----
+
+Distribute the **artefact + signed manifest + public key** (and the SBOM)
+wherever you publish software — a release page, a package registry, a file
+share — and point `distribution` at it. The operator fetches from there,
+verifies against your key, and adds it to the trust store. The feed is
+also how you **revoke** and how operators learn which versions are
+compatible.
 
 == Trust lifecycle
 
@@ -225,7 +265,7 @@ listing the components that fit together and their revocation status:
   "validUntil":  "2026-12-07T00:00:00Z",
   "hosts": [ { "name": "gate-one", "version": "1.5.0", "hostAPI": ">=1.0 <2.0" } ],
   "externalComponents": [ { "name": "redis", "role": "session-store", "constraint": ">=7.0 <8.0" } ],
-  "plugins": [ { "name": "com.acme.audit", "version": "1.0.0", "digest": "sha256:…", "status": "active" } ],
+  "plugins": [ { "name": "com.company.audit", "version": "1.0.0", "digest": "sha256:…", "publisher": "Company Ltd", "distribution": "https://company.example/plugins/audit", "status": "active" } ],
   "revocations": [ { "digest": "sha256:…", "reason": "misbehaviour", "severity": "high" } ],
   "signature": { "alg": "ed25519", "keyId": "cladone-2026", "value": "…" }
 }
@@ -284,10 +324,10 @@ the response and sit on the hot path, which Gate One avoids.
   "requireSigned": true,
   "types": { "auth": { "shareBytes": 10485760, "fsync": "always" } },
   "plugins": [{
-    "name": "com.acme.audit",
+    "name": "com.company.audit",
     "url": "http://127.0.0.1:9100",
-    "manifest": "acme-audit.manifest.json",
-    "artifact": "acme-audit"
+    "manifest": "company-audit.manifest.json",
+    "artifact": "company-audit"
   }]
 }
 ----

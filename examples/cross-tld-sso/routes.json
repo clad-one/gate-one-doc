@@ -1,9 +1,9 @@
 {
   "ssoGroups": [
     {
-      "id": "mycompany",
+      "id": "company",
       "type": "oidc",
-      "issuer": "https://idp.example.com/realms/mycompany",
+      "issuer": "https://idp.example.com/realms/company",
       "clientId": "gate-one",
       "clientSecretEnv": "OIDC_CLIENT_SECRET",
       "scopes": [

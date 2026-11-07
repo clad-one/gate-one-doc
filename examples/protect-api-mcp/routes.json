@@ -1,9 +1,9 @@
 {
   "authProviders": [
     {
-      "id": "mycompany",
+      "id": "company",
       "type": "oidc",
-      "issuer": "https://auth.example.com/t/mycompany",
+      "issuer": "https://auth.example.com/t/company",
       "clientId": "gate-one",
       "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
       "loginBaseUrl": "https://login.example.com",
@@ -17,14 +17,14 @@
       }
     },
     {
-      "id": "mycompany-api",
+      "id": "company-api",
       "type": "jwt",
-      "issuer": "https://auth.example.com/t/mycompany",
-      "jwksUrl": "https://auth.example.com/t/mycompany/jwks.json",
+      "issuer": "https://auth.example.com/t/company",
+      "jwksUrl": "https://auth.example.com/t/company/jwks.json",
       "audience": "https://api.example.com"
     }
   ],
-  "defaultAuthProvider": "mycompany",
+  "defaultAuthProvider": "company",
   "mcpDefaults": {
     "scope": "mcp-tools"
   },
@@ -41,7 +41,7 @@
       "path": "/v1/*",
       "backend": "http://api:8080",
       "auth": {
-        "provider": "mycompany-api",
+        "provider": "company-api",
         "identity": {
           "scopes": [
             "read:things"
@@ -54,7 +54,7 @@
       "path": "/mcp",
       "backend": "http://mcp:8080",
       "auth": {
-        "provider": "mycompany-api"
+        "provider": "company-api"
       },
       "mcp": {
         "enabled": true,

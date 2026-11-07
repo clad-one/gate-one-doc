@@ -9,7 +9,7 @@
   },
   "tenants": [
     {
-      "id": "mycompany",
+      "id": "company",
       "clientId": "gate-one",
       "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
       "redirectUris": [

@@ -21,7 +21,7 @@ link:/examples/high-availability/routes.json[`examples/high-availability/routes.
 {
   "authProvider": {
     "type": "oidc",
-    "issuer": "https://auth.example.com/realms/mycompany",
+    "issuer": "https://auth.example.com/realms/company",
     "clientId": "gate-one",
     "clientSecretEnv": "OIDC_CLIENT_SECRET",
     "loginBaseUrl": "https://login.example.com",

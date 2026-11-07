@@ -1,9 +1,9 @@
 {
   "authProviders": [
     {
-      "id": "mycompany",
+      "id": "company",
       "type": "oidc",
-      "issuer": "https://auth.example.com/t/mycompany",
+      "issuer": "https://auth.example.com/t/company",
       "clientId": "gate-one",
       "clientSecretEnv": "MYCOMPANY_OIDC_SECRET",
       "loginBaseUrl": "https://login.example.com",
@@ -11,7 +11,7 @@
       "sessionKeyEnv": "MYCOMPANY_SESSION_KEY"
     }
   ],
-  "defaultAuthProvider": "mycompany",
+  "defaultAuthProvider": "company",
   "mcpDefaults": {
     "scope": "mcp-tools"
   },
