@@ -43,6 +43,18 @@ link:/examples/high-availability/routes.json[`examples/high-availability/routes.
 
 == Run it
 
+The packaged demo runs two Gate One instances, two tenants, two brokers and Redis (Docker Compose):
+
+[source,bash]
+----
+cd gate-one-src/deploy/local/redis
+BIN_DIR=~/gate-one-bin ./run.sh
+----
+
+The script prints the URLs and stops with `./run.sh down`. See [`deploy/local/redis`](https://github.com/clad-one/gate-one/tree/main/deploy/local/redis) for the stack and its README.
+
+To run it by hand instead:
+
 [source,bash]
 ----
 export OIDC_CLIENT_SECRET=...

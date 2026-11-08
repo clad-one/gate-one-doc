@@ -91,6 +91,18 @@ the canonical manifest plus the artefact digest.
 
 == Run it
 
+The packaged demo starts the app, the reference plugin and Gate One (needs Go for the plugin):
+
+[source,bash]
+----
+cd gate-one-src/deploy/local/usage-events
+BIN_DIR=~/gate-one-bin ./run.sh
+----
+
+The script prints the URLs and stops with `./run.sh down`. See [`deploy/local/usage-events`](https://github.com/clad-one/gate-one/tree/main/deploy/local/usage-events) for the stack and its README.
+
+To run it by hand instead:
+
 The plugin is a **separate service**: Gate One verifies its manifest but
 never launches it, so you start it first. The reference plugin lives at
 `cmd/plugin-audit-echo` in the source repository.

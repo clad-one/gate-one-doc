@@ -40,6 +40,18 @@ link:/examples/getting-started/routes.json[`examples/getting-started/routes.json
 
 == Run it
 
+The packaged demo starts the static site and Gate One together (no Docker):
+
+[source,bash]
+----
+cd gate-one-src/deploy/local/getting-started
+BIN_DIR=~/gate-one-bin ./run.sh
+----
+
+The script prints the URLs and stops with `./run.sh down`. See [`deploy/local/getting-started`](https://github.com/clad-one/gate-one/tree/main/deploy/local/getting-started) for the stack and its README.
+
+To run it by hand instead:
+
 You need a small HTTP server on port 8080. Any static server works:
 
 [source,bash]

@@ -73,6 +73,18 @@ const session = res.ok ? await res.json() : null;
 
 == Run it
 
+The packaged demo serves the panel page and starts Gate One (no Docker):
+
+[source,bash]
+----
+cd gate-one-src/deploy/local/account-panel
+BIN_DIR=~/gate-one-bin ./run.sh
+----
+
+The script prints the URLs and stops with `./run.sh down`. See [`deploy/local/account-panel`](https://github.com/clad-one/gate-one/tree/main/deploy/local/account-panel) for the stack and its README.
+
+To run it by hand instead:
+
 [source,bash]
 ----
 # terminal 1: the application

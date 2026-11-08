@@ -106,7 +106,8 @@
     "/docs/features/usage-events"
   ],
   "/docs/examples": [
-    "/"
+    "/",
+    "/docs/install"
   ],
   "/docs/examples/account-panel": [
     "/docs/examples",

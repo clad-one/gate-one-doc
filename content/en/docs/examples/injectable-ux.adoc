@@ -77,6 +77,18 @@ every guard evaluation.
 
 == Try it
 
+The packaged demo serves the gated dashboard and starts Gate One (no Docker):
+
+[source,bash]
+----
+cd gate-one-src/deploy/local/injectable-ux
+BIN_DIR=~/gate-one-bin ./run.sh
+----
+
+The script prints the URLs and stops with `./run.sh down`. See [`deploy/local/injectable-ux`](https://github.com/clad-one/gate-one/tree/main/deploy/local/injectable-ux) for the stack and its README.
+
+To run it by hand instead:
+
 [source,bash]
 ----
 python3 -m http.server 8080
