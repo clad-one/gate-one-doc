@@ -112,8 +112,9 @@ link:/examples/injectable-ux/bundle.json[`bundle.json`].
 URL that carries identity must be excluded with
 `pwa.networkOnly.excludePatterns` (JS regexes tested against the full
 URL): the identity provider's discovery, authorize, token, JWKS and
-end-session endpoints, and the Gate One callback (`/auth/callback`) or
-the embedded broker's `/t/<tenant>/callback`.
+end-session endpoints; any OAuth/JWT token endpoint used by API or
+machine clients; the `http-bridge` login URL; and the Gate One callback
+(`/auth/callback`) or the embedded broker's `/t/<tenant>/callback`.
 
 A cached auth probe replays a stale identity after login or logout; a
 cached callback replays a one-time `code`. The

@@ -108,6 +108,8 @@ Always exclude:
 
 * the identity provider's discovery, authorize, token, JWKS and
   end-session endpoints;
+* any token endpoint used by API or machine clients (OAuth/JWT), and the
+  `http-bridge` login URL when the route uses that provider;
 * the Gate One callback (`/auth/callback`) and, with the embedded
   broker, `/t/<tenant>/callback`, which carry `code`/`state`.
 
