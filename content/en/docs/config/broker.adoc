@@ -439,7 +439,7 @@ Turn an incoming claim's values into broker roles.
 | [[field-tenants-rules-then-rolesFrom-transforms]] `transforms`
 | array of string
 | no
-| Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>.
+| Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<from>[:<to>] (keep fields from..to, negative counts from the end, joined by <sep>).
 
 |===
 
@@ -465,7 +465,7 @@ Copy an incoming claim into the issued token.
 | [[field-tenants-rules-then-copyClaims-transforms]] `transforms`
 | array of string
 | no
-| Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>.
+| Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<from>[:<to>] (keep fields from..to, negative counts from the end, joined by <sep>).
 
 |===
 

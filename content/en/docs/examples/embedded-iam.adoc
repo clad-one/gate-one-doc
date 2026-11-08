@@ -165,9 +165,11 @@ A rule reads the token (`when`) and writes the user (`then`):
   the issued token, optionally renamed (`to`) and reshaped.
 
 `transforms` is an ordered pipeline applied to every value: `lower`,
-`upper`, `prefix:<p>`, `suffix:<p>`, `replace:<a>:<b>`, `keep:<sep>:<n>`
-(keep the n-th field; `n<0` counts from the end). So `keep:@:-1` is the
-email domain, `keep:@:0` the local part, and `keep:-:-1` turns
+`upper`, `prefix:<p>`, `suffix:<p>`, `replace:<a>:<b>`, and
+`keep:<sep>:<from>[:<to>]` — keep the fields `from..to` (negative counts
+from the end) joined by `<sep>`; a single index keeps one field. So
+`keep:@:-1` is the email domain, `keep:@:0` the local part, `keep:@:0:-2`
+drops the last field (`a@b@c` -> `a@b`), and `keep:-:-1` turns
 `team-support` into `support`. Reserved claims (`iss`, `sub`, `aud`,
 `roles`, `scope`, `email`, …) can never be written.
 

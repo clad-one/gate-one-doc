@@ -530,7 +530,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>."
+          "description": "Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<from>[:<to>] (keep fields from..to, negative counts from the end, joined by <sep>)."
         }
       }
     },
@@ -558,7 +558,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>."
+          "description": "Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<from>[:<to>] (keep fields from..to, negative counts from the end, joined by <sep>)."
         }
       }
     }
