@@ -31,15 +31,18 @@ Gate One connects to the IAM, and the IAM configures the IdPs it trusts.
 ```mermaid
 flowchart TB
   ADMIN["Platform admin"] -->|"tenants, roles, audiences"| IAM["IAM / authorization<br/>cladone-auth (optional)<br/>or Keycloak / Entra / Auth0"]
-  IAM -->|"tenants.upstreams"| GOOGLE["Google<br/>IdP"]
-  IAM --> MICROSOFT["Microsoft<br/>IdP"]
-  IAM --> KEYCLOAK["Keycloak / OIDC<br/>IdP (also IAM in direct mode)"]
+  subgraph IDPS["IdPs"]
+    GOOGLE["Google"]
+    MICROSOFT["Microsoft"]
+    KEYCLOAK["Keycloak / OIDC"]
+  end
+  IAM -->|"tenants.upstreams"| IDPS
   IAM -.->|"localAccounts (optional)"| LOCAL["Local accounts"]
   GO["Gate One<br/>authProvider + route policy"] -->|"oidc: issuer + JWKS"| IAM
-  GO -.->|"oidc direct: issuer + JWKS"| KEYCLOAK
+  GO -.->|"oidc direct: issuer + JWKS"| IDPS
   GO -->|"jwt: bearer + JWKS"| API["API / MCP issuer"]
   IAM -->|"token with roles+scopes+claims"| GO
-  KEYCLOAK -.->|"roles, scopes, claims"| GO
+  IDPS -.->|"roles, scopes, claims when provided"| GO
   GO -->|"verified identity + policy"| APP["Application"]
 ```
 
