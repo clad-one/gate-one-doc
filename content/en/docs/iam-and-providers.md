@@ -122,6 +122,11 @@ usually, the session cookie. See
 [the HTTP bridge contract](/docs/components/bridge-contract/) for endpoints, headers
 and status codes.
 
+There is **no `grpc-bridge` provider type today**. The gRPC binding is
+planned for the broker-side identity adapters, not for `authProvider`.
+If it becomes useful, it will be a new type rather than a silent change
+to `http-bridge`.
+
 ### Broker, bridge and token broker
 
 These names are easy to confuse:

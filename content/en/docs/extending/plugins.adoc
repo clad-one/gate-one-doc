@@ -19,7 +19,7 @@ provider and never calls a plugin on the authentication path.
 |===
 | Family | Runs in | Transport | Decides auth? | Licence
 
-| Auth adapter | broker | HTTP/JSON | yes, in the broker | Gate One licence
+| Auth adapter | broker | HTTP/JSON (gRPC later) | yes, in the broker | Gate One licence
 | Injection / userscript / UI | Gate One | route `inject` bundle (config) | no | extension licence
 | Event consumer | Gate One | HTTP/JSON, signed manifest | no | extension licence
 |===
