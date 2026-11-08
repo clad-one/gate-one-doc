@@ -196,6 +196,13 @@
       "additionalProperties": false,
       "description": "Narrow the subscription. Empty fields mean all.",
       "properties": {
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Request hosts or glob patterns (e.g. app.example.com, *.example.com)."
+        },
         "routes": {
           "type": "array",
           "items": {

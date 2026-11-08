@@ -882,6 +882,11 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | no
 | Durable event type -> WAL policy. A plugin can only subscribe to a configured type.
 
+| [[field-usage-capture]] `capture`
+| array of <<config-usage-capture,object>>
+| no
+| Opt-in capture of allow-listed query parameters and JSON body fields into matching events (default: billing). Scoped by host/route/method; values are capped and sensitive names skipped.
+
 | [[field-usage-plugins]] `plugins`
 | array of <<config-usage-plugins,object>>
 | no
@@ -915,6 +920,76 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | integer
 | no
 | Append-file rotation size. 0 = share/4 capped at 8 MiB. Minimum: 0.
+
+|===
+
+[[config-usage-capture]]
+==== usage.capture
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-capture-hosts]] `hosts`
+| array of string
+| no
+| Request hosts or glob patterns to capture. Empty = all hosts.
+
+| [[field-usage-capture-routes]] `routes`
+| array of string
+| no
+| Request path patterns to capture. Empty = all paths.
+
+| [[field-usage-capture-methods]] `methods`
+| array of string
+| no
+| HTTP methods to capture. Empty = all methods.
+
+| [[field-usage-capture-types]] `types`
+| array of string
+| no
+| Event types to attach attrs to. Default: [billing].
+
+| [[field-usage-capture-query]] `query`
+| array of string
+| no
+| Allow-listed query parameter names whose values are copied as q.<name>. Sensitive names are skipped.
+
+| [[field-usage-capture-body]] `body`
+| <<config-usage-capture-body,object>>
+| no
+| Optional JSON-body extraction.
+
+| [[field-usage-capture-maxAttrsBytes]] `maxAttrsBytes`
+| integer
+| no
+| Total attrs budget in bytes. Default 1024, clamped to 2048. Minimum: 0. Maximum: 2048.
+
+|===
+
+[[config-usage-capture-body]]
+===== usage.capture.body
+
+Optional JSON-body extraction.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-capture-body-format]] `format`
+| string (one of: `json`)
+| no
+| Body parser; only json is supported.
+
+| [[field-usage-capture-body-paths]] `paths`
+| array of string
+| no
+| Dotted JSON paths ($.a.b or a.b) whose scalar values are copied as b.<path>.
+
+| [[field-usage-capture-body-maxBytes]] `maxBytes`
+| integer
+| no
+| Skip body capture when the raw body is larger. 0 = no limit. Minimum: 0.
 
 |===
 
@@ -953,7 +1028,7 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | [[field-usage-plugins-filters]] `filters`
 | <<config-usage-plugins-filters,object>>
 | no
-| Narrow the subscription by route, tenant, method, status class or sample rate.
+| Narrow the subscription by host, route, tenant, method, status class or sample rate. Route patterns match the path only, so use hosts to avoid matching the same path on every host.
 
 | [[field-usage-plugins-maxLagBytes]] `maxLagBytes`
 | integer
@@ -975,11 +1050,16 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 [[config-usage-plugins-filters]]
 ===== usage.plugins.filters
 
-Narrow the subscription by route, tenant, method, status class or sample rate.
+Narrow the subscription by host, route, tenant, method, status class or sample rate. Route patterns match the path only, so use hosts to avoid matching the same path on every host.
 
 [cols="2,2,1,5",options="header"]
 |===
 | Field | Type | Required | Description
+
+| [[field-usage-plugins-filters-hosts]] `hosts`
+| array of string
+| no
+| Request hosts or glob patterns to include (e.g. app.example.com, *.example.com). Empty = all hosts.
 
 | [[field-usage-plugins-filters-routes]] `routes`
 | array of string

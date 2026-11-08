@@ -100,6 +100,16 @@ The flat event delivered to subscribed out-of-process plugins. No token, cookie,
 | no
 | Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.
 
+| [[field-attrs]] `attrs`
+| object
+| no
+| Bounded billing attributes captured from allow-listed query/body fields (or backend hints). Sensitive names are skipped; values are capped.
+
+| [[field-attrsTruncated]] `attrsTruncated`
+| boolean
+| no
+| True when attrs were capped (too many keys, or a key/value/total exceeded the limit).
+
 | [[field-sessionId]] `sessionId`
 | string
 | no

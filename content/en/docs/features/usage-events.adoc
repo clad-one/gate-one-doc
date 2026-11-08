@@ -31,7 +31,7 @@ metering.
 | `request` | after a response, if subscribed | best effort
 | `auth` | login, logout, callback, back-channel logout, revocation | zero loss
 | `error` | 401/403/502/5xx, provider unavailable | window
-| `billing` | a billable unit (reserved for a later plugin) | zero loss
+| `billing` | a billable unit (`units`/`unitType`, optional `attrs`) | zero loss
 | `audit` | reload, plugin load/revoke | best effort
 |===
 
@@ -131,6 +131,61 @@ X-Gate-One-Subject: v1.<base64url>
 It is added after authentication, never accepted from a client, and is
 not an authentication token.
 
+[[billing]]
+== Billing and capture
+
+A `billing` event carries a metered amount: `units` + `unitType`
+(`request`, `token`, `byte`, `mcp_call`), plus optional bounded `attrs`.
+
+The cheapest and most accurate source is the **backend**, which knows
+what it actually consumed. It returns internal response headers:
+
+[source,http]
+----
+X-Gate-One-Units: 1240
+X-Gate-One-Unit: token
+X-Gate-One-Billable: {"units":1240,"unitType":"token","attrs":{"model":"gpt-4"}}
+----
+
+`X-Gate-One-Billable` is an optional JSON shortcut (≤ 512 bytes). The
+gateway copies the values into the event and **strips the headers from
+the client response**; a client-supplied copy is stripped from the
+request. Prefer this path: no request-body parsing, the smallest record,
+the most accurate count.
+
+When the backend cannot report, opt in to **gateway capture** for
+specific endpoints:
+
+[source,json]
+----
+"usage": {
+  "capture": [{
+    "hosts": ["app.company.example"],
+    "routes": ["/api/process_stream"],
+    "methods": ["POST"],
+    "types": ["billing"],
+    "query": ["coupes", "lang"],
+    "body": { "paths": ["$.coupes", "$.model"], "maxBytes": 2048 },
+    "maxAttrsBytes": 1024
+  }]
+}
+----
+
+Captured values appear as `attrs`: `q.<name>` for a query parameter and
+`b.<path>` for a body field. Everything is **bounded**: at most 8 keys,
+keys ≤ 32 bytes, values ≤ 256 bytes, total ≤ `maxAttrsBytes` (default
+1024, max 2048). When a value is dropped or cut the event sets
+`attrsTruncated: true`. Sensitive names (`token`, `password`, `secret`,
+`authorization`, `cookie`, `credential`, `session`, …) are **always
+skipped**, and a body is parsed only when it is no larger than
+`body.maxBytes`.
+
+Capture applies only to the event types listed in `types` (default
+`billing`), so high-volume `request` events stay small. Keep the WAL
+lean: prefer the backend header, allow-list a few query names rather than
+whole bodies, and use a content-addressed spool (not the WAL) for large
+payloads.
+
 == WAL and backpressure
 
 * one WAL per **(node, event type)**;
@@ -206,8 +261,10 @@ verifies:
 * `kind` (`extension` or `auth`; `auth` requires `allowAuth`).
 
 A manifest is authoritative for the subscription (`events.types`,
-filters, `maxLagBytes`, `onMaxLag`) and the licence feature. The
-complete example is
+filters, `maxLagBytes`, `onMaxLag`) and the licence feature. Filters can
+narrow by `hosts`, `routes`, `tenants`, `methods` and `statusClasses`.
+`routes` matches the **path only**, not host+path, so add `hosts` when
+the same path exists on several hosts. The complete example is
 link:/examples/usage-events/routes.json[`routes.json`], link:/examples/usage-events/audit.manifest.json[`audit.manifest.json`], link:/examples/usage-events/trust-store.json[`trust-store.json`].
 
 == Host → plugin contract
