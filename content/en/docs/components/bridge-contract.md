@@ -224,5 +224,3 @@ Configure:
 * It is not the `tokenBroker` block. That service supplies per-user
   upstream credentials for `upstream.tokenBroker`; it is unrelated to
   authentication provider selection.
-* It is not a gRPC contract. No `grpc-bridge` type exists today; the
-  gRPC binding is planned for IAM-side identity adapters.
