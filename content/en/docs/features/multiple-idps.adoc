@@ -52,7 +52,7 @@ It is deliberately resource-light: the recommended path uses external
 IdPs, so there is no password store and no password-hashing cost. Local
 accounts are optional for small deployments.
 
-It is a broker, not a full replacement for Keycloak/Zitadel: no
+It is a lightweight IAM, not a full replacement for Keycloak/Zitadel: no
 per-resource policy engine, no admin UI, no multi-identity linking.
 
 * Feature: link:/docs/features/embedded-iam/[Embedded IAM]
@@ -62,7 +62,7 @@ per-resource policy engine, no admin UI, no multi-identity linking.
 
 If you have a single identity provider that already carries the roles and
 scopes your routes need, point Gate One straight at it: one `oidc`
-provider, no federation, no broker. See the
+provider, no federation, no embedded IAM. See the
 link:/docs/examples/direct-oidc/[Direct OIDC example].
 
 == Choosing
@@ -96,4 +96,4 @@ locally; the difference is where user federation and administration live.
 * link:/docs/config/gate-one/#field-authProvider-issuer[`authProvider.issuer`]
 * link:/docs/config/gate-one/#field-authProvider-clientId[`authProvider.clientId`]
 * link:/docs/config/gate-one/#field-authProvider-roleClaims[`authProvider.roleClaims`]
-* link:/docs/config/broker/[Embedded IAM configuration]
+* link:/docs/config/embedded-iam/[Embedded IAM configuration]

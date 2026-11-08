@@ -14,7 +14,7 @@ you offer IdP federation and managed users without running Keycloak,
 Zitadel or another full IAM.
 
 Gate One reaches it as an ordinary OIDC issuer:
-`authProvider.type: "oidc"` with `issuer` pointing at the broker.
+`authProvider.type: "oidc"` with `issuer` pointing at the IAM.
 
 == What it is, and what it is not
 
@@ -26,7 +26,7 @@ Gate One reaches it as an ordinary OIDC issuer:
 * It is **not** an `http-bridge`: it does not implement the
   link:/docs/components/bridge-contract/[HTTP bridge contract].
 * It is optional: for a single IdP, point Gate One straight at that
-  issuer and skip the broker.
+  issuer and skip the IAM.
 
 == Run it
 
@@ -54,7 +54,7 @@ Then point Gate One at it:
 }
 ----
 
-Redis is optional for the broker and required only when several broker
+Redis is optional for the IAM and required only when several IAM
 instances share session/revocation state.
 
 == Where to go next
@@ -62,6 +62,6 @@ instances share session/revocation state.
 * link:/docs/features/embedded-iam/[Embedded IAM] — why and how, with the
   claim-mapping model.
 * link:/docs/examples/embedded-iam/[Embedded IAM example] — a runnable
-  broker + Gate One configuration.
-* link:/docs/config/broker/[Broker configuration reference] — every
+  IAM + Gate One configuration.
+* link:/docs/config/embedded-iam/[Embedded IAM configuration reference] — every
   `broker.json` field.

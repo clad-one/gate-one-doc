@@ -1,17 +1,19 @@
 ---
-title: Broker configuration
-linkTitle: Broker
+title: Embedded IAM configuration
+linkTitle: Embedded IAM
 weight: 20
+aliases:
+  - /docs/config/broker/
 ---
 
-= Broker configuration
+= Embedded IAM configuration
 :toc: left
 :toclevels: 3
 :icons: font
 
-Generated from `schemas/broker.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
+Generated from `schemas/embedded-iam.schema.json` by `scripts/gen-config-docs`. Do not edit this page: edit the schema or the generator.
 
-The optional `cladone-auth` broker configuration. Secrets are read from the environment; a `*Env` field names the variable.
+The optional `cladone-auth` embedded IAM configuration. Secrets are read from the environment; a `*Env` field names the variable.
 
 [[config-root]]
 == Fields
@@ -23,7 +25,7 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | [[field-publicUrl]] `publicUrl`
 | string
 | yes
-| External origin of the broker, without a trailing slash (for example https://auth.example.com).
+| External origin of the IAM, without a trailing slash (for example https://auth.example.com).
 
 | [[field-listen]] `listen`
 | string
@@ -33,7 +35,7 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | [[field-sessionCookieName]] `sessionCookieName`
 | string
 | no
-| Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+| IAM SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
 
 | [[field-tenants]] `tenants`
 | array of <<config-tenants,object>>
@@ -132,7 +134,7 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | [[field-tenants-groupRoles]] `groupRoles`
 | object
 | no
-| Map an upstream group/claim value to broker roles.
+| Map an upstream group/claim value to IAM roles.
 
 | [[field-tenants-accessTokenTtlSeconds]] `accessTokenTtlSeconds`
 | integer
@@ -152,7 +154,7 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | [[field-tenants-sessionTtlSeconds]] `sessionTtlSeconds`
 | integer
 | no
-| Broker SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
+| IAM SSO session lifetime in seconds. Default 43200 (12 hours). Minimum: 1.
 
 | [[field-tenants-localAccounts]] `localAccounts`
 | boolean
@@ -172,7 +174,7 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | [[field-tenants-mappings]] `mappings`
 | array of <<config-tenants-mappings,object>>
 | no
-| Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
+| Ordered mapping rules translating upstream claims into IAM roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
 
 | [[field-tenants-rules]] `rules`
 | array of <<config-tenants-rules,object>>
@@ -325,12 +327,12 @@ One claim-to-rights mapping rule.
 | [[field-tenants-mappings-roles]] `roles`
 | array of string
 | no
-| Broker roles added when the rule matches.
+| IAM roles added when the rule matches.
 
 | [[field-tenants-mappings-scopes]] `scopes`
 | array of string
 | no
-| Broker scopes added when the rule matches.
+| IAM scopes added when the rule matches.
 
 | [[field-tenants-mappings-claims]] `claims`
 | object
@@ -398,12 +400,12 @@ Rights granted when every condition matches.
 | [[field-tenants-rules-then-roles]] `roles`
 | array of string
 | no
-| Constant broker roles.
+| Constant IAM roles.
 
 | [[field-tenants-rules-then-scopes]] `scopes`
 | array of string
 | no
-| Constant broker scopes.
+| Constant IAM scopes.
 
 | [[field-tenants-rules-then-claims]] `claims`
 | object
@@ -425,7 +427,7 @@ Rights granted when every condition matches.
 [[config-tenants-rules-then-rolesFrom]]
 ====== tenants.rules.then.rolesFrom
 
-Turn an incoming claim's values into broker roles.
+Turn an incoming claim's values into IAM roles.
 
 [cols="2,2,1,5",options="header"]
 |===
@@ -521,12 +523,12 @@ Shared store for flows, codes, refresh tokens and the revocation keyspace read b
 | [[field-redis-prefix]] `prefix`
 | string
 | no
-| Key prefix for broker state. Default cladone:broker:v1:.
+| Key prefix for IAM state. Default cladone:broker:v1:.
 
 | [[field-redis-authPrefix]] `authPrefix`
 | string
 | no
-| Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:.
+| Key prefix the IAM writes revocations to, read by Gate One. Default cladone:auth:v1:.
 
 | [[field-redis-dialTimeoutMs]] `dialTimeoutMs`
 | integer

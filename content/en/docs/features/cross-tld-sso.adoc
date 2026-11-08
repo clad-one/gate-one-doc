@@ -130,7 +130,7 @@ If you use back-channel logout:
   client or a group-level subject revocation instead.
 
 Both domains must use the **same issuer** and the same user identity
-(`issuer` + `sub`). If you use different IdPs per domain, the broker's
+(`issuer` + `sub`). If you use different IdPs per domain, the IAM's
 account linking is not enough yet: Gate One's `subjectId` is per
 `(issuer, sub)`.
 
@@ -142,9 +142,9 @@ account linking is not enough yet: Gate One's `subjectId` is per
   default prompt.
 * A cookie is never shared across TLDs; logout propagation relies on
   back-channel logout or the shared Redis revocation state.
-* With broker local accounts, the broker currently renders its local
+* With IAM local accounts, the IAM currently renders its local
   login page on `/authorize` even when it has a session. Use an upstream
-  IdP for the zero-form path, or add a broker session short-circuit.
+  IdP for the zero-form path, or add an IAM session short-circuit.
 * Applications on the same TLD should use `cookieDomain` instead; it
   avoids the extra redirect and is simpler.
 ====

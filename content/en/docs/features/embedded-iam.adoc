@@ -2,7 +2,7 @@
 title: Embedded IAM
 linkTitle: Embedded IAM
 weight: 30
-description: The optional cladone-auth broker federates IdPs, maps claims and manages local and federated user grants.
+description: The optional cladone-auth embedded IAM federates IdPs, maps claims and manages local and federated user grants.
 ---
 
 = Embedded IAM
@@ -32,14 +32,14 @@ not a full identity provider.
 * emits Ed25519-signed ID/access/refresh tokens, JWKS, discovery and the
   revocation keyspace Gate One reads.
 
-The broker is deliberately resource-light. The recommended path uses
+The embedded IAM is deliberately resource-light. The recommended path uses
 **external IdPs**, so there is no password store and no password-hashing
 cost. Local accounts (`localAccounts`, PBKDF2) are optional for small
 deployments.
 
 == Mapping IdP claims to application rights
 
-A mapping rule takes a claim path and adds broker roles, scopes or
+A mapping rule takes a claim path and adds IAM roles, scopes or
 claims:
 
 [source,text]
@@ -67,11 +67,11 @@ grants are stored on the user and apply to both kinds of account.
 
 A user has exactly **one** authentication identity:
 
-* local: email + password managed by the broker;
+* local: email + password managed by the IAM;
 * federated: one `(issuer, subject)` link.
 
 There is no multi-link/account-linking model. If an upstream subject
-changes unexpectedly, an admin relinks the existing broker user instead
+changes unexpectedly, an admin relinks the existing IAM user instead
 of losing its grants.
 
 == Administration
@@ -85,10 +85,10 @@ immediate invalidation.
 
 == Example and reference
 
-* link:/docs/examples/embedded-iam/[Embedded IAM example] — broker
+* link:/docs/examples/embedded-iam/[Embedded IAM example] — IAM
   configuration, IdP mapping, user creation and grants.
-* link:/docs/config/broker/[Broker configuration reference]
-* link:/docs/config/broker/#field-tenants-mappings[`tenants[].mappings`]
+* link:/docs/config/embedded-iam/[Embedded IAM configuration reference]
+* link:/docs/config/embedded-iam/#field-tenants-mappings[`tenants[].mappings`]
 
 [[limits]]
 [IMPORTANT]
@@ -96,7 +96,7 @@ immediate invalidation.
 * Not a full IAM suite: no admin UI, no multi-identity linking, no
   per-resource policy engine.
 * Route policy stays in Gate One.
-* Authentication adapters and broker IdP adapters remain under the Gate
+* Authentication adapters and IAM IdP adapters remain under the Gate
   One licence.
 * If you already run Keycloak or Zitadel, use it as the external IAM
   instead: link:/docs/features/multiple-idps/[Multiple identity providers].

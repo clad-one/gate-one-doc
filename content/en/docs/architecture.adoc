@@ -26,7 +26,7 @@ flowchart TB
     A --> F["4. proxy, or<br/>401 / 403 / 502 / 503"]
     F --> E["5. emit subscribed<br/>event after the response"]
   end
-  G -->|"OIDC / JWT"| I["Identity provider<br/>or Broker"]
+  G -->|"OIDC / JWT"| I["Identity provider<br/>or IAM"]
   G -->|"proxied request"| AP["Existing application"]
   G -.->|"HTTP/JSON event"| P["Out-of-process plugin"]
 </pre>
@@ -89,22 +89,22 @@ zero-form login. This is not a shared cross-TLD cookie. See
 link:/docs/features/cross-tld-sso/[Cross-domain SSO].
 
 An authentication provider is **not** a plugin. `authProvider.type:
-"plugin"` is rejected. Authentication adapters are brokered: they live in
-the broker and remain under the Gate One licence.
+"plugin"` is rejected. Authentication adapters live in the embedded IAM
+and remain under the Gate One licence.
 
-== With or without the broker
+== With or without the embedded IAM
 
-The broker is optional.
+The embedded IAM is optional.
 
-* **Without the broker**, Gate One talks directly to one OIDC or JWT
+* **Without the embedded IAM**, Gate One talks directly to one OIDC or JWT
   issuer per provider. This is the simplest production setup.
-* **With the broker** (`cladone-auth`), Gate One trusts one local issuer
+* **With the embedded IAM** (`cladone-auth`), Gate One trusts one local issuer
   that federates Google, Microsoft, Auth0, Keycloak or local accounts,
   applies tenant policy and re-emits Ed25519-signed tokens. Gate One
   never trusts the upstream token.
 
-The broker adds a second service and a second session (browser SSO on
-the broker host), but it keeps the trust boundary local and makes
+The embedded IAM adds a second service and a second session (browser SSO on
+the IAM host), but it keeps the trust boundary local and makes
 multi-provider and multi-tenant setups uniform. It also publishes the
 revocation keyspace Gate One reads for a global logout.
 
@@ -197,7 +197,7 @@ cover when to scale and the Redis-backed configuration.
 
 * It is not an identity provider (the `dev` provider is for local
   development only).
-* It is not a token issuer; the broker is a separate optional service.
+* It is not a token issuer; the embedded IAM is a separate optional service.
 * It is not a general-purpose authorization server: policy is per route
   (technical conditions, roles, scopes, claims), not per resource.
 * It is not a plugin runtime inside the request process: plugins never

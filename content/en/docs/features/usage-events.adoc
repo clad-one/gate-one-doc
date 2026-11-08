@@ -268,7 +268,7 @@ link:/docs/extending/publish-a-plugin/[Publish and trust a plugin].
 
 == Licensing
 
-Non-auth, non-broker extensions may be closed-source or commercial; a
+Non-auth, non-IAM extensions may be closed-source or commercial; a
 commercial plugin may declare `licenseFeature` and the host refuses to
 load it without that feature. The full terms are under
 link:/docs/#source-and-licence[Source and licence].

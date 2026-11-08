@@ -18,7 +18,7 @@ Gate One enforces.
 * link:/examples/embedded-iam/broker.json[`examples/embedded-iam/broker.json`]
 * link:/examples/embedded-iam/routes.json[`examples/embedded-iam/routes.json`]
 
-== Broker configuration
+== Embedded IAM configuration
 
 [source,json]
 ----
@@ -118,7 +118,7 @@ legacy `groupRoles` block is still accepted for the `groups` claim).
 ----
 
 The Redis store is here because this example is also the multi-instance
-form; a single broker instance can use its memory store, and a single
+form; a single IAM instance can use its memory store, and a single
 Gate One instance can use the default bbolt store.
 
 [[dynamic-rights]]
@@ -195,7 +195,7 @@ cladone-auth user set -config broker.json -tenant company \
 Local users use the same commands with `-kind local` and a password. The
 same `roles`/`scopes`/`claims` model applies to both.
 
-If the IdP subject changes unexpectedly, relink the same broker user
+If the IdP subject changes unexpectedly, relink the same IAM user
 with `-new-issuer`/`-new-sub` instead of deleting it; its grants are
 preserved.
 
@@ -203,7 +203,7 @@ preserved.
 
 [source,bash]
 ----
-# broker
+# embedded IAM
 export REDIS_PASSWORD=...
 export MYCOMPANY_BROKER_CLIENT_SECRET=...
 export GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=...
@@ -218,8 +218,8 @@ gate-one -config routes.json
 
 == What to observe
 
-* the broker's IdP chooser, then Google login;
-* the broker session cookie on `auth.example.com`;
+* the IAM's IdP chooser, then Google login;
+* the IAM session cookie on `auth.example.com`;
 * `roleClaims: ["roles"]` and the mapped `admin` role in the Gate One
   policy;
 * `cladone-auth user show` after first login, then a grant update that
@@ -229,7 +229,7 @@ gate-one -config routes.json
 [[caveats]]
 [NOTE]
 ====
-* The broker is an issuer and user directory, not a per-resource policy
+* The IAM is an issuer and user directory, not a per-resource policy
   engine; route rules stay in Gate One.
 * One external identity link per user; no account linking.
 * Upstream secrets stay in environment variables.

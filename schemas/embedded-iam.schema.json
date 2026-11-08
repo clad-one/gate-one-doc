@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://gate-one.example.com/schemas/broker.schema.json",
-  "title": "Cladone Auth broker configuration",
-  "description": "Optional multi-tenant OIDC issuer. The broker federates upstream identity providers, applies local policy and re-emits Ed25519-signed JWTs. Gate One trusts only the broker issuer. Secrets are read from the environment: a *Env field is required when no inline secret is accepted.",
+  "$id": "https://gate-one.example.com/schemas/embedded-iam.schema.json",
+  "title": "Cladone Auth embedded IAM configuration",
+  "description": "Optional multi-tenant OIDC issuer. The IAM federates upstream identity providers, applies local policy and re-emits Ed25519-signed JWTs. Gate One trusts only the IAM issuer. Secrets are read from the environment: a *Env field is required when no inline secret is accepted.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@
     "publicUrl": {
       "type": "string",
       "format": "uri",
-      "description": "External origin of the broker, without a trailing slash (for example https://auth.example.com)."
+      "description": "External origin of the IAM, without a trailing slash (for example https://auth.example.com)."
     },
     "listen": {
       "type": "string",
@@ -21,7 +21,7 @@
     },
     "sessionCookieName": {
       "type": "string",
-      "description": "Broker SSO cookie shared by all applications in one browser. Default cladone_broker_sid."
+      "description": "IAM SSO cookie shared by all applications in one browser. Default cladone_broker_sid."
     },
     "tenants": {
       "type": "array",
@@ -142,7 +142,7 @@
               "type": "string"
             }
           },
-          "description": "Map an upstream group/claim value to broker roles."
+          "description": "Map an upstream group/claim value to IAM roles."
         },
         "accessTokenTtlSeconds": {
           "type": "integer",
@@ -162,7 +162,7 @@
         "sessionTtlSeconds": {
           "type": "integer",
           "minimum": 1,
-          "description": "Broker SSO session lifetime in seconds. Default 43200 (12 hours)."
+          "description": "IAM SSO session lifetime in seconds. Default 43200 (12 hours)."
         },
         "localAccounts": {
           "type": "boolean",
@@ -182,7 +182,7 @@
         },
         "mappings": {
           "type": "array",
-          "description": "Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.",
+          "description": "Ordered mapping rules translating upstream claims into IAM roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.",
           "items": {
             "$ref": "#/definitions/mappingRule"
           }
@@ -291,11 +291,11 @@
         },
         "prefix": {
           "type": "string",
-          "description": "Key prefix for broker state. Default cladone:broker:v1:."
+          "description": "Key prefix for IAM state. Default cladone:broker:v1:."
         },
         "authPrefix": {
           "type": "string",
-          "description": "Key prefix the broker writes revocations to, read by Gate One. Default cladone:auth:v1:."
+          "description": "Key prefix the IAM writes revocations to, read by Gate One. Default cladone:auth:v1:."
         },
         "dialTimeoutMs": {
           "type": "integer",
@@ -396,7 +396,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Broker roles added when the rule matches."
+          "description": "IAM roles added when the rule matches."
         },
         "scopes": {
           "type": "array",
@@ -404,7 +404,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Broker scopes added when the rule matches."
+          "description": "IAM scopes added when the rule matches."
         },
         "claims": {
           "type": "object",
@@ -480,7 +480,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Constant broker roles."
+          "description": "Constant IAM roles."
         },
         "scopes": {
           "type": "array",
@@ -488,7 +488,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "Constant broker scopes."
+          "description": "Constant IAM scopes."
         },
         "claims": {
           "type": "object",
@@ -517,7 +517,7 @@
       "required": [
         "claim"
       ],
-      "description": "Turn an incoming claim's values into broker roles.",
+      "description": "Turn an incoming claim's values into IAM roles.",
       "properties": {
         "claim": {
           "type": "string",

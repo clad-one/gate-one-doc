@@ -216,7 +216,7 @@ Configure:
 
 * It is not an OIDC/OAuth discovery endpoint: use `type: "oidc"` for
   that.
-* It is not implemented by the `cladone-auth` **Broker**. The Broker is an
+* It is not implemented by the `cladone-auth` **IAM**. The IAM is an
   OIDC issuer/IAM and Gate One connects to it with `type: "oidc"`; it
   does not expose `/auth`, `/auth/mcp` or `/health`. **auth-bridge** is
   the reference implementation of this request-verification contract;
@@ -225,4 +225,4 @@ Configure:
   upstream credentials for `upstream.tokenBroker`; it is unrelated to
   authentication provider selection.
 * It is not a gRPC contract. No `grpc-bridge` type exists today; the
-  gRPC binding is planned for broker-side identity adapters.
+  gRPC binding is planned for IAM-side identity adapters.

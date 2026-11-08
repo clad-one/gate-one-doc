@@ -2,13 +2,13 @@
 title: Direct OIDC with one IdP
 linkTitle: Direct OIDC
 weight: 15
-description: Point Gate One straight at a single OIDC issuer, with no federation and no broker.
+description: Point Gate One straight at a single OIDC issuer, with no federation and no IAM.
 ---
 
 = Direct OIDC with one IdP
 
 This example points Gate One straight at **one OIDC issuer**: no external
-IAM to federate, no embedded broker. Gate One is the relying party; the
+IAM to federate, no embedded IAM. Gate One is the relying party; the
 issuer is the IdP and, because it also carries roles and scopes, the
 authorization source for that deployment.
 
@@ -23,7 +23,7 @@ any one issuer — Zitadel, Entra ID, Okta or Auth0.
 
 If you must federate several IdPs, use an external IAM
 (link:/docs/examples/keycloak-google/[Keycloak with Google]) or the
-embedded broker (link:/docs/examples/embedded-iam/[Embedded IAM]).
+embedded IAM (link:/docs/examples/embedded-iam/[Embedded IAM]).
 
 == File
 
@@ -63,13 +63,13 @@ link:/examples/direct-oidc/routes.json[`examples/direct-oidc/routes.json`]
   are Keycloak-shaped, so `realm_access.roles`,
   `resource_access.<clientId>.roles`, `groups` and `scope` are read with
   no configuration.
-* **One provider, one session, no broker, no federation.** The file above
+* **One provider, one session, no IAM, no federation.** The file above
   is the whole authentication setup.
 * **You reuse the IAM you already run** — user lifecycle, groups, client
   scopes, audience mappers (for MCP), back-channel logout.
 
 What you give up is federating several upstream IdPs behind one issuer;
-add that with an external IAM or the broker when you need it.
+add that with an external IAM or the embedded IAM when you need it.
 
 == If your one provider is Google
 
@@ -83,7 +83,7 @@ useful to restrict a route to your organization's domain:
 
 If you need Google-issued tokens with roles, that is Google Cloud
 Identity Platform custom claims; otherwise put an IAM (Keycloak, Entra,
-Okta) or the broker in front of Google.
+Okta) or the embedded IAM in front of Google.
 
 == Run it
 

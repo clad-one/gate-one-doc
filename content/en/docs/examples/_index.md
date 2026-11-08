@@ -13,7 +13,7 @@ live.
 | Example | What it shows |
 |---|---|
 | [Getting started](getting-started/) | A local demo with the embedded development identity provider, its default users and a user badge. |
-| [Direct OIDC](direct-oidc/) | One OIDC issuer used directly, with roles and scopes read from that issuer and no federation or broker. |
+| [Direct OIDC](direct-oidc/) | One OIDC issuer used directly, with roles and scopes read from that issuer and no federation or IAM. |
 | [Multi-app SSO](multi-app-sso/) | A second application added to the same provider and cookie domain, reusing the login session. |
 | [Cross-domain SSO](cross-tld-sso/) | Two unrelated domains using one IdP session, one provider per domain and a single shared route body. |
 | [Keycloak with Google](keycloak-google/) | A classical external IAM: Keycloak federates Google, Gate One trusts one Keycloak issuer. |

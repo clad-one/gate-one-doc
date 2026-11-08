@@ -114,7 +114,7 @@ URL that carries identity must be excluded with
 URL): the identity provider's discovery, authorize, token, JWKS and
 end-session endpoints; any OAuth/JWT token endpoint used by API or
 machine clients; the `http-bridge` login URL; and the Gate One callback
-(`/auth/callback`) or the embedded broker's `/t/<tenant>/callback`.
+(`/auth/callback`) or the embedded IAM's `/t/<tenant>/callback`.
 
 A cached auth probe replays a stale identity after login or logout; a
 cached callback replays a one-time `code`. The

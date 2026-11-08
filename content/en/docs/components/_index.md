@@ -7,7 +7,7 @@ description: The services that make up a complete Gate One deployment, and how t
 
 Gate One is one binary. A complete deployment adds a few separate
 services around it: a reverse proxy in front, an identity provider, and —
-depending on the features you enable — the optional `cladone-auth` broker,
+depending on the features you enable — the optional `cladone-auth` embedded IAM,
 a bridge, the token broker and Redis for shared state.
 
 | Component | Role | Required? | Guide |

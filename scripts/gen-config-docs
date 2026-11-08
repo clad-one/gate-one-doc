@@ -24,9 +24,10 @@ PAGES = [
      "The `api-routes.json` file consumed by the `gate-one` binary. "
      "Relative paths (certificates, keys, plugin artefacts, WAL directories) "
      "are resolved from the configuration file."),
-    ("broker.schema.json", "broker.adoc", "Broker configuration", "Broker", 20,
-     "The optional `cladone-auth` broker configuration. Secrets are read "
-     "from the environment; a `*Env` field names the variable."),
+    ("embedded-iam.schema.json", "embedded-iam.adoc", "Embedded IAM configuration",
+     "Embedded IAM", 20,
+     "The optional `cladone-auth` embedded IAM configuration. Secrets are "
+     "read from the environment; a `*Env` field names the variable."),
     ("plugin-manifest.schema.json", "plugin-manifest.adoc", "Plugin manifest", "Manifest", 30,
      "The signed manifest shipped with an out-of-process plugin. The "
      "operator references it from `usage.plugins[].manifest`; the trust "
@@ -42,6 +43,11 @@ PAGES = [
      "The flat event delivered to subscribed out-of-process plugins. "
      "No token, cookie, raw query string, email or username is present."),
 ]
+
+# Pages that were renamed: keep the previously published URLs working.
+ALIASES: dict[str, list[str]] = {
+    "embedded-iam.adoc": ["/docs/config/broker/"],
+}
 
 TYPE_NAMES = {
     "string": "string", "integer": "integer", "number": "number",
@@ -231,9 +237,12 @@ def generate(
         f"title: {title}",
         f"linkTitle: {link_title}",
         f"weight: {weight}",
-        "---",
-        "",
     ]
+    if out_path.name in ALIASES:
+        front.append("aliases:")
+        for alias in ALIASES[out_path.name]:
+            front.append(f"  - {alias}")
+    front += ["---", ""]
     lines = front + [
         f"= {title}",
         ":toc: left",

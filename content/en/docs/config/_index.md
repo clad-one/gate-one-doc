@@ -6,7 +6,7 @@ description: Every field, generated from the published JSON Schemas.
 ---
 
 * [Gate One configuration](gate-one/) — `api-routes.json` (`authProvider.type`: `dev`, `http-bridge`, `oidc`, `jwt`)
-* [Broker configuration](broker/) — `cladone-auth` (optional embedded IAM/OIDC issuer)
+* [Embedded IAM configuration](embedded-iam/) — `cladone-auth` (optional embedded IAM/OIDC issuer)
 * [Plugin manifest](plugin-manifest/)
 * [Plugin trust store](plugin-trust-store/)
 * [Publisher feed](publisher-feed/)
@@ -23,7 +23,7 @@ The schemas are also published for editor autocompletion and external
 validation:
 
 * [`api-routes.schema.json`](/schemas/api-routes.schema.json)
-* [`broker.schema.json`](/schemas/broker.schema.json)
+* [`embedded-iam.schema.json`](/schemas/embedded-iam.schema.json)
 * [`plugin-manifest.schema.json`](/schemas/plugin-manifest.schema.json)
 * [`plugin-trust-store.schema.json`](/schemas/plugin-trust-store.schema.json)
 * [`publisher-feed.schema.json`](/schemas/publisher-feed.schema.json)

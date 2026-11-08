@@ -20,7 +20,7 @@ develop, sign, install and revoke.
 Extension families and what is *not* a plugin are defined once in
 link:/docs/extending/plugins/[Plugins]. For publishers, the only fully
 signed extension today is the **event consumer**; injection bundles are
-route configuration and auth adapters stay in the broker under the Gate
+route configuration and auth adapters stay in the IAM under the Gate
 One licence.
 
 == The trust model
@@ -295,7 +295,7 @@ waiting for a manual edit on every deployment.
   client-side patches), referenced by `route.inject` and validated
   against `inject-bundle.schema.json`. It is a configuration file, not a
   signed plugin; a signed-bundle path is planned.
-* **Auth adapter** (`kind: auth`) — broker-only and under the Gate One
+* **Auth adapter** (`kind: auth`) — IAM-only and under the Gate One
   licence; it is not an extension and cannot be signed by a third party.
 
 There is deliberately no “route handler” plugin: a Backend-For-Frontend

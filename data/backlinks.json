@@ -49,7 +49,7 @@
     "/docs/iam-and-providers",
     "/docs/install"
   ],
-  "/docs/config/broker": [
+  "/docs/config/embedded-iam": [
     "/docs/components/cladone-auth",
     "/docs/config",
     "/docs/features/embedded-iam",

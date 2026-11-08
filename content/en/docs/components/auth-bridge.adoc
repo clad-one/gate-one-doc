@@ -60,4 +60,4 @@ endpoints; the contract is the specification.
 * link:/docs/examples/http-bridge/[IAM + IdP bridge example] — a runnable
   configuration.
 * link:/docs/iam-and-providers/[IAM, IdPs and provider types] — how
-  `http-bridge` differs from `oidc` and from the `cladone-auth` broker.
+  `http-bridge` differs from `oidc` and from the `cladone-auth` embedded IAM.

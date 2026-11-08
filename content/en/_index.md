@@ -38,7 +38,7 @@ immediate revocation.
 
 {{% blocks/feature icon="fa-solid fa-users-gear" title="Any identity provider" url="/docs/features/multiple-idps/" %}}
 Talk directly to Keycloak, Entra, Auth0 or Google, or let the optional
-broker federate several providers and local accounts.
+embedded IAM federate several providers and local accounts.
 {{% /blocks/feature %}}
 
 {{% blocks/feature icon="fa-solid fa-shield-halved" title="APIs and MCP" url="/docs/features/protect-api-mcp/" %}}

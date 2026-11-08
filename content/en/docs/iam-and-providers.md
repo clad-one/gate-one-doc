@@ -62,7 +62,7 @@ Two valid shapes:
 In both shapes, Gate One enforces `auth.identity` per route; the IAM does
 not decide which application route a user may call. An IdP that only
 authenticates (for example a plain Google login) does not provide
-application roles; use an IAM/broker or another claim source if you need
+application roles; use an IAM or another claim source if you need
 them.
 
 ## Provider types
@@ -84,7 +84,7 @@ flowchart TB
 
 | Type | Gate One talks to | Browser login | Session owner | Use when |
 |---|---|---|---|---|
-| `oidc` | An OIDC issuer: `cladone-auth` tenant or one IdP/IAM | Yes | Gate One (bbolt/Redis) | You have an OIDC issuer, or you use the broker |
+| `oidc` | An OIDC issuer: `cladone-auth` tenant or one IdP/IAM | Yes | Gate One (bbolt/Redis) | You have an OIDC issuer, or you use the embedded IAM |
 | `jwt` | A JWKS endpoint | No | Stateless | APIs and MCP machine clients |
 | `http-bridge` | A service implementing the Gate One HTTP bridge contract | Yes, on the bridge | The bridge | The technology is not OAuth/OIDC, or you already run auth-bridge |
 | `dev` | The embedded loopback-only IdP | Yes | Gate One (local) | Onboarding and tests only |
@@ -122,23 +122,23 @@ usually, the session cookie. See
 [the HTTP bridge contract](/docs/components/bridge-contract/) for endpoints, headers
 and status codes.
 
-### Broker, bridge and token broker
+### IAM, bridge and token broker
 
 These names are easy to confuse:
 
 | Name | What it is | Gate One talks to it via |
 |---|---|---|
-| `cladone-auth` **Broker** | Optional embedded IAM and OIDC issuer: IdP federation, users, claims, grants and tokens | `authProvider.type: "oidc"` |
+| `cladone-auth` **IAM** | Optional embedded IAM and OIDC issuer: IdP federation, users, claims, grants and tokens | `authProvider.type: "oidc"` |
 | **`http-bridge`** | Provider type for a service that verifies requests and returns identity/IAM facts | `authProvider.type: "http-bridge"` |
 | **auth-bridge** | Reference implementation of the `http-bridge` contract, often in front of Keycloak | `authProvider.type: "http-bridge"` |
 | **`tokenBroker`** | Internal per-user credential service used by `upstream.tokenBroker` | Internal API, not an `authProvider` |
 
-The Broker does **not** implement the HTTP bridge contract. It speaks
+The IAM does **not** implement the HTTP bridge contract. It speaks
 OIDC and issues tokens; Gate One is the OIDC relying party. The bridge
 contract is a request-verification contract and the bridge owns the
 session for that provider type.
 
-See [Embedded IAM](/docs/features/embedded-iam/) for the Broker,
+See [Embedded IAM](/docs/features/embedded-iam/) for the IAM,
 [Delegated credentials](/docs/features/delegated-credentials/) and
 [Token broker](/docs/components/token-broker/) for the per-user credential service,
 and [HTTP bridge contract](/docs/components/bridge-contract/) for the bridge.
@@ -151,7 +151,7 @@ only, has real alice/bob accounts, and must not be exposed to a network.
 ## Internal OAuth IAM: `cladone-auth`
 
 `cladone-auth` is the optional internal OAuth/OIDC IAM. It is a small
-multi-tenant issuer with a broker-side user directory:
+multi-tenant issuer with an IAM-side user directory:
 
 * it federates external IdPs (Google, Microsoft, Keycloak, …) configured
   per tenant under `tenants[].upstreams`;
@@ -173,13 +173,13 @@ rights or local policy, but do not need a full IAM suite.
 
 ```mermaid
 flowchart LR
-  GO["Gate One<br/>authProvider + route policy"] -->|"authorize + token"| BROKER["cladone-auth<br/>tenant company"]
-  BROKER -->|"upstream login"| G["Google"]
-  BROKER -->|"upstream login"| M["Microsoft"]
-  BROKER -.->|"optional local password"| L["Local account<br/>PBKDF2"]
-  BROKER -->|"roles, scopes, claims"| GO
-  USERS["user directory<br/>local + federated grants"] --- BROKER
-  MAPPINGS["claim mappings<br/>IdP claims -> roles/scopes/claims"] --- BROKER
+  GO["Gate One<br/>authProvider + route policy"] -->|"authorize + token"| IAM["cladone-auth<br/>tenant company"]
+  IAM -->|"upstream login"| G["Google"]
+  IAM -->|"upstream login"| M["Microsoft"]
+  IAM -.->|"optional local password"| L["Local account<br/>PBKDF2"]
+  IAM -->|"roles, scopes, claims"| GO
+  USERS["user directory<br/>local + federated grants"] --- IAM
+  MAPPINGS["claim mappings<br/>IdP claims -> roles/scopes/claims"] --- IAM
 ```
 
 The recommended path is **external IdPs**: there is no password store to
@@ -195,7 +195,7 @@ Configuration:
 
 * [Embedded IAM feature](/docs/features/embedded-iam/)
 * [Embedded IAM example](/docs/examples/embedded-iam/)
-* [Broker configuration reference](/docs/config/broker/)
+* [Embedded IAM configuration reference](/docs/config/embedded-iam/)
 
 ## `cladone-auth` vs auth-bridge
 
@@ -227,9 +227,9 @@ Both can serve the same users, but they sit on **opposite sides of OIDC**:
 
 The crux is the **trust direction**:
 
-* with `cladone-auth`, Gate One is the relying party and the broker is the
+* with `cladone-auth`, Gate One is the relying party and the IAM is the
   issuer — Gate One holds the session and enforces `auth.identity` from the
-  **signed token**; the broker is the policy point;
+  **signed token**; the IAM is the policy point;
 * with auth-bridge, the bridge is the relying party and Keycloak is the
   issuer — Gate One enforces policy from the bridge's **identity headers**.
 

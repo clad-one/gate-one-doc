@@ -336,7 +336,7 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 | [[field-authProvider-revocationTtlSeconds]] `revocationTtlSeconds`
 | integer
 | no
-| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the broker), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
+| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the embedded IAM), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
 
 | [[field-authProvider-dev]] `dev`
 | <<config-authProvider-dev,object>>
@@ -505,7 +505,7 @@ RP-side revocation store (back-channel logout, RP logout). Default: bbolt at ./g
 | [[field-authProvider-sessionStore-prefix]] `prefix`
 | string
 | no
-| Shared revocation key prefix. Default cladone:auth:v1:. Must match the broker's redis.authPrefix.
+| Shared revocation key prefix. Default cladone:auth:v1:. Must match the embedded IAM's redis.authPrefix.
 
 | [[field-authProvider-sessionStore-dialTimeoutMs]] `dialTimeoutMs`
 | integer
@@ -2246,7 +2246,7 @@ One cross-domain SSO group. Every provider in the group shares issuer, client, s
 | [[field-ssoGroups-revocationTtlSeconds]] `revocationTtlSeconds`
 | integer
 | no
-| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the broker), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
+| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the embedded IAM), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
 
 | [[field-ssoGroups-legacyTokenCookies]] `legacyTokenCookies`
 | boolean
@@ -2337,7 +2337,7 @@ RP-side revocation store (back-channel logout, RP logout). Default: bbolt at ./g
 | [[field-ssoGroups-sessionStore-prefix]] `prefix`
 | string
 | no
-| Shared revocation key prefix. Default cladone:auth:v1:. Must match the broker's redis.authPrefix.
+| Shared revocation key prefix. Default cladone:auth:v1:. Must match the embedded IAM's redis.authPrefix.
 
 | [[field-ssoGroups-sessionStore-dialTimeoutMs]] `dialTimeoutMs`
 | integer

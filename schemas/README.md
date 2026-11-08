@@ -9,7 +9,7 @@ source repository:
 | `api-routes.schema.json` | `gate-one-src/testdata/api-routes.schema.json` |
 | `inject-bundle.schema.json` | `gate-one-src/testdata/inject-bundle.schema.json` |
 | `usage-event.schema.json` | `gate-one-src/testdata/usage-event.schema.json` |
-| `broker.schema.json` | product contract (broker configuration) |
+| `embedded-iam.schema.json` | product contract (embedded IAM configuration) |
 | `plugin-manifest.schema.json` | product contract (`pkg/pluginmanifest.Manifest`) |
 | `plugin-trust-store.schema.json` | product contract (`pkg/pluginmanifest.TrustStore`) |
 
