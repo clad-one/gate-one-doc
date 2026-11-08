@@ -190,3 +190,10 @@ Injected content must satisfy the policy. A nonce never applies to a
 * link:/docs/config/gate-one/#field-routes-csp[`routes[].csp`]
 * link:/docs/config/gate-one/#field-routes-authGuard[`routes[].authGuard`]
 * link:/docs/config/gate-one/#field-routes-pwa-networkOnly[`routes[].pwa.networkOnly`]
+
+== See also
+
+* link:/docs/strict-csp/[Strict Content Security Policy] — the four CSP
+  modes, styles, rollout and violation reading.
+* link:/docs/ui-gating/[Declarative UI gating] — the `data-gtw-*`
+  attributes behind `uiGate`, with the behavioural matrix and limits.

@@ -208,9 +208,15 @@
     "/docs/install",
     "/docs/plugins"
   ],
+  "/docs/strict-csp": [
+    "/docs/features/injectable-ux"
+  ],
   "/docs/token-broker": [
     "/docs/features/delegated-credentials",
     "/docs/iam-and-providers",
     "/docs/install"
+  ],
+  "/docs/ui-gating": [
+    "/docs/features/injectable-ux"
   ]
 }
