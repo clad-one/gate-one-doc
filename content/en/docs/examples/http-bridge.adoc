@@ -9,7 +9,7 @@ description: An http-bridge provider returning identity and IAM facts while Gate
 
 This example configures `authProvider.type: "http-bridge"` and points it
 at a service implementing the
-link:/docs/bridge-contract/[bridge contract]. The bridge can adapt
+link:/docs/components/bridge-contract/[bridge contract]. The bridge can adapt
 SAML, LDAP, mTLS, API keys or a legacy session service;
 Gate One only sees `/auth`, `/auth/mcp` and `/health`.
 

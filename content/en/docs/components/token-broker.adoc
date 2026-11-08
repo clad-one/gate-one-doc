@@ -1,7 +1,9 @@
 ---
 title: Token broker
 linkTitle: Token broker
-weight: 37
+weight: 30
+aliases:
+  - /docs/token-broker/
 description: The optional service behind delegated credentials — endpoints, provider registry, environment and installation.
 ---
 
@@ -175,4 +177,5 @@ the route details and link:/docs/config/gate-one/#field-tokenBroker[the
 == Licence
 
 The broker is part of the Gate One distribution and follows the
-repository licence (BSL-CUSTOM). It is not an authentication adapter.
+repository licence; it is not an authentication adapter. See
+link:/docs/#source-and-licence[Source and licence].

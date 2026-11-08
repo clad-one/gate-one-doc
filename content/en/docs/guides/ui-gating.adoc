@@ -1,8 +1,10 @@
 ---
 title: Declarative UI gating
 linkTitle: UI gating
-weight: 27
-description: "The data-gtw-* attributes read by the injected guard, with the behavioural matrix and limitations."
+weight: 20
+description: "The data-gtw-* contract behind uiGate: attributes, control families, the behavioural matrix and the limitations."
+aliases:
+  - /docs/ui-gating/
 ---
 
 = Gate One — Declarative UI gating (`data-gtw-*`)

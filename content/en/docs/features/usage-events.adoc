@@ -250,71 +250,28 @@ the Gate One process and never decides authentication.
 }
 ----
 
-The manifest is signed (Ed25519) and declares the artefact digest,
-dependencies, host API and event subscription. At startup Gate One
-verifies:
-
-* the signature and the signing key against `usage.trustStore`;
-* the artefact digest and optional size;
-* the declared dependencies against the trust store;
-* revocation by digest;
-* host API compatibility;
-* `kind` (`extension` or `auth`; `auth` requires `allowAuth`).
-
-A manifest is authoritative for the subscription (`events.types`,
-filters, `maxLagBytes`, `onMaxLag`) and the licence feature. Filters can
-narrow by `hosts`, `routes`, `tenants`, `methods` and `statusClasses`.
-`routes` matches the **path only**, not host+path, so add `hosts` when
-the same path exists on several hosts. The complete example is
+The manifest is signed (Ed25519) and declares the artefact digest, the
+dependencies, the host API and the event subscription; Gate One verifies
+all of it at startup against `usage.trustStore`. A manifest is
+authoritative for the subscription (`events.types`, filters,
+`maxLagBytes`, `onMaxLag`) and the licence feature. Filters can narrow by
+`hosts`, `routes`, `tenants`, `methods` and `statusClasses`. `routes`
+matches the **path only**, not host+path, so add `hosts` when the same
+path exists on several hosts. The complete example is
 link:/examples/usage-events/routes.json[`routes.json`], link:/examples/usage-events/audit.manifest.json[`audit.manifest.json`], link:/examples/usage-events/trust-store.json[`trust-store.json`].
 
-== Host → plugin contract
-
-Every call carries a short-lived signed assertion:
-
-[source,http]
-----
-X-Gate-One-Assertion: base64url(payload).base64url(HMAC-SHA256)
-----
-
-The payload binds the audience (plugin name), an expiry and the body
-size. The plugin exposes:
-
-[cols="1,2",options="header"]
-|===
-| Endpoint | Purpose
-| `GET /health` | readiness; a degraded plugin stops receiving new batches
-| `POST /events` | batch `[{offset, event}]`; the plugin commits its state, then acknowledges the offsets
-|===
-
-Acknowledgement is transactional: the core truncates up to the minimum
-cursor of all subscribers. A plugin that does not acknowledge will hit
-backpressure, not silently lose the events it declared durable.
-
-== Reference plugin
-
-`cmd/plugin-audit-echo` in the source repository is the reference
-consumer. It verifies the assertion, decodes the batch and logs the
-events; it has no dependency on Gate One internals.
-
-[source,bash]
-----
-export GATE_ONE_PLUGIN_SECRET=...
-go run ./cmd/plugin-audit-echo -addr :9100 -name com.cladone.audit
-----
-
-How to sign, install and revoke a plugin — and the unsigned development
-flow with `usage.requireSigned` — is in
-link:/docs/publish-a-plugin/[Publish and trust a plugin].
+The plugin-side contract — the signed assertion, the `/health` and
+`/events` endpoints, the reference `cmd/plugin-audit-echo`, and how to
+sign, install and revoke — is in
+link:/docs/extending/plugins/[Plugins] and
+link:/docs/extending/publish-a-plugin/[Publish and trust a plugin].
 
 == Licensing
 
-The core is source-available under BSL-CUSTOM. Non-auth, non-broker
-extensions may be closed-source or commercial under the plugin
-exception. Authentication adapters, broker IdP adapters and derived
-copies remain under the Gate One licence. A commercial plugin may
-declare `licenseFeature`; the host refuses to load it without that
-feature.
+Non-auth, non-broker extensions may be closed-source or commercial; a
+commercial plugin may declare `licenseFeature` and the host refuses to
+load it without that feature. The full terms are under
+link:/docs/#source-and-licence[Source and licence].
 
 [[limits]]
 [IMPORTANT]

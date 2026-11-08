@@ -1,8 +1,10 @@
 ---
 title: Strict Content Security Policy
 linkTitle: Strict CSP
-weight: 26
+weight: 10
 description: "How the injected guard interacts with Content Security Policy: the four modes, styles, rollout and violation reading."
+aliases:
+  - /docs/strict-csp/
 ---
 
 = Get a strict Content Security Policy

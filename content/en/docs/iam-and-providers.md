@@ -119,7 +119,7 @@ service, or auth-bridge in front of Keycloak.
 Gate One only calls `/auth`, `/auth/mcp` and `/health`, and redirects the
 browser to the bridge's login page. The bridge owns the protocol and,
 usually, the session cookie. See
-[the HTTP bridge contract](/docs/bridge-contract/) for endpoints, headers
+[the HTTP bridge contract](/docs/components/bridge-contract/) for endpoints, headers
 and status codes.
 
 ### Broker, bridge and token broker
@@ -140,8 +140,8 @@ session for that provider type.
 
 See [Embedded IAM](/docs/features/embedded-iam/) for the Broker,
 [Delegated credentials](/docs/features/delegated-credentials/) and
-[Token broker](/docs/token-broker/) for the per-user credential service,
-and [HTTP bridge contract](/docs/bridge-contract/) for the bridge.
+[Token broker](/docs/components/token-broker/) for the per-user credential service,
+and [HTTP bridge contract](/docs/components/bridge-contract/) for the bridge.
 
 ### `dev`
 
@@ -258,6 +258,6 @@ bridge) and you already run that stack.
 ## Related
 
 * [Architecture](/docs/architecture/)
-* [HTTP bridge contract](/docs/bridge-contract/)
+* [HTTP bridge contract](/docs/components/bridge-contract/)
 * [Multiple identity providers](/docs/features/multiple-idps/)
-* [Plugins](/docs/plugins/)
+* [Plugins](/docs/extending/plugins/)
