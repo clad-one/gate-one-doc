@@ -1,0 +1,393 @@
+<!doctype html><html itemscope itemtype=http://schema.org/WebPage lang=en class=no-js><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=robots content="index, follow"><title>Usage event | Gate One</title><meta name=description content="Generated from schemas/usage-event.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The flat event delivered to subscribed out-of-process plugins. No token, cookie, raw query string, email or username is present.
+Fields Field Type Required Description schemaVersion
+integer (fixed: 1)
+yes
+Event schema version. Always 1 for this contract.
+type
+string (one of: request, auth, error, billing, audit)
+yes
+Event family. Only subscribed types are produced.
+ts
+string
+yes
+Event time, RFC 3339 UTC.
+instanceId
+string
+yes
+Stable Gate One node identifier (one WAL per node and type). Minimum length: 1. Maximum length: 256.
+epoch
+string
+yes
+Producer epoch, changed on restart/migration so consumers can detect a gap. Minimum length: 1. Maximum length: 128.
+tenant
+string
+no
+Auth provider id or logical tenant; empty for shared/public routes. Maximum length: 128.
+subjectId
+string
+no
+Opaque deployment-scoped user identifier: versioned HMAC. Never an email or a raw IdP sub. Pattern: ^v[0-9]\.[A-Za-z0-9_-]$.
+route
+string
+no
+Normalized route pattern, never the raw URL/query. Maximum length: 512.
+host
+string
+no
+Request host, without port. Routes are keyed by (host, path): this disambiguates the same path served on several hosts. Maximum length: 256.
+method
+string
+no
+HTTP method for request/error events. Maximum length: 16.
+status
+integer
+no
+HTTP status for request/error events. Minimum: 0. Maximum: 599.
+durationMs
+integer
+no
+Backend or auth duration in milliseconds. Minimum: 0.
+bytes
+integer
+no
+Response/request size in bytes, as observed by the gateway. Minimum: 0.
+authResult
+string (one of: ok, anonymous, denied, unavailable, failed)
+no
+Authentication outcome for the request or auth action.
+action
+string
+no
+Auth action: login, login_failed, logout, backchannel_logout, revocation. Audit action: reload, reload_failed, plugin_load. Maximum length: 64.
+detail
+string
+no
+Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.
+attrs
+object
+no
+Bounded billing attributes captured from allow-listed query/body fields (or backend hints). Sensitive names are skipped; values are capped.
+attrsTruncated
+boolean
+no
+True when attrs were capped (too many keys, or a key/value/total exceeded the limit).
+sessionId
+string
+no
+Opaque RP session id for auth events. Maximum length: 128.
+mcpTool
+string
+no
+MCP tool or operation name, when the event comes from an MCP route. Maximum length: 256.
+units
+integer
+no
+Billable/metered units for billing events. Minimum: 0.
+unitType
+string (one of: request, token, byte, mcp_call)
+no
+Unit kind for billing events.
+requestId
+string
+no
+Gateway request id, for correlation with logs and traces. Maximum length: 128.
+idempotencyKey
+string
+no
+Caller-provided idempotency key, copied only for billing. Maximum length: 128."><meta property="og:url" content="https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/usage-event/"><meta property="og:site_name" content="Gate One"><meta property="og:title" content="Usage event"><meta property="og:description" content="Generated from schemas/usage-event.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The flat event delivered to subscribed out-of-process plugins. No token, cookie, raw query string, email or username is present.
+Fields Field Type Required Description schemaVersion
+integer (fixed: 1)
+yes
+Event schema version. Always 1 for this contract.
+type
+string (one of: request, auth, error, billing, audit)
+yes
+Event family. Only subscribed types are produced.
+ts
+string
+yes
+Event time, RFC 3339 UTC.
+instanceId
+string
+yes
+Stable Gate One node identifier (one WAL per node and type). Minimum length: 1. Maximum length: 256.
+epoch
+string
+yes
+Producer epoch, changed on restart/migration so consumers can detect a gap. Minimum length: 1. Maximum length: 128.
+tenant
+string
+no
+Auth provider id or logical tenant; empty for shared/public routes. Maximum length: 128.
+subjectId
+string
+no
+Opaque deployment-scoped user identifier: versioned HMAC. Never an email or a raw IdP sub. Pattern: ^v[0-9]\.[A-Za-z0-9_-]$.
+route
+string
+no
+Normalized route pattern, never the raw URL/query. Maximum length: 512.
+host
+string
+no
+Request host, without port. Routes are keyed by (host, path): this disambiguates the same path served on several hosts. Maximum length: 256.
+method
+string
+no
+HTTP method for request/error events. Maximum length: 16.
+status
+integer
+no
+HTTP status for request/error events. Minimum: 0. Maximum: 599.
+durationMs
+integer
+no
+Backend or auth duration in milliseconds. Minimum: 0.
+bytes
+integer
+no
+Response/request size in bytes, as observed by the gateway. Minimum: 0.
+authResult
+string (one of: ok, anonymous, denied, unavailable, failed)
+no
+Authentication outcome for the request or auth action.
+action
+string
+no
+Auth action: login, login_failed, logout, backchannel_logout, revocation. Audit action: reload, reload_failed, plugin_load. Maximum length: 64.
+detail
+string
+no
+Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.
+attrs
+object
+no
+Bounded billing attributes captured from allow-listed query/body fields (or backend hints). Sensitive names are skipped; values are capped.
+attrsTruncated
+boolean
+no
+True when attrs were capped (too many keys, or a key/value/total exceeded the limit).
+sessionId
+string
+no
+Opaque RP session id for auth events. Maximum length: 128.
+mcpTool
+string
+no
+MCP tool or operation name, when the event comes from an MCP route. Maximum length: 256.
+units
+integer
+no
+Billable/metered units for billing events. Minimum: 0.
+unitType
+string (one of: request, token, byte, mcp_call)
+no
+Unit kind for billing events.
+requestId
+string
+no
+Gateway request id, for correlation with logs and traces. Maximum length: 128.
+idempotencyKey
+string
+no
+Caller-provided idempotency key, copied only for billing. Maximum length: 128."><meta property="og:locale" content="en"><meta property="og:type" content="article"><meta property="article:section" content="docs"><meta itemprop=name content="Usage event"><meta itemprop=description content="Generated from schemas/usage-event.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The flat event delivered to subscribed out-of-process plugins. No token, cookie, raw query string, email or username is present.
+Fields Field Type Required Description schemaVersion
+integer (fixed: 1)
+yes
+Event schema version. Always 1 for this contract.
+type
+string (one of: request, auth, error, billing, audit)
+yes
+Event family. Only subscribed types are produced.
+ts
+string
+yes
+Event time, RFC 3339 UTC.
+instanceId
+string
+yes
+Stable Gate One node identifier (one WAL per node and type). Minimum length: 1. Maximum length: 256.
+epoch
+string
+yes
+Producer epoch, changed on restart/migration so consumers can detect a gap. Minimum length: 1. Maximum length: 128.
+tenant
+string
+no
+Auth provider id or logical tenant; empty for shared/public routes. Maximum length: 128.
+subjectId
+string
+no
+Opaque deployment-scoped user identifier: versioned HMAC. Never an email or a raw IdP sub. Pattern: ^v[0-9]\.[A-Za-z0-9_-]$.
+route
+string
+no
+Normalized route pattern, never the raw URL/query. Maximum length: 512.
+host
+string
+no
+Request host, without port. Routes are keyed by (host, path): this disambiguates the same path served on several hosts. Maximum length: 256.
+method
+string
+no
+HTTP method for request/error events. Maximum length: 16.
+status
+integer
+no
+HTTP status for request/error events. Minimum: 0. Maximum: 599.
+durationMs
+integer
+no
+Backend or auth duration in milliseconds. Minimum: 0.
+bytes
+integer
+no
+Response/request size in bytes, as observed by the gateway. Minimum: 0.
+authResult
+string (one of: ok, anonymous, denied, unavailable, failed)
+no
+Authentication outcome for the request or auth action.
+action
+string
+no
+Auth action: login, login_failed, logout, backchannel_logout, revocation. Audit action: reload, reload_failed, plugin_load. Maximum length: 64.
+detail
+string
+no
+Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.
+attrs
+object
+no
+Bounded billing attributes captured from allow-listed query/body fields (or backend hints). Sensitive names are skipped; values are capped.
+attrsTruncated
+boolean
+no
+True when attrs were capped (too many keys, or a key/value/total exceeded the limit).
+sessionId
+string
+no
+Opaque RP session id for auth events. Maximum length: 128.
+mcpTool
+string
+no
+MCP tool or operation name, when the event comes from an MCP route. Maximum length: 256.
+units
+integer
+no
+Billable/metered units for billing events. Minimum: 0.
+unitType
+string (one of: request, token, byte, mcp_call)
+no
+Unit kind for billing events.
+requestId
+string
+no
+Gateway request id, for correlation with logs and traces. Maximum length: 128.
+idempotencyKey
+string
+no
+Caller-provided idempotency key, copied only for billing. Maximum length: 128."><meta itemprop=wordCount content="414"><meta name=twitter:card content="summary"><meta name=twitter:title content="Usage event"><meta name=twitter:description content="Generated from schemas/usage-event.schema.json by scripts/gen-config-docs. Do not edit this page: edit the schema or the generator.
+The flat event delivered to subscribed out-of-process plugins. No token, cookie, raw query string, email or username is present.
+Fields Field Type Required Description schemaVersion
+integer (fixed: 1)
+yes
+Event schema version. Always 1 for this contract.
+type
+string (one of: request, auth, error, billing, audit)
+yes
+Event family. Only subscribed types are produced.
+ts
+string
+yes
+Event time, RFC 3339 UTC.
+instanceId
+string
+yes
+Stable Gate One node identifier (one WAL per node and type). Minimum length: 1. Maximum length: 256.
+epoch
+string
+yes
+Producer epoch, changed on restart/migration so consumers can detect a gap. Minimum length: 1. Maximum length: 128.
+tenant
+string
+no
+Auth provider id or logical tenant; empty for shared/public routes. Maximum length: 128.
+subjectId
+string
+no
+Opaque deployment-scoped user identifier: versioned HMAC. Never an email or a raw IdP sub. Pattern: ^v[0-9]\.[A-Za-z0-9_-]$.
+route
+string
+no
+Normalized route pattern, never the raw URL/query. Maximum length: 512.
+host
+string
+no
+Request host, without port. Routes are keyed by (host, path): this disambiguates the same path served on several hosts. Maximum length: 256.
+method
+string
+no
+HTTP method for request/error events. Maximum length: 16.
+status
+integer
+no
+HTTP status for request/error events. Minimum: 0. Maximum: 599.
+durationMs
+integer
+no
+Backend or auth duration in milliseconds. Minimum: 0.
+bytes
+integer
+no
+Response/request size in bytes, as observed by the gateway. Minimum: 0.
+authResult
+string (one of: ok, anonymous, denied, unavailable, failed)
+no
+Authentication outcome for the request or auth action.
+action
+string
+no
+Auth action: login, login_failed, logout, backchannel_logout, revocation. Audit action: reload, reload_failed, plugin_load. Maximum length: 64.
+detail
+string
+no
+Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.
+attrs
+object
+no
+Bounded billing attributes captured from allow-listed query/body fields (or backend hints). Sensitive names are skipped; values are capped.
+attrsTruncated
+boolean
+no
+True when attrs were capped (too many keys, or a key/value/total exceeded the limit).
+sessionId
+string
+no
+Opaque RP session id for auth events. Maximum length: 128.
+mcpTool
+string
+no
+MCP tool or operation name, when the event comes from an MCP route. Maximum length: 256.
+units
+integer
+no
+Billable/metered units for billing events. Minimum: 0.
+unitType
+string (one of: request, token, byte, mcp_call)
+no
+Unit kind for billing events.
+requestId
+string
+no
+Gateway request id, for correlation with logs and traces. Maximum length: 128.
+idempotencyKey
+string
+no
+Caller-provided idempotency key, copied only for billing. Maximum length: 128."><link rel=preload href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/scss/main.min.e217b233f541db8a0e820cf9a917288d988b12a2acb2ee9c1b44774b6074081c.css as=style integrity="sha256-4heyM/VB24oOggz5qRcojZiLEqKssu6cG0R3S2B0CBw=" crossorigin=anonymous><link href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/scss/main.min.e217b233f541db8a0e820cf9a917288d988b12a2acb2ee9c1b44774b6074081c.css rel=stylesheet integrity="sha256-4heyM/VB24oOggz5qRcojZiLEqKssu6cG0R3S2B0CBw=" crossorigin=anonymous><link rel=stylesheet href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/css/prism.css></head><body class=td-page><header><nav class="td-navbar js-navbar-scroll"><div class="td-navbar-container container-fluid flex-column flex-md-row"><a class=navbar-brand href=https://cladone.com/><span class="navbar-brand__logo navbar-logo"><img src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/images/cladone-logo.png alt width=32 height=32>
+</span><span class=navbar-brand__name>Cladone</span></a><div class="td-navbar__main td-navbar-nav-scroll td-navbar-nav-scroll--indicator" id=main_navbar><div class="scroll-indicator scroll-left"></div><ul class=navbar-nav><li class=nav-item><a class="nav-link active" href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/><span>Home</span></a></li><li class=nav-item><a class="nav-link active" href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/><span>Docs</span></a></li></ul><div class="scroll-indicator scroll-right"></div></div><div class="td-navbar__search d-none d-lg-block"></div></div></nav></header><div class="container-fluid td-outer"><div class=td-main data-bs-spy=scroll data-bs-target=.td-toc data-bs-root-margin="0px 0px -10%"><div class="row flex-xl-nowrap"><aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none"><div id=td-sidebar-menu class=td-sidebar__inner><form class="td-sidebar__search d-flex align-items-center"><button class="btn btn-link td-sidebar__toggle" type=button data-bs-toggle=collapse data-bs-target=#td-section-nav aria-controls=td-section-nav aria-expanded=false aria-label="Toggle section navigation"></button></form><nav class="td-sidebar-nav collapse" id=td-section-nav><ul class="td-sidebar-nav__section pe-md-3 ul-0"><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-docs-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/ title=Documentation class="align-left ps-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-docs><span>Docs</span></a><ul class=ul-1><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsinstall-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/install/ title="Components and installation" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsinstall><span>Install</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id=m-docsfeatures-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/ class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id=m-docsfeatures><span>Features</span></a><ul class="ul-2 foldable"><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturessso-multi-apps-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/sso-multi-apps/ title="SSO across your apps" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturessso-multi-apps><span>SSO across apps</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturescross-tld-sso-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/cross-tld-sso/ title="SSO across different domains" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturescross-tld-sso><span>Cross-domain SSO</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesmultiple-idps-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/multiple-idps/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesmultiple-idps><span>Multiple identity providers</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesprotect-api-mcp-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/protect-api-mcp/ title="Protect APIs and MCP tools" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesprotect-api-mcp><span>APIs and MCP</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesembedded-iam-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/embedded-iam/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesembedded-iam><span>Embedded IAM</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesmcp-tools-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/mcp-tools/ title="Expose REST APIs and MCP servers as MCP tools" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesmcp-tools><span>MCP tools</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesdelegated-credentials-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/delegated-credentials/ title="Call services with the user's credentials" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesdelegated-credentials><span>Delegated credentials</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeatureshorizontal-scaling-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/horizontal-scaling/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeatureshorizontal-scaling><span>Horizontal scaling</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesinjectable-ux-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/injectable-ux/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesinjectable-ux><span>Injectable UX</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesaccount-panel-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/account-panel/ title="Bring your own account panel" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesaccount-panel><span>Own account panel</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsfeaturesusage-events-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/usage-events/ title="Usage events and plugins" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsfeaturesusage-events><span>Usage events</span></a></li></ul></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsiam-and-providers-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/iam-and-providers/ title="IAM, IdPs and provider types" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsiam-and-providers><span>IAM and providers</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsarchitecture-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/architecture/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsarchitecture><span>Architecture</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsbridge-contract-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/bridge-contract/ title="HTTP bridge contract" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsbridge-contract><span>Bridge contract</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsplugins-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/plugins/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsplugins><span>Plugins</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docspublish-a-plugin-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/publish-a-plugin/ title="Publish and trust a plugin" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docspublish-a-plugin><span>Publish a plugin</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docstoken-broker-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/token-broker/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docstoken-broker><span>Token broker</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id=m-docsexamples-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/ class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id=m-docsexamples><span>Examples</span></a><ul class="ul-2 foldable"><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesgetting-started-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/getting-started/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesgetting-started><span>Getting started</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesdirect-oidc-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/direct-oidc/ title="Direct OIDC with one IdP" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesdirect-oidc><span>Direct OIDC</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesmulti-app-sso-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/multi-app-sso/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesmulti-app-sso><span>Multi-app SSO</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplescross-tld-sso-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/cross-tld-sso/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplescross-tld-sso><span>Cross-domain SSO</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexampleskeycloak-google-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/keycloak-google/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexampleskeycloak-google><span>Keycloak with Google</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesembedded-iam-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/embedded-iam/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesembedded-iam><span>Embedded IAM</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexampleshigh-availability-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/high-availability/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexampleshigh-availability><span>High Availability</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesapi-mcp-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/api-mcp/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesapi-mcp><span>APIs and MCP</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesaccount-panel-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/account-panel/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesaccount-panel><span>Own account panel</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexampleshttp-bridge-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/http-bridge/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexampleshttp-bridge><span>IAM + IdP bridge</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesmcp-tools-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/mcp-tools/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesmcp-tools><span>MCP tools</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesinjectable-ux-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/injectable-ux/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesinjectable-ux><span>Injectable UX</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplessiteproxy-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/siteproxy/ title="Enhance a proxied site" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplessiteproxy><span>Proxied site</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsexamplesusage-plugin-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/examples/usage-plugin/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsexamplesusage-plugin><span>Usage plugin</span></a></li></ul></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-docsconfig-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/ title="Configuration reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id=m-docsconfig><span>Configuration</span></a><ul class="ul-2 foldable"><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfiggate-one-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/gate-one/ title="Gate One configuration" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfiggate-one><span>Gate One</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigbroker-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/broker/ title="Broker configuration" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigbroker><span>Broker</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigplugin-manifest-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/plugin-manifest/ title="Plugin manifest" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigplugin-manifest><span>Manifest</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigplugin-trust-store-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/plugin-trust-store/ title="Plugin trust store" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigplugin-trust-store><span>Trust store</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-docsconfigpublisher-feed-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/publisher-feed/ class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id=m-docsconfigpublisher-feed><span>Publisher feed</span></a></li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-docsconfigusage-event-li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/usage-event/ class="align-left ps-0 active td-sidebar-link td-sidebar-link__page" id=m-docsconfigusage-event><span class=td-sidebar-nav-active-item>Usage event</span></a></li></ul></li></ul></li></ul></nav></div></aside><aside class=td-sidebar-toc><div class="td-page-meta ms-2 pb-1 pt-2 mb-0"></div><div class=td-toc data-proofer-ignore><div class=td-toc-title><span class=td-toc-title__text>On this page</span>
+<a class=td-toc-title__link title="Top of page" href=#></a></div><nav id=TableOfContents><ul><li><a href=#config-root>Fields</a></li></ul></nav></div><div class="td-toc td-references"><div class=td-toc-title><span class=td-toc-title__text>Referenced by</span></div><nav aria-label="Referenced by"><ul><li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/>Configuration reference</a></li><li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/features/usage-events/>Usage events and plugins</a></li><li><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/plugins/>Plugins</a></li></ul></nav></div></aside><main class="col-12 col-md-9 col-xl-8 ps-md-5" role=main><nav aria-label=breadcrumb class=td-breadcrumbs><ol class=td-breadcrumbs__list><li class=td-breadcrumbs__item><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/>Docs</a></li><li class=td-breadcrumbs__item><a href=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/docs/config/>Configuration</a></li><li class=td-breadcrumbs__item aria-current=page>Usage event</li></ol></nav><div class=td-content><h1>Usage event</h1><header class=article-meta></header><div id=preamble><div class=sectionbody><div class=paragraph><p>Generated from <code>schemas/usage-event.schema.json</code> by <code>scripts/gen-config-docs</code>. Do not edit this page: edit the schema or the generator.</p></div><div class=paragraph><p>The flat event delivered to subscribed out-of-process plugins. No token, cookie, raw query string, email or username is present.</p></div></div></div><div class=sect1><h2 id=config-root>Fields</h2><div class=sectionbody><table class="tableblock frame-all grid-all stretch"><col style=width:20%><col style=width:20%><col style=width:10%><col style=width:50%><thead><tr><th class="tableblock halign-left valign-top">Field</th><th class="tableblock halign-left valign-top">Type</th><th class="tableblock halign-left valign-top">Required</th><th class="tableblock halign-left valign-top">Description</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-schemaVersion></a><code>schemaVersion</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer (fixed: <code>1</code>)</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Event schema version. Always 1 for this contract.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-type></a><code>type</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string (one of: <code>request</code>, <code>auth</code>, <code>error</code>, <code>billing</code>, <code>audit</code>)</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Event family. Only subscribed types are produced.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-ts></a><code>ts</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Event time, RFC 3339 UTC.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-instanceId></a><code>instanceId</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Stable Gate One node identifier (one WAL per node and type). Minimum length: 1. Maximum length: 256.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-epoch></a><code>epoch</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>yes</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Producer epoch, changed on restart/migration so consumers can detect a gap. Minimum length: 1. Maximum length: 128.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-tenant></a><code>tenant</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Auth provider id or logical tenant; empty for shared/public routes. Maximum length: 128.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-subjectId></a><code>subjectId</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Opaque deployment-scoped user identifier: versioned HMAC. Never an email or a raw IdP sub. Pattern: <code>^v[0-9]\.[A-Za-z0-9_-]$</code>.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-route></a><code>route</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Normalized route pattern, never the raw URL/query. Maximum length: 512.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-host></a><code>host</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Request host, without port. Routes are keyed by (host, path): this disambiguates the same path served on several hosts. Maximum length: 256.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-method></a><code>method</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>HTTP method for request/error events. Maximum length: 16.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-status></a><code>status</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>HTTP status for request/error events. Minimum: 0. Maximum: 599.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-durationMs></a><code>durationMs</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Backend or auth duration in milliseconds. Minimum: 0.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-bytes></a><code>bytes</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Response/request size in bytes, as observed by the gateway. Minimum: 0.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-authResult></a><code>authResult</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string (one of: <code>ok</code>, <code>anonymous</code>, <code>denied</code>, <code>unavailable</code>, <code>failed</code>)</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Authentication outcome for the request or auth action.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-action></a><code>action</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Auth action: login, login_failed, logout, backchannel_logout, revocation. Audit action: reload, reload_failed, plugin_load. Maximum length: 64.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-detail></a><code>detail</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Free-text context for audit events (plugin name, reload error). Never PII. Maximum length: 256.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-attrs></a><code>attrs</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>object</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Bounded billing attributes captured from allow-listed query/body fields (or backend hints). Sensitive names are skipped; values are capped.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-attrsTruncated></a><code>attrsTruncated</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>boolean</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>True when attrs were capped (too many keys, or a key/value/total exceeded the limit).</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-sessionId></a><code>sessionId</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Opaque RP session id for auth events. Maximum length: 128.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-mcpTool></a><code>mcpTool</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>MCP tool or operation name, when the event comes from an MCP route. Maximum length: 256.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-units></a><code>units</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>integer</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Billable/metered units for billing events. Minimum: 0.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-unitType></a><code>unitType</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string (one of: <code>request</code>, <code>token</code>, <code>byte</code>, <code>mcp_call</code>)</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Unit kind for billing events.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-requestId></a><code>requestId</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Gateway request id, for correlation with logs and traces. Maximum length: 128.</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class=tableblock><a id=field-idempotencyKey></a><code>idempotencyKey</code></p></td><td class="tableblock halign-left valign-top"><p class=tableblock>string</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>no</p></td><td class="tableblock halign-left valign-top"><p class=tableblock>Caller-provided idempotency key, copied only for billing. Maximum length: 128.</p></td></tr></tbody></table></div></div></div></main></div></div><footer class="td-footer row d-print-none"><div class=container-fluid><div class="row mx-md-2"><div class="td-footer__left col-6 col-sm-4 order-sm-1"><ul class=td-footer__links-list><li class=td-footer__links-item data-bs-toggle=tooltip title=Source aria-label=Source><a href=https://github.com/clad-one/gate-one aria-label=Source target=_blank rel=noopener><i class="fa-brands fa-git-alt"></i></a></li><li class=td-footer__links-item data-bs-toggle=tooltip title=Licence aria-label=Licence><a href=https://github.com/clad-one/gate-one/blob/main/LICENSE aria-label=Licence target=_blank rel=noopener><i class="fa-solid fa-scale-balanced"></i></a></li></ul></div><div class="td-footer__right col-6 col-sm-4 order-sm-3"></div><div class="td-footer__center col-12 col-sm-4 py-2 order-sm-2"><span class=td-footer__copyright>&copy;
+2026
+<span class=td-footer__authors>Cladone-IT</span></span><span class=td-footer__all_rights_reserved>All Rights Reserved</span></div></div></div></footer></div><script src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/js/main.min.8588c41b22442fdfcc34dfa6c9b04ff9ef2a4869fdd213ff830b547fc96bd281.js integrity="sha256-hYjEGyJEL9/MNN+mybBP+e8qSGn90hP/gwtUf8lr0oE=" crossorigin=anonymous></script><script src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/js/prism.js></script><script src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/js/plugins/tabpane-persist.d14334f51386faeefb7f976f7df59c450aa780ebb6abe69c77d96f28f9fe2122.js integrity="sha256-0UM09ROG+u77f5dvffWcRQqngOu2q+acd9lvKPn+ISI=" crossorigin=anonymous></script><script src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/js/prism-json.min.js></script><script src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/js/prism-http.min.js></script><script src=https://clad-one.github.io/gate-one-doc/v0.4.5-docs.2/js/sidebar-nav.js></script></body></html>
