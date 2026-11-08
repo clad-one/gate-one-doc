@@ -21,7 +21,7 @@
     },
     "sessionCookieName": {
       "type": "string",
-      "description": "IAM SSO cookie shared by all applications in one browser. Default cladone_broker_sid."
+      "description": "IAM SSO cookie shared by all applications in one browser. Default cladone_iam_sid."
     },
     "tenants": {
       "type": "array",
@@ -291,7 +291,7 @@
         },
         "prefix": {
           "type": "string",
-          "description": "Key prefix for IAM state. Default cladone:broker:v1:."
+          "description": "Key prefix for IAM state. Default cladone:iam:v1:."
         },
         "authPrefix": {
           "type": "string",

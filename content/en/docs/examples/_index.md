@@ -45,7 +45,7 @@ The raw files are also served under `/examples/`:
 * [`examples/sso-multi-apps/routes.json`](/examples/sso-multi-apps/routes.json)
 * [`examples/cross-tld-sso/routes.json`](/examples/cross-tld-sso/routes.json)
 * [`examples/keycloak-google/routes.json`](/examples/keycloak-google/routes.json)
-* [`examples/embedded-iam/broker.json`](/examples/embedded-iam/broker.json)
+* [`examples/embedded-iam/embedded-iam.json`](/examples/embedded-iam/embedded-iam.json)
   and [`routes.json`](/examples/embedded-iam/routes.json)
 * [`examples/high-availability/routes.json`](/examples/high-availability/routes.json)
 * [`examples/protect-api-mcp/routes.json`](/examples/protect-api-mcp/routes.json)

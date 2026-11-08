@@ -11,7 +11,7 @@
     {
       "id": "company",
       "clientId": "gate-one",
-      "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
+      "clientSecretEnv": "MYCOMPANY_IAM_CLIENT_SECRET",
       "redirectUris": [
         "https://login.example.com/auth/callback"
       ],

@@ -36,8 +36,8 @@ local accounts, session store):
 
 [source,bash]
 ----
-cladone-auth -check -config broker.json
-cladone-auth -config broker.json
+cladone-auth -check -config embedded-iam.json
+cladone-auth -config embedded-iam.json
 ----
 
 Then point Gate One at it:
@@ -64,4 +64,4 @@ instances share session/revocation state.
 * link:/docs/examples/embedded-iam/[Embedded IAM example] — a runnable
   IAM + Gate One configuration.
 * link:/docs/config/embedded-iam/[Embedded IAM configuration reference] — every
-  `broker.json` field.
+  `embedded-iam.json` field.

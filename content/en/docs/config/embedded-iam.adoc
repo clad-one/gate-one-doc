@@ -35,7 +35,7 @@ The optional `cladone-auth` embedded IAM configuration. Secrets are read from th
 | [[field-sessionCookieName]] `sessionCookieName`
 | string
 | no
-| IAM SSO cookie shared by all applications in one browser. Default cladone_broker_sid.
+| IAM SSO cookie shared by all applications in one browser. Default cladone_iam_sid.
 
 | [[field-tenants]] `tenants`
 | array of <<config-tenants,object>>
@@ -523,7 +523,7 @@ Shared store for flows, codes, refresh tokens and the revocation keyspace read b
 | [[field-redis-prefix]] `prefix`
 | string
 | no
-| Key prefix for IAM state. Default cladone:broker:v1:.
+| Key prefix for IAM state. Default cladone:iam:v1:.
 
 | [[field-redis-authPrefix]] `authPrefix`
 | string

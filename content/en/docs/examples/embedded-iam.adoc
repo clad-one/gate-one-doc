@@ -15,7 +15,7 @@ Gate One enforces.
 
 == Files
 
-* link:/examples/embedded-iam/broker.json[`examples/embedded-iam/broker.json`]
+* link:/examples/embedded-iam/embedded-iam.json[`examples/embedded-iam/embedded-iam.json`]
 * link:/examples/embedded-iam/routes.json[`examples/embedded-iam/routes.json`]
 
 == Embedded IAM configuration
@@ -34,7 +34,7 @@ Gate One enforces.
   "tenants": [{
     "id": "company",
     "clientId": "gate-one",
-    "clientSecretEnv": "MYCOMPANY_BROKER_CLIENT_SECRET",
+    "clientSecretEnv": "MYCOMPANY_IAM_CLIENT_SECRET",
     "redirectUris": ["https://login.example.com/auth/callback"],
     "upstreams": {
       "google": {
@@ -181,12 +181,12 @@ roles/scopes/claims to a specific user (persisted):
 [source,bash]
 ----
 # inspect the JIT user (issuer/subject come from the IdP token)
-cladone-auth user list -config broker.json -tenant company
-cladone-auth user show -config broker.json -tenant company \
+cladone-auth user list -config embedded-iam.json -tenant company
+cladone-auth user show -config embedded-iam.json -tenant company \
   -issuer https://accounts.google.com -sub 'google-sub-1'
 
 # assign common rights
-cladone-auth user set -config broker.json -tenant company \
+cladone-auth user set -config embedded-iam.json -tenant company \
   -issuer https://accounts.google.com -sub 'google-sub-1' \
   -roles support -scopes read:things \
   -claims '{"department":"support"}'
@@ -217,9 +217,9 @@ To run it by hand instead:
 ----
 # embedded IAM
 export REDIS_PASSWORD=...
-export MYCOMPANY_BROKER_CLIENT_SECRET=...
+export MYCOMPANY_IAM_CLIENT_SECRET=...
 export GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=...
-cladone-auth -config broker.json
+cladone-auth -config embedded-iam.json
 
 # gate one
 export MYCOMPANY_OIDC_SECRET=...

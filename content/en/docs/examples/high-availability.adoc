@@ -43,7 +43,7 @@ link:/examples/high-availability/routes.json[`examples/high-availability/routes.
 
 == Run it
 
-The packaged demo runs two Gate One instances, two tenants, two brokers and Redis (Docker Compose):
+The packaged demo runs two Gate One instances, two tenants, two IAMs and Redis (Docker Compose):
 
 [source,bash]
 ----

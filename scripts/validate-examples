@@ -35,7 +35,7 @@ except ModuleNotFoundError:
 
 BY_NAME = {
     "routes.json": "api-routes.schema.json",
-    "broker.json": "embedded-iam.schema.json",
+    "embedded-iam.json": "embedded-iam.schema.json",
     "bundle.json": "inject-bundle.schema.json",
     "trust-store.json": "plugin-trust-store.schema.json",
 }

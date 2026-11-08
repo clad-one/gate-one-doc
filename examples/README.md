@@ -1,6 +1,6 @@
 # Examples
 
-Every `routes.json` / `broker.json` / `bundle.json` / `*.manifest.json` /
+Every `routes.json` / `embedded-iam.json` / `bundle.json` / `*.manifest.json` /
 `trust-store.json` file is validated against the published JSON Schema
 by `scripts/validate-examples`:
 
