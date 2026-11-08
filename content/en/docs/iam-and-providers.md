@@ -199,6 +199,54 @@ Configuration:
 * [Embedded IAM example](/docs/examples/embedded-iam/)
 * [Broker configuration reference](/docs/config/broker/)
 
+## `cladone-auth` vs auth-bridge
+
+Both can serve the same users, but they sit on **opposite sides of OIDC**:
+
+* **`cladone-auth` is an OIDC issuer and IAM.** It federates upstream
+  IdPs, holds the user directory, applies claim→rights policy and issues
+  its own tokens. Gate One is the relying party (`type: "oidc"`).
+* **auth-bridge is an OIDC relying party and bridge.** It runs the OIDC
+  flow against Keycloak and answers Gate One with identity headers per the
+  bridge contract (`type: "http-bridge"`). It does not issue tokens.
+
+| Capability | `cladone-auth` | auth-bridge |
+|---|---|---|
+| Gate One provider type | `oidc` | `http-bridge` |
+| Role | OIDC **issuer** + IAM | OIDC **client/RP** + forwardAuth bridge |
+| Emits tokens (discovery, JWKS) | yes (Ed25519) | no — returns identity headers |
+| Who verifies each request | Gate One (validates the JWT) | the bridge (`/auth`) |
+| Session owner | Gate One (bbolt/Redis) | the bridge (cookies) |
+| Upstream IdPs | N per tenant (`upstreams`) | one: Keycloak |
+| User directory | built-in (local + federated JIT) + CLI | none (Keycloak) |
+| Claim → roles/scopes/claims | `mappings` + `rules` | Keycloak mappers/groups |
+| Multi-tenant | yes (`tenants`) | no (one realm) |
+| Local password login | optional (`localAccounts`) | delegated to Keycloak |
+| MCP bearer | Gate One validates the JWT | `/auth/mcp` (bridge checks scope) |
+| Global logout | back-channel + Redis revocation | front+back-channel + JSON file |
+| Non-OIDC upstreams (SAML/LDAP/mTLS/API key) | no | yes — the contract is generic |
+| Ops footprint | one Go binary + JSON (+Redis) | Node service + Keycloak |
+
+The crux is the **trust direction**:
+
+* with `cladone-auth`, Gate One is the relying party and the broker is the
+  issuer — Gate One holds the session and enforces `auth.identity` from the
+  **signed token**; the broker is the policy point;
+* with auth-bridge, the bridge is the relying party and Keycloak is the
+  issuer — Gate One enforces policy from the bridge's **identity headers**.
+
+**What is *not* a difference: the token broker.** Delegated upstream
+credentials are a separate internal service. Gate One injects the per-user
+token on `upstream.tokenBroker` routes and serves its browser routes
+(`tokenBroker.browserHost`) for **either** provider. It is therefore not a
+reason to choose one over the other — see
+[Delegated credentials](/docs/features/delegated-credentials/).
+
+**Choosing:** use `cladone-auth` when you want several IdPs, normalized
+rights, a small built-in user directory and one Go binary; use auth-bridge
+when the upstream is Keycloak (or a non-OIDC technology via a custom
+bridge) and you already run that stack.
+
 ## Choosing a type
 
 | If you need… | Use |
