@@ -80,7 +80,7 @@ contract; auth-bridge is the reference. The legacy `http` alias is
 accepted. | auth-bridge or a custom bridge
 | `oidc` | Native OpenID Connect relying party: discovery, code + PKCE,
 state/nonce, JWKS, signed session, RP-initiated and back-channel logout,
-MCP bearer validation. | an OIDC identity provider
+MCP bearer validation. | an OIDC Identity Provider (IdP) or IAM
 | `jwt` | Stateless JWKS bearer validation for APIs and MCP. No login
 page, no session cookie. | a JWT issuer with JWKS
 |===

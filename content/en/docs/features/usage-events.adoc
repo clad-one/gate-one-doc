@@ -116,10 +116,11 @@ Rules:
 * `host` is the request host, **without port**. Routes are keyed by
   (host, path): `host` + `route` identify the route, so the same path
   served on two hosts is not ambiguous;
-* the user is an opaque `subjectId`:
-  `v1.` + base64url(HMAC-SHA256(secret, issuer "\x00" sub));
-* the secret is per deployment, shared by every instance, and held only
-  by the producer. A plugin never receives it.
+* the user is an opaque `subjectId`: a per-deployment HMAC of the
+  `(issuer, subject)` pair, so it is stable and not reversible. The
+  secret is shared by every instance and held only by the producer; a
+  plugin never receives it. The exact construction is in the
+  link:https://github.com/clad-one/gate-one/blob/main/doc/plugins.adoc[developer documentation].
 
 The application may receive the same identifier as a backend header:
 
