@@ -68,6 +68,56 @@
             "admin"
           ]
         }
+      ],
+      "rules": [
+        {
+          "when": [
+            {
+              "claim": "email",
+              "match": "domain",
+              "values": [
+                "example.com"
+              ]
+            }
+          ],
+          "then": {
+            "roles": [
+              "employee"
+            ],
+            "copyClaims": [
+              {
+                "from": "email",
+                "to": "email_domain",
+                "transforms": [
+                  "keep:@:-1",
+                  "lower"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "when": [
+            {
+              "claim": "groups",
+              "match": "glob",
+              "values": [
+                "team-*"
+              ]
+            }
+          ],
+          "then": {
+            "rolesFrom": [
+              {
+                "claim": "groups",
+                "transforms": [
+                  "keep:-:-1",
+                  "lower"
+                ]
+              }
+            ]
+          }
+        }
       ]
     }
   ]

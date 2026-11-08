@@ -8,8 +8,10 @@ description: Federate IdPs in cladone-auth, map claims and assign user grants.
 = Embedded IAM
 
 This example runs the optional embedded IAM `cladone-auth` as the single
-OIDC issuer for Gate One. `cladone-auth` federates Google and normalizes
-Google claims into the roles/scopes/claims Gate One enforces.
+OIDC issuer for Gate One. `cladone-auth` federates **one or more upstream
+IdPs** (Google, Microsoft Entra, Auth0, any OIDC issuer — each keyed under
+`upstreams`) and normalizes their claims into the roles/scopes/claims
+Gate One enforces.
 
 == Files
 
@@ -40,19 +42,50 @@ Google claims into the roles/scopes/claims Gate One enforces.
         "clientIdEnv": "GOOGLE_CLIENT_ID",
         "clientSecretEnv": "GOOGLE_CLIENT_SECRET",
         "hostedDomain": "example.com"
+      },
+      "microsoft": {
+        "issuer": "https://login.microsoftonline.com/common/v2.0",
+        "clientIdEnv": "MICROSOFT_CLIENT_ID",
+        "clientSecretEnv": "MICROSOFT_CLIENT_SECRET",
+        "optional": true
       }
     },
     "defaultRoles": ["user"],
     "allowedDomains": ["example.com"],
     "mappings": [
       { "claim": "groups", "values": ["admins"], "roles": ["admin"] }
+    ],
+    "rules": [
+      {
+        "when": [{ "claim": "email", "match": "domain", "values": ["example.com"] }],
+        "then": {
+          "roles": ["employee"],
+          "copyClaims": [
+            { "from": "email", "to": "email_domain", "transforms": ["keep:@:-1", "lower"] }
+          ]
+        }
+      },
+      {
+        "when": [{ "claim": "groups", "match": "glob", "values": ["team-*"] }],
+        "then": {
+          "rolesFrom": [
+            { "claim": "groups", "transforms": ["keep:-:-1", "lower"] }
+          ]
+        }
+      }
     ]
   }]
 }
 ----
 
-`mappings` translates IdP-specific claims into the common model. The
-legacy `groupRoles` block is still accepted for the `groups` claim.
+`upstreams` is a **map** keyed by IdP id; each key is the value of the
+`idp` authorize parameter and the label on the built-in IdP chooser. An
+`optional` upstream is skipped (not shown, not validated) until its
+credentials exist, so you can ship it ahead of the secrets.
+
+`mappings` translates IdP-specific claims into the common model (the
+legacy `groupRoles` block is still accepted for the `groups` claim).
+`rules` is the richer when/then policy — see below.
 
 == Gate One configuration
 
@@ -88,10 +121,60 @@ The Redis store is here because this example is also the multi-instance
 form; a single broker instance can use its memory store, and a single
 Gate One instance can use the default bbolt store.
 
+[[dynamic-rights]]
+== Dynamic rights (rules)
+
+Federated users are created at first login with **no rights** (JIT). Two
+additive mechanisms grant rights:
+
+* **`rules`** — evaluated on **every login** against the incoming token's
+  claims; the result is **never persisted** on the user. This is how you
+  give a *group of users* (by email, domain, subject or IdP group) the
+  right roles/scopes/claims automatically.
+* **`cladone-auth user set`** — a **persisted** per-user exception (below).
+
+A rule reads the token (`when`) and writes the user (`then`):
+
+[source,json]
+----
+{
+  "when": [
+    { "claim": "email",  "match": "domain", "values": ["example.com"] },
+    { "claim": "groups", "values": ["support"] }
+  ],
+  "then": {
+    "roles":      ["employee"],
+    "scopes":     ["read:things"],
+    "claims":     { "department": "support" },
+    "rolesFrom":  [{ "claim": "groups", "transforms": ["keep:-:-1", "lower"] }],
+    "copyClaims": [{ "from": "email", "to": "email_domain",
+                     "transforms": ["keep:@:-1", "lower"] }]
+  }
+}
+----
+
+* **`when`** — the **test**, evaluated against the incoming token. Each
+  condition names a `claim` and either matches `values` (`match`: `exact`
+  (default), `prefix`, `suffix`, `domain`, `glob`) or just requires the
+  claim to be present. Several conditions are combined with **AND**.
+* **`then.roles` / `scopes` / `claims`** — **constant** grants: applied
+  whenever the test passes, regardless of *which* value matched.
+* **`then.rolesFrom`** — **derived** roles: each value of the claim
+  becomes a role.
+* **`then.copyClaims`** — **derived** claims: copy an incoming claim into
+  the issued token, optionally renamed (`to`) and reshaped.
+
+`transforms` is an ordered pipeline applied to every value: `lower`,
+`upper`, `prefix:<p>`, `suffix:<p>`, `replace:<a>:<b>`, `keep:<sep>:<n>`
+(keep the n-th field; `n<0` counts from the end). So `keep:@:-1` is the
+email domain, `keep:@:0` the local part, and `keep:-:-1` turns
+`team-support` into `support`. Reserved claims (`iss`, `sub`, `aud`,
+`roles`, `scope`, `email`, …) can never be written.
+
 == Users and grants
 
-Federated users are created at first login without rights (JIT). An
-admin then assigns roles/scopes/claims:
+The rules above cover the common case. For a one-off exception, assign
+roles/scopes/claims to a specific user (persisted):
 
 [source,bash]
 ----

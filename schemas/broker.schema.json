@@ -186,6 +186,13 @@
           "items": {
             "$ref": "#/definitions/mappingRule"
           }
+        },
+        "rules": {
+          "type": "array",
+          "description": "when/then policy rules: test the incoming token's claims (when) and grant rights (then), including derived roles (rolesFrom) and copied claims (copyClaims). Evaluated on every login; results are not persisted on the user.",
+          "items": {
+            "$ref": "#/definitions/rule"
+          }
         }
       }
     },
@@ -403,6 +410,155 @@
           "type": "object",
           "additionalProperties": true,
           "description": "Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused."
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "when",
+        "then"
+      ],
+      "description": "A when/then policy rule: test the incoming token's claims and grant rights. Evaluated on every login; results are not persisted on the user.",
+      "properties": {
+        "when": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Conditions, combined with logical AND. A single condition object is also accepted as shorthand.",
+          "items": {
+            "$ref": "#/definitions/condition"
+          }
+        },
+        "then": {
+          "$ref": "#/definitions/then"
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim"
+      ],
+      "description": "Test one claim of the incoming token.",
+      "properties": {
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dot path into the upstream token claims (email, sub, groups, realm_access.roles, ...)."
+        },
+        "match": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "prefix",
+            "suffix",
+            "domain",
+            "glob"
+          ],
+          "description": "Matching operator. Default exact. prefix/suffix/domain/glob are case-insensitive."
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Values to match. Omitted = the claim must be present and non-empty."
+        }
+      }
+    },
+    "then": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Rights granted when every condition matches.",
+      "properties": {
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Constant broker roles."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Constant broker scopes."
+        },
+        "claims": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Constant claims copied into issued tokens. Reserved claims are refused."
+        },
+        "rolesFrom": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/rolesFrom"
+          },
+          "description": "Derive roles from an incoming claim's values."
+        },
+        "copyClaims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/copyClaim"
+          },
+          "description": "Copy incoming claims into issued tokens, optionally renamed and reshaped."
+        }
+      }
+    },
+    "rolesFrom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim"
+      ],
+      "description": "Turn an incoming claim's values into broker roles.",
+      "properties": {
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dot path into the upstream token claims."
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>."
+        }
+      }
+    },
+    "copyClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from"
+      ],
+      "description": "Copy an incoming claim into the issued token.",
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source claim dot path."
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Destination claim name. Default: same as from. Reserved names are refused."
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>."
         }
       }
     }

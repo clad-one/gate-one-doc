@@ -174,6 +174,11 @@ The optional `cladone-auth` broker configuration. Secrets are read from the envi
 | no
 | Ordered mapping rules translating upstream claims into broker roles/scopes/claims. Evaluated on every federated login; results are not persisted on the user. The legacy groupRoles block remains supported for the groups claim.
 
+| [[field-tenants-rules]] `rules`
+| array of <<config-tenants-rules,object>>
+| no
+| when/then policy rules: test the incoming token's claims (when) and grant rights (then), including derived roles (rolesFrom) and copied claims (copyClaims). Evaluated on every login; results are not persisted on the user.
+
 |===
 
 [[config-tenants-google]]
@@ -331,6 +336,136 @@ One claim-to-rights mapping rule.
 | object
 | no
 | Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
+
+|===
+
+[[config-tenants-rules]]
+==== tenants.rules
+
+A when/then policy rule: test the incoming token's claims and grant rights. Evaluated on every login; results are not persisted on the user.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-rules-when]] `when`
+| array of <<config-tenants-rules-when,object>>
+| yes
+| Conditions, combined with logical AND. A single condition object is also accepted as shorthand.
+
+| [[field-tenants-rules-then]] `then`
+| <<config-tenants-rules-then,object>>
+| yes
+| Rights granted when every condition matches.
+
+|===
+
+[[config-tenants-rules-when]]
+===== tenants.rules.when
+
+Test one claim of the incoming token.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-rules-when-claim]] `claim`
+| string
+| yes
+| Dot path into the upstream token claims (email, sub, groups, realm_access.roles, ...). Minimum length: 1.
+
+| [[field-tenants-rules-when-match]] `match`
+| string (one of: `exact`, `prefix`, `suffix`, `domain`, `glob`)
+| no
+| Matching operator. Default exact. prefix/suffix/domain/glob are case-insensitive.
+
+| [[field-tenants-rules-when-values]] `values`
+| array of string
+| no
+| Values to match. Omitted = the claim must be present and non-empty.
+
+|===
+
+[[config-tenants-rules-then]]
+===== tenants.rules.then
+
+Rights granted when every condition matches.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-rules-then-roles]] `roles`
+| array of string
+| no
+| Constant broker roles.
+
+| [[field-tenants-rules-then-scopes]] `scopes`
+| array of string
+| no
+| Constant broker scopes.
+
+| [[field-tenants-rules-then-claims]] `claims`
+| object
+| no
+| Constant claims copied into issued tokens. Reserved claims are refused.
+
+| [[field-tenants-rules-then-rolesFrom]] `rolesFrom`
+| array of <<config-tenants-rules-then-rolesFrom,object>>
+| no
+| Derive roles from an incoming claim's values.
+
+| [[field-tenants-rules-then-copyClaims]] `copyClaims`
+| array of <<config-tenants-rules-then-copyClaims,object>>
+| no
+| Copy incoming claims into issued tokens, optionally renamed and reshaped.
+
+|===
+
+[[config-tenants-rules-then-rolesFrom]]
+====== tenants.rules.then.rolesFrom
+
+Turn an incoming claim's values into broker roles.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-rules-then-rolesFrom-claim]] `claim`
+| string
+| yes
+| Dot path into the upstream token claims. Minimum length: 1.
+
+| [[field-tenants-rules-then-rolesFrom-transforms]] `transforms`
+| array of string
+| no
+| Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>.
+
+|===
+
+[[config-tenants-rules-then-copyClaims]]
+====== tenants.rules.then.copyClaims
+
+Copy an incoming claim into the issued token.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-tenants-rules-then-copyClaims-from]] `from`
+| string
+| yes
+| Source claim dot path. Minimum length: 1.
+
+| [[field-tenants-rules-then-copyClaims-to]] `to`
+| string
+| no
+| Destination claim name. Default: same as from. Reserved names are refused. Minimum length: 1.
+
+| [[field-tenants-rules-then-copyClaims-transforms]] `transforms`
+| array of string
+| no
+| Pipeline applied to each value: lower, upper, prefix:<p>, suffix:<p>, replace:<a>:<b>, keep:<sep>:<n>.
 
 |===
 
