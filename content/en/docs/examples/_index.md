@@ -5,10 +5,11 @@ weight: 40
 description: Copyable, schema-validated configurations.
 ---
 
-Copyable, schema-validated configurations. Most examples are real files
-under `examples/` in the product repository; the proxied-site example
-lives in the source repository, where its runnable demo and userscript
-live.
+Most examples are real files under `examples/` in the product
+repository. The build validates them against the published JSON Schema;
+local examples are also checked with `gate-one -check`. The proxied-site
+example lives in the source repository, where its runnable demo and
+userscript live.
 
 | Example | What it shows |
 |---|---|

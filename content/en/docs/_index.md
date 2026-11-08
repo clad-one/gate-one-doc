@@ -16,24 +16,14 @@ reference.
 install Gate One with the optional services.</p>
 </div></div></div>
 <div class="col"><div class="card h-100"><div class="card-body">
-<h2 class="card-title h5"><a href="/docs/components/">Components</a></h2>
-<p class="card-text">The reverse proxy, <code>cladone-auth</code>,
-auth-bridge, the token broker and Redis, one page each.</p>
-</div></div></div>
-<div class="col"><div class="card h-100"><div class="card-body">
 <h2 class="card-title h5"><a href="/docs/features/">Features</a></h2>
 <p class="card-text">SSO, multiple identity providers, APIs and MCP,
-injectable UX, delegated credentials, usage events.</p>
+injectable UX, usage events.</p>
 </div></div></div>
 <div class="col"><div class="card h-100"><div class="card-body">
 <h2 class="card-title h5"><a href="/docs/examples/">Examples</a></h2>
 <p class="card-text">Copyable, schema-validated configurations for each
 feature.</p>
-</div></div></div>
-<div class="col"><div class="card h-100"><div class="card-body">
-<h2 class="card-title h5"><a href="/docs/guides/">Guides</a></h2>
-<p class="card-text">Task-oriented deep dives: strict CSP and declarative
-UI gating.</p>
 </div></div></div>
 <div class="col"><div class="card h-100"><div class="card-body">
 <h2 class="card-title h5"><a href="/docs/iam-and-providers/">IAM and providers</a></h2>
@@ -44,11 +34,6 @@ UI gating.</p>
 <h2 class="card-title h5"><a href="/docs/architecture/">Architecture</a></h2>
 <p class="card-text">Request path, provider types, HA and the
 plugin boundary.</p>
-</div></div></div>
-<div class="col"><div class="card h-100"><div class="card-body">
-<h2 class="card-title h5"><a href="/docs/extending/">Extending</a></h2>
-<p class="card-text">Write, sign and publish out-of-process
-extensions.</p>
 </div></div></div>
 <div class="col"><div class="card h-100"><div class="card-body">
 <h2 class="card-title h5"><a href="/docs/config/gate-one/">Configuration</a></h2>

@@ -167,11 +167,6 @@ The guard uses classes and a nonced runtime `<style>`; it does not need
 Injected content must satisfy the policy. A nonce never applies to a
 `style` attribute.
 
-The full CSP guide — the four modes, styles, rollout and violation
-reading — is link:/docs/guides/strict-csp/[Get a strict Content Security
-Policy]. The `data-gtw-*` attribute contract behind `uiGate` is
-link:/docs/guides/ui-gating/[Declarative UI gating].
-
 [[limits]]
 [IMPORTANT]
 ====

@@ -127,7 +127,7 @@ unknown protected path to produce an `error` event.
   configuration validate. Use a real signed artefact for a deployment.
 * The manifest is signed by the **publisher**; the operator only adds the
   public key to the trust store. The full walkthrough is in
-  link:/docs/extending/publish-a-plugin/[Publish and trust a plugin].
+  link:/docs/publish-a-plugin/[Publish and trust a plugin].
 * `request` and `error` cannot use `fsync: "always"`; use `window_ms`.
 * A plugin that stops acknowledging eventually triggers `onMaxLag`.
 * Long-term retention is the plugin's policy; the core only keeps what

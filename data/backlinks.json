@@ -1,72 +1,30 @@
 {
-  "/docs": [
-    "/docs/components/token-broker",
-    "/docs/extending/plugins",
-    "/docs/features/usage-events"
-  ],
   "/docs/architecture": [
     "/",
-    "/docs/components/reverse-proxy",
     "/docs/iam-and-providers",
     "/docs/install"
   ],
-  "/docs/components": [
-    "/docs/install"
-  ],
-  "/docs/components/auth-bridge": [
-    "/docs/components",
-    "/docs/install"
-  ],
-  "/docs/components/bridge-contract": [
-    "/docs/components",
-    "/docs/components/auth-bridge",
-    "/docs/components/cladone-auth",
-    "/docs/config",
+  "/docs/bridge-contract": [
     "/docs/examples/http-bridge",
     "/docs/features/delegated-credentials",
     "/docs/iam-and-providers",
     "/docs/install"
   ],
-  "/docs/components/cladone-auth": [
-    "/docs/components",
-    "/docs/install"
-  ],
-  "/docs/components/redis": [
-    "/docs/architecture",
-    "/docs/components",
-    "/docs/components/reverse-proxy",
-    "/docs/install"
-  ],
-  "/docs/components/reverse-proxy": [
-    "/docs/architecture",
-    "/docs/components",
-    "/docs/components/redis",
-    "/docs/install"
-  ],
-  "/docs/components/token-broker": [
-    "/docs/components",
-    "/docs/features/delegated-credentials",
-    "/docs/iam-and-providers",
-    "/docs/install"
-  ],
   "/docs/config/broker": [
-    "/docs/components/cladone-auth",
     "/docs/config",
     "/docs/features/embedded-iam",
     "/docs/features/multiple-idps",
-    "/docs/iam-and-providers"
+    "/docs/iam-and-providers",
+    "/docs/install"
   ],
   "/docs/config/gate-one": [
     "/",
-    "/docs/components/redis",
-    "/docs/components/token-broker",
     "/docs/config",
     "/docs/examples/account-panel",
     "/docs/examples/getting-started",
     "/docs/examples/high-availability",
     "/docs/examples/injectable-ux",
     "/docs/examples/siteproxy",
-    "/docs/extending/publish-a-plugin",
     "/docs/features/account-panel",
     "/docs/features/cross-tld-sso",
     "/docs/features/delegated-credentials",
@@ -77,33 +35,31 @@
     "/docs/features/protect-api-mcp",
     "/docs/features/sso-multi-apps",
     "/docs/features/usage-events",
-    "/docs/install"
+    "/docs/install",
+    "/docs/publish-a-plugin",
+    "/docs/token-broker"
   ],
   "/docs/config/plugin-manifest": [
     "/docs/architecture",
     "/docs/config",
-    "/docs/extending",
-    "/docs/extending/plugins",
-    "/docs/extending/publish-a-plugin",
-    "/docs/features/usage-events"
+    "/docs/features/usage-events",
+    "/docs/plugins",
+    "/docs/publish-a-plugin"
   ],
   "/docs/config/plugin-trust-store": [
     "/docs/config",
-    "/docs/extending",
-    "/docs/extending/plugins",
-    "/docs/extending/publish-a-plugin",
-    "/docs/features/usage-events"
+    "/docs/features/usage-events",
+    "/docs/plugins",
+    "/docs/publish-a-plugin"
   ],
   "/docs/config/publisher-feed": [
     "/docs/config",
-    "/docs/extending",
-    "/docs/extending/publish-a-plugin"
+    "/docs/publish-a-plugin"
   ],
   "/docs/config/usage-event": [
     "/docs/config",
-    "/docs/extending",
-    "/docs/extending/plugins",
-    "/docs/features/usage-events"
+    "/docs/features/usage-events",
+    "/docs/plugins"
   ],
   "/docs/examples": [
     "/"
@@ -126,7 +82,6 @@
     "/docs/install"
   ],
   "/docs/examples/embedded-iam": [
-    "/docs/components/cladone-auth",
     "/docs/examples",
     "/docs/examples/direct-oidc",
     "/docs/examples/keycloak-google",
@@ -139,14 +94,12 @@
     "/docs/examples"
   ],
   "/docs/examples/high-availability": [
-    "/docs/architecture",
-    "/docs/components/redis",
     "/docs/examples",
     "/docs/examples/multi-app-sso",
-    "/docs/features/horizontal-scaling"
+    "/docs/features/horizontal-scaling",
+    "/docs/install"
   ],
   "/docs/examples/http-bridge": [
-    "/docs/components/auth-bridge",
     "/docs/examples"
   ],
   "/docs/examples/injectable-ux": [
@@ -178,24 +131,7 @@
   ],
   "/docs/examples/usage-plugin": [
     "/docs/examples",
-    "/docs/extending/publish-a-plugin"
-  ],
-  "/docs/extending": [
-    "/docs/config"
-  ],
-  "/docs/extending/plugins": [
-    "/docs/architecture",
-    "/docs/extending",
-    "/docs/extending/publish-a-plugin",
-    "/docs/iam-and-providers",
-    "/docs/install"
-  ],
-  "/docs/extending/publish-a-plugin": [
-    "/docs/examples/usage-plugin",
-    "/docs/extending",
-    "/docs/extending/plugins",
-    "/docs/features/usage-events",
-    "/docs/install"
+    "/docs/publish-a-plugin"
   ],
   "/docs/features/account-panel": [
     "/docs/examples/account-panel",
@@ -206,23 +142,20 @@
     "/docs/features/sso-multi-apps"
   ],
   "/docs/features/delegated-credentials": [
-    "/docs/components/token-broker",
     "/docs/examples/mcp-tools",
     "/docs/features/mcp-tools",
     "/docs/features/protect-api-mcp",
     "/docs/iam-and-providers",
-    "/docs/install"
+    "/docs/install",
+    "/docs/token-broker"
   ],
   "/docs/features/embedded-iam": [
-    "/docs/components/cladone-auth",
     "/docs/features/multiple-idps",
     "/docs/features/sso-multi-apps",
-    "/docs/iam-and-providers"
+    "/docs/iam-and-providers",
+    "/docs/install"
   ],
   "/docs/features/horizontal-scaling": [
-    "/docs/architecture",
-    "/docs/components/redis",
-    "/docs/components/reverse-proxy",
     "/docs/features/sso-multi-apps",
     "/docs/install"
   ],
@@ -256,27 +189,28 @@
   ],
   "/docs/features/usage-events": [
     "/docs/architecture",
-    "/docs/extending",
-    "/docs/extending/plugins",
-    "/docs/extending/publish-a-plugin"
-  ],
-  "/docs/guides/strict-csp": [
-    "/docs/features/injectable-ux",
-    "/docs/guides"
-  ],
-  "/docs/guides/ui-gating": [
-    "/docs/features/injectable-ux",
-    "/docs/guides"
+    "/docs/plugins",
+    "/docs/publish-a-plugin"
   ],
   "/docs/iam-and-providers": [
     "/",
-    "/docs/components",
-    "/docs/components/auth-bridge",
-    "/docs/config",
     "/docs/features/delegated-credentials",
     "/docs/install"
   ],
-  "/docs/install": [
-    "/docs/components"
+  "/docs/plugins": [
+    "/docs/architecture",
+    "/docs/iam-and-providers",
+    "/docs/publish-a-plugin"
+  ],
+  "/docs/publish-a-plugin": [
+    "/docs/examples/usage-plugin",
+    "/docs/features/usage-events",
+    "/docs/install",
+    "/docs/plugins"
+  ],
+  "/docs/token-broker": [
+    "/docs/features/delegated-credentials",
+    "/docs/iam-and-providers",
+    "/docs/install"
   ]
 }

@@ -2,8 +2,6 @@
 title: HTTP bridge contract
 linkTitle: Bridge contract
 weight: 25
-aliases:
-  - /docs/bridge-contract/
 description: The contract an external service implements for authProvider.type http-bridge.
 ---
 

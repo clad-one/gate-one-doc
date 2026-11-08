@@ -1,9 +1,7 @@
 ---
 title: Plugins
 linkTitle: Plugins
-weight: 10
-aliases:
-  - /docs/plugins/
+weight: 30
 description: "The out-of-process extension contract: manifest, trust store, event subscription, assertion and licence."
 ---
 
@@ -147,7 +145,7 @@ See link:/docs/config/plugin-trust-store/[the trust-store reference].
 The publisher can also publish a signed **publisher feed** listing
 compatible components and revocations; the operator adopts it with
 `publisherFeed`. See
-link:/docs/extending/publish-a-plugin/[Publish and trust a plugin].
+link:/docs/publish-a-plugin/[Publish and trust a plugin].
 
 == Configuration
 
@@ -205,7 +203,7 @@ The complete signed example is
 link:/examples/usage-events/routes.json[`routes.json`], link:/examples/usage-events/audit.manifest.json[`audit.manifest.json`], link:/examples/usage-events/trust-store.json[`trust-store.json`].
 
 The publisher/operator walkthrough — develop unsigned, sign, install and
-revoke — is in link:/docs/extending/publish-a-plugin/[Publish and trust a plugin].
+revoke — is in link:/docs/publish-a-plugin/[Publish and trust a plugin].
 
 == What is not a plugin
 
@@ -219,8 +217,12 @@ revoke — is in link:/docs/extending/publish-a-plugin/[Publish and trust a plug
 
 == Licence
 
-The licence terms (core, plugin exception, `PLUGIN-LICENSING.md`) are
-summarised under link:/docs/#source-and-licence[Source and licence].
+The core is source-available under BSL-CUSTOM (English `LICENSE`
+authoritative; `LICENSE.fr.md` is a French reference). Non-auth,
+non-broker extensions may be closed-source or commercial under the
+plugin exception, provided they respect the documented API/manifest and
+do not impose incompatible terms on Gate One. See `PLUGIN-LICENSING.md`
+in the source repository.
 
 == Read next
 
