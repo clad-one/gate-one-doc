@@ -1,7 +1,9 @@
 ---
 title: Publish and trust a plugin
 linkTitle: Publish a plugin
-weight: 35
+weight: 20
+aliases:
+  - /docs/publish-a-plugin/
 description: Develop, sign, install and revoke an out-of-process plugin, and the trust model behind it.
 mermaid: true
 ---
@@ -15,22 +17,11 @@ develop, sign, install and revoke.
 
 == Plugin families
 
-[cols="1,2,1,1",options="header"]
-|===
-| Family | Contract | Signed | Status
-
-| Event consumer | `GET /health` + `POST /events` (HTTP/JSON) | manifest, `capabilities: ["events"]` | implemented
-| Injection / UI | `route.inject` bundle (`inject-bundle.schema.json`) | route config, not a signed plugin | implemented
-| Auth adapter | broker only | `kind: auth` | Gate One licence, not an extension
-|===
-
-Only the **event consumer** is a fully signed extension today.
-
-A **Backend-For-Frontend is not a plugin**: it is a proxied `backend:`
-route, post-auth by definition, written in any language. Response
-transforms are the gateway's native injector chain (`inject`,
-`rewriteBody`, `responseHeaders`, `rewriteRedirects`, the guard); bespoke
-logic belongs in the backend or the edge proxy.
+Extension families and what is *not* a plugin are defined once in
+link:/docs/extending/plugins/[Plugins]. For publishers, the only fully
+signed extension today is the **event consumer**; injection bundles are
+route configuration and auth adapters stay in the broker under the Gate
+One licence.
 
 == The trust model
 
@@ -97,7 +88,7 @@ becomes a **hard load error** instead of a warning.
 
 . **Implement the service.** It exposes `GET /health` and `POST /events`,
   and verifies the `X-Gate-One-Assertion` on every call (see
-  link:/docs/plugins/[the plugin contract]).
+  link:/docs/extending/plugins/[the plugin contract]).
 . **Build the artefact** and compute its `sha256:<hex>` digest (and
   optional size).
 . **Write the manifest** — `name`, `version`, `hostAPI`, `artifact`,
@@ -359,6 +350,6 @@ link:/docs/examples/usage-plugin/[the usage-plugin example].
 
 == Read next
 
-* link:/docs/plugins/[Plugins]
+* link:/docs/extending/plugins/[Plugins]
 * link:/docs/features/usage-events/[Usage events and plugins]
 * link:/docs/examples/usage-plugin/[Usage plugin example]

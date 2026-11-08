@@ -48,24 +48,14 @@ the backend.
 
 Gate One protects applications as a reverse proxy, but it should itself
 sit behind a front reverse proxy or ingress controller in most
-deployments (Traefik, nginx, Caddy, a cloud load balancer):
+deployments. The gateway listens on plain HTTP, so the ingress terminates
+TLS, publishes one stable public URL, load-balances and health-checks the
+replicas, and keeps WAF, rate limits and access logs in front. Gate One
+trusts `X-Forwarded-*` from that immediate hop and must not be reachable
+directly by clients.
 
-* Gate One listens on plain HTTP and does not manage certificates. The
-  ingress terminates TLS, renews certificates and applies HSTS.
-* One public entry point gives OIDC redirect URIs, cookie domains and MCP
-  metadata a stable URL that is independent of the container address.
-* The ingress load-balances and health-checks the Gate One replicas, so
-  the container port never has to be published.
-* WAF rules, rate limits, request-size limits and access logs stay in
-  front of Gate One instead of competing with its own route policy.
-* Only the ingress needs to know where Gate One runs; clients cannot
-  reach it directly.
-
-Gate One reads the incoming scheme, host and `X-Forwarded-*` headers when
-it rewrites backend redirects and computes rate-limit identities. The
-ingress must set `X-Forwarded-Proto`, `X-Forwarded-Host` and
-`X-Forwarded-For`. Because those headers are trusted from the immediate
-hop, Gate One must not be reachable directly by clients.
+See link:/docs/components/reverse-proxy/[Reverse proxy] for the forwarded
+headers and probes.
 
 == Provider types
 
@@ -162,7 +152,7 @@ the producer only.
 
 Extensions are out-of-process HTTP/JSON services, verified by an Ed25519
 manifest and a local trust store. There is no compile-time plugin API.
-See link:/docs/plugins/[Plugins] and
+See link:/docs/extending/plugins/[Plugins] and
 link:/docs/config/plugin-manifest/[the manifest reference].
 
 == Deployment and high availability
@@ -183,21 +173,25 @@ flowchart TB
 
 * **Two replicas** behind a load balancer; no published container port.
 * **Shared state** in Redis (Sentinel + TLS + ACL) with a versioned key
-  prefix. A local bbolt file is valid for a single instance only.
+  prefix. A local bbolt file is valid for a single instance only. See
+  link:/docs/components/redis/[Redis].
 * **Same session key** on every replica (`sessionKeyEnv`), and one
   shared `ssoGroups` session store for cross-TLD providers.
 * **Health probes**: `/healthz` (liveness) and `/readyz` (readiness,
   including providers and usage).
 * **Manual rolling restart**: one replica at a time, 30-second stop
   grace, in-flight drain. There is no blue/green deployment yet.
-* **WAL per node**: a plugin consumes each node's WAL; `instanceId` and
-  `epoch` make a gap visible after a restart or a migration.
+* **WAL per node**: a plugin consumes each node's WAL.
 * **Configuration reload**: `SIGHUP` re-reads and validates the file,
   then swaps the gateway atomically. An invalid file is refused and the
   previous configuration stays active.
 * **Fail closed**: Redis unavailable on an authenticated route →
   `502 authentication_unavailable`; a full durable share → targeted
   `503 usage_unavailable`; a failed login audit → no session.
+
+The link:/docs/features/horizontal-scaling/[Horizontal scaling] feature
+and the link:/docs/examples/high-availability/[High Availability example]
+cover when to scale and the Redis-backed configuration.
 
 == What Gate One is not
 

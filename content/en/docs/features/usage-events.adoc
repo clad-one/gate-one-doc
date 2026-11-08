@@ -304,16 +304,14 @@ go run ./cmd/plugin-audit-echo -addr :9100 -name com.cladone.audit
 
 How to sign, install and revoke a plugin — and the unsigned development
 flow with `usage.requireSigned` — is in
-link:/docs/publish-a-plugin/[Publish and trust a plugin].
+link:/docs/extending/publish-a-plugin/[Publish and trust a plugin].
 
 == Licensing
 
-The core is source-available under BSL-CUSTOM. Non-auth, non-broker
-extensions may be closed-source or commercial under the plugin
-exception. Authentication adapters, broker IdP adapters and derived
-copies remain under the Gate One licence. A commercial plugin may
-declare `licenseFeature`; the host refuses to load it without that
-feature.
+Non-auth, non-broker extensions may be closed-source or commercial; a
+commercial plugin may declare `licenseFeature` and the host refuses to
+load it without that feature. The full terms are under
+link:/docs/#source-and-licence[Source and licence].
 
 [[limits]]
 [IMPORTANT]

@@ -1,0 +1,49 @@
+---
+title: Redis
+linkTitle: Redis
+weight: 35
+description: The shared session and revocation store required when several Gate One replicas run behind a load balancer.
+---
+
+= Redis
+
+A single Gate One instance keeps its OIDC session and revocation state in
+a local **bbolt** file. That is enough for one instance and needs no
+Redis.
+
+bbolt is local to the instance and cannot be shared safely by several
+Gate One replicas: a logout or a back-channel revocation recorded on one
+node would not be visible to the others. As soon as a second replica
+runs, that shared state moves to **Redis**.
+
+== What a scaled deployment requires
+
+* **Redis** as the shared session/revocation store
+  (`authProvider.sessionStore.type: "redis"`);
+* the same **session signing key** on every node
+  (`authProvider.sessionKeyEnv`);
+* the same cookie domain, so the browser presents the same session
+  cookie to every replica;
+* a load balancer in front of the replicas
+  (link:/docs/components/reverse-proxy/[Reverse proxy]);
+* Redis Sentinel/TLS/ACL when Redis itself must be highly available.
+
+No sticky sessions are required for the session cookie: every replica
+verifies it with the shared key. Redis carries the shared revocation
+state.
+
+== Failure mode
+
+When `sessionStore` is Redis and Redis is unavailable, authenticated
+routes fail with `502 authentication_unavailable`. Public routes keep
+working. A single-instance deployment should keep the default bbolt
+store — Redis is a scaling requirement, not a default.
+
+== Related
+
+* link:/docs/features/horizontal-scaling/[Horizontal scaling] — when and
+  why.
+* link:/docs/examples/high-availability/[High Availability example] —
+  the Redis-backed configuration and the shared session key.
+* link:/docs/config/gate-one/#field-authProvider-sessionStore[`authProvider.sessionStore`]
+  and [`sessionKeyEnv`](/docs/config/gate-one/#field-authProvider-sessionKeyEnv).
