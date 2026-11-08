@@ -2,7 +2,7 @@
 title: Embedded IAM
 linkTitle: Embedded IAM
 weight: 30
-description: Federate Google in cladone-auth, map claims and assign user grants.
+description: Federate IdPs in cladone-auth, map claims and assign user grants.
 ---
 
 = Embedded IAM
