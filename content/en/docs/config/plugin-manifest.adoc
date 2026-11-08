@@ -192,6 +192,11 @@ Narrow the subscription. Empty fields mean all.
 |===
 | Field | Type | Required | Description
 
+| [[field-events-filters-hosts]] `hosts`
+| array of string
+| no
+| Request hosts or glob patterns (e.g. app.example.com, *.example.com).
+
 | [[field-events-filters-routes]] `routes`
 | array of string
 | no
