@@ -52,6 +52,21 @@
       },
       "csp": {
         "mode": "nonce"
+      },
+      "pwa": {
+        "enabled": true,
+        "name": "Gate One demo",
+        "shortName": "Demo",
+        "themeColor": "#2563eb",
+        "networkOnly": {
+          "excludePatterns": [
+            "^https://idp\\.example\\.com/.*/\\.well-known/openid-configuration",
+            "^https://idp\\.example\\.com/.*/protocol/openid-connect",
+            "^https://idp\\.example\\.com/.*/end_session_endpoint",
+            "^http://login\\.demo\\.localhost:3000/auth/callback",
+            "^http://login\\.demo\\.localhost:3000/t/[^/?#]+/callback"
+          ]
+        }
       }
     }
   ]

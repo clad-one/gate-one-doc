@@ -1779,7 +1779,7 @@ PWA shell, manifest, icons and service-worker cache policy for a frontend route.
 | [[field-routes-pwa-networkOnly]] `networkOnly`
 | <<config-routes-pwa-networkOnly,object>>
 | no
-| Its presence activates the "never cached" route (auth exchanges, OAuth callbacks carrying a one-time code…).
+| Its presence activates the "never cached" route. When a PWA route shares the authentication scope, the identity-provider endpoints (discovery, authorize, token, JWKS, end-session) and the RP callback carrying a one-time code/state MUST be excluded, or the service worker can replay a stale identity or a one-time code.
 
 | [[field-routes-pwa-assets]] `assets`
 | <<config-routes-pwa-assets,object>>
@@ -1924,7 +1924,7 @@ Its presence activates the universal GET cache (everything nothing else covers).
 [[config-routes-pwa-networkOnly]]
 ===== routes.pwa.networkOnly
 
-Its presence activates the "never cached" route (auth exchanges, OAuth callbacks carrying a one-time code…).
+Its presence activates the "never cached" route. When a PWA route shares the authentication scope, the identity-provider endpoints (discovery, authorize, token, JWKS, end-session) and the RP callback carrying a one-time code/state MUST be excluded, or the service worker can replay a stale identity or a one-time code.
 
 [cols="2,2,1,5",options="header"]
 |===

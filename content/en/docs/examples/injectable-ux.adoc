@@ -36,7 +36,16 @@ injection surface in one route.
     { "selector": "[data-feature=export]", "auth": "before" }
   ],
   "authGuard": { "forbidden": { "banner": true } },
-  "csp": { "mode": "nonce" }
+  "csp": { "mode": "nonce" },
+  "pwa": {
+    "enabled": true,
+    "networkOnly": {
+      "excludePatterns": [
+        "^https://idp\\.example\\.com/.*/\\.well-known/openid-configuration",
+        "^https://idp\\.example\\.com/.*/protocol/openid-connect"
+      ]
+    }
+  }
 }
 ----
 
@@ -86,6 +95,42 @@ scripts. If the application already sends a CSP, prefer
 `csp.mode: "merge"`; if the application forbids inline scripts, use
 `hash` or `merge` and keep application scripts external.
 
+== PWA and identity endpoints
+
+`pwa.enabled` wraps the route in a service worker that caches same-origin
+pages and assets. Any URL that carries identity must therefore be
+excluded with `pwa.networkOnly.excludePatterns` (JS regexes tested
+against the full URL). Otherwise the worker can serve a cached auth
+probe — a stale identity after login or logout — or replay a callback
+that carries a one-time `code`.
+
+Always exclude:
+
+* the identity provider's discovery, authorize, token, JWKS and
+  end-session endpoints;
+* the Gate One callback (`/auth/callback`) and, with the embedded
+  broker, `/t/<tenant>/callback`, which carry `code`/`state`.
+
+[source,json]
+----
+"pwa": {
+  "enabled": true,
+  "networkOnly": {
+    "excludePatterns": [
+      "^https://idp\\.example\\.com/.*/\\.well-known/openid-configuration",
+      "^https://idp\\.example\\.com/.*/protocol/openid-connect",
+      "^https://idp\\.example\\.com/.*/end_session_endpoint",
+      "^http://login\\.demo\\.localhost:3000/auth/callback",
+      "^http://login\\.demo\\.localhost:3000/t/[^/?#]+/callback"
+    ]
+  }
+}
+----
+
+Replace `idp.example.com` with the issuer host. See the
+link:/docs/config/gate-one/#field-routes-pwa-networkOnly[`routes.pwa.networkOnly`]
+reference.
+
 [[caveats]]
 [NOTE]
 ====
@@ -94,5 +139,7 @@ scripts. If the application already sends a CSP, prefer
 * The guard cannot intercept a request the browser never sent.
 * Injection and CSP are per route; do not enable `own: true` unless the
   configured policy is complete for the application.
+* A PWA service worker must never cache identity endpoints; see
+  <<pwa-and-identity-endpoints>>.
 ====
 

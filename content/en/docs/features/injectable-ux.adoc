@@ -41,6 +41,7 @@ selector rules when the markup cannot change. Roles, scopes, claims,
 page prefix and order, plus client-side `data-*` patches. Referenced by
 `route.inject`.
 | PWA | Manifest, icons, service worker and API cache policy per route.
+Identity endpoints must be excluded from the cache (`pwa.networkOnly`).
 | Forbidden UX | `authGuard.forbidden` adds a dismissable banner on the
 gateway's own identity 403, or redirects browser navigations to a page.
 | CSP | `csp.mode` `off`, `merge`, `hash` or `nonce`; the guard is
@@ -104,6 +105,22 @@ The bundle referenced by `inject`:
 Complete files:
 link:/examples/injectable-ux/routes.json[`routes.json`],
 link:/examples/injectable-ux/bundle.json[`bundle.json`].
+
+== PWA and identity endpoints
+
+`pwa.enabled` adds a service worker that caches pages and assets. Any
+URL that carries identity must be excluded with
+`pwa.networkOnly.excludePatterns` (JS regexes tested against the full
+URL): the identity provider's discovery, authorize, token, JWKS and
+end-session endpoints, and the Gate One callback (`/auth/callback`) or
+the embedded broker's `/t/<tenant>/callback`.
+
+A cached auth probe replays a stale identity after login or logout; a
+cached callback replays a one-time `code`. The
+link:/docs/examples/injectable-ux/[Injectable UX example] shows the
+patterns, and
+link:/docs/config/gate-one/#field-routes-pwa-networkOnly[`routes[].pwa.networkOnly`]
+is the field reference.
 
 == Markup or config?
 
@@ -171,3 +188,4 @@ Injected content must satisfy the policy. A nonce never applies to a
 * link:/docs/config/gate-one/#field-routes-inject[`routes[].inject`]
 * link:/docs/config/gate-one/#field-routes-csp[`routes[].csp`]
 * link:/docs/config/gate-one/#field-routes-authGuard[`routes[].authGuard`]
+* link:/docs/config/gate-one/#field-routes-pwa-networkOnly[`routes[].pwa.networkOnly`]
