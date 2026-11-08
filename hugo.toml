@@ -39,6 +39,11 @@ summaryLength = 40
   [[module.mounts]]
     source = "node_modules/mermaid/dist"
     target = "assets/js/mermaid"
+  # Lunr (offline site search) is vendored too: Docsy's default head loads
+  # it from unpkg; layouts/_partials/head.html points at this local copy.
+  [[module.mounts]]
+    source = "node_modules/lunr"
+    target = "assets/vendor/lunr"
   # Publish the schemas and examples under /schemas/ and /examples/.
   [[module.mounts]]
     source = "schemas"
@@ -67,6 +72,10 @@ summaryLength = 40
   copyright = "Cladone-IT"
   version = "1.0"
   prism_syntax_highlighting = true
+  # Local (Lunr) site search: no external service, index built per release.
+  offlineSearch = true
+  offlineSearchMaxResults = 12
+  offlineSearchSummaryLength = 90
   # Absolute URL of the non-versioned shared asset directory. Set by
   # scripts/publish-pages (HUGO_PARAMS_SHAREDASSETSURL) so the large
   # Mermaid bundle is published once instead of once per release. Empty

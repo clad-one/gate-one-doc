@@ -1,0 +1,229 @@
+#!/usr/bin/env node
+/* Verify the offline (Lunr) search index produced by the last build:
+ * every page is present, and each sampled page is findable by its own
+ * title. Mirrors the browser's indexing (local lunr, title boosted, body
+ * searched) — no browser, no CDN, no external service. */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const lunr = require('lunr');
+
+const root = path.resolve(__dirname, '..');
+const pub = path.join(root, 'public');
+
+const indexName = fs
+  .readdirSync(pub, { withFileTypes: true })
+  .filter((e) => e.isFile() && /^offline-search-index\..*\.json$/.test(e.name))
+  .map((e) => e.name)[0];
+
+if (!indexName) {
+  console.error(
+    'validate-search: no offline-search-index.*.json — run npm run build first'
+  );
+  process.exit(2);
+}
+
+const docs = JSON.parse(fs.readFileSync(path.join(pub, indexName), 'utf8'));
+if (!Array.isArray(docs) || docs.length === 0) {
+  console.error(`validate-search: ${indexName} is empty`);
+  process.exit(1);
+}
+
+const idx = lunr(function () {
+  this.ref('ref');
+  this.field('title', { boost: 5 });
+  this.field('description', { boost: 2 });
+  this.field('body');
+  docs.forEach((d) => this.add(d));
+});
+
+let bad = 0;
+
+// 1. Every indexed page must carry real text (guards the index template,
+//    and that AsciiDoc bodies are extracted).
+const empty = docs.filter((d) => !d.body || d.body.length < 50);
+if (empty.length) {
+  console.error(
+    `validate-search: ${empty.length} page(s) with no body: ` +
+      empty.map((d) => d.ref).join(', ')
+  );
+  bad++;
+}
+
+// 2. Every built documentation page must be in the index (nothing silently
+//    dropped by the exclude_search filter). Alias pages (front-matter
+//    `aliases`, emitted as meta-refresh redirects) are not content.
+const built = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      walk(full);
+    } else if (e.name === 'index.html') {
+      const html = fs.readFileSync(full, 'utf8');
+      if (html.includes('http-equiv=refresh')) continue;
+      const ref = full.toString().replace(pub, '').replace(/index\.html$/, '');
+      if (ref.startsWith('/docs/')) built.push(ref);
+    }
+  }
+})(path.join(pub, 'docs'));
+const indexed = new Set(docs.map((d) => d.ref));
+const missing = built.filter((r) => !indexed.has(r));
+if (missing.length) {
+  console.error(
+    `validate-search: ${missing.length} built page(s) absent from the index: ` +
+      missing.join(', ')
+  );
+  bad++;
+}
+
+// 3. Each page is findable by its own title (a spread across the corpus).
+const sample = docs.filter((d) => d.title && d.ref.split('/').length > 3);
+const step = Math.max(1, Math.floor(sample.length / 8));
+for (let i = 0; i < sample.length; i += step) {
+  const page = sample[i];
+  const hits = idx.search(page.title);
+  if (!hits.some((h) => h.ref === page.ref)) {
+    console.error(
+      `validate-search: "${page.title}" (${page.ref}) not found by its own title`
+    );
+    bad++;
+  }
+}
+
+// 4. Result URLs must stay inside this (versioned) site: the search input's
+//    base href plus an index ref must land under the published base path.
+//    (Page RelPermalink drops the version subpath, so the shadowed
+//    search-input partial supplies it — guard that linkage.)
+const home = fs.readFileSync(path.join(pub, 'index.html'), 'utf8');
+const baseMatch = home.match(/data-offline-search-base-href=("?)([^ ">]+)\1/);
+const idxUrlMatch = home.match(
+  /data-offline-search-index-json-src=("?)([^ ">]+)\1/
+);
+if (!baseMatch || !idxUrlMatch) {
+  console.error('validate-search: search input or index URL missing from the home page');
+  bad++;
+} else {
+  const base = baseMatch[2].replace(/\/?$/, '/');
+  const idxUrl = idxUrlMatch[2];
+  const sitePath = new URL(idxUrl).pathname.replace(/[^/]*$/, '');
+  const samplePath = new URL(
+    base + docs[0].ref.replace(/^\//, ''),
+    'https://site.invalid'
+  ).pathname;
+  if (!samplePath.startsWith(sitePath)) {
+    console.error(
+      `validate-search: result URLs escape the site (${samplePath} vs ${sitePath})`
+    );
+    bad++;
+  }
+}
+
+
+// 5. Browser-level: run Docsy's offline-search.js in jsdom against the real
+//    index and assert that a typed query renders a result inside the site.
+//    The theme script lives in the Hugo module cache; skip (not fail) when it
+//    is absent, e.g. a clean checkout that never built the theme.
+const { JSDOM } = require('jsdom');
+
+function themeSearchScript() {
+  const roots = [
+    process.env.HUGO_CACHEDIR,
+    path.join(require('os').homedir(), '.cache', 'hugo_cache'),
+    '/tmp/hugo_cache',
+  ].filter(Boolean);
+  for (const r of roots) {
+    const base = path.join(
+      r, 'modules/filecache/modules/pkg/mod/github.com/docsy/docsy/theme@'
+    );
+    const dir = path.dirname(base);
+    let entries;
+    try {
+      entries = fs.readdirSync(dir).filter((n) => n.startsWith('theme@'));
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const file = path.join(dir, e, 'assets/js/offline-search.js');
+      if (fs.existsSync(file)) return file;
+    }
+  }
+  return null;
+}
+
+(async () => {
+const uiScript = themeSearchScript();
+if (!uiScript) {
+  console.log('validate-search: UI phase skipped (theme JS not in the module cache)');
+} else if (!bad) {
+  const dom = new JSDOM(
+    `<!doctype html><html><body>
+      <div class="td-search td-search--offline">
+        <input class="td-search__input"
+          data-offline-search-index-json-src="${idxUrlMatch[2]}"
+          data-offline-search-base-href="${baseMatch[2]}"
+          data-offline-search-max-results="12">
+      </div></body></html>`,
+    { runScripts: 'outside-only', url: 'https://site.invalid/' }
+  );
+  const w = dom.window;
+  w.lunr = lunr;
+  w.fetch = async () => ({ ok: true, json: async () => docs });
+  class StubPopover {
+    constructor(el, opts) {
+      this.opts = opts;
+      this.html = opts.content;
+      el.__popover = this;
+    }
+    static getInstance(el) {
+      return el.__popover || null;
+    }
+    setContent(c) {
+      this.html = c;
+    }
+    dispose() {
+      this.html = null;
+    }
+    show() {}
+  }
+  w.bootstrap = { Popover: StubPopover };
+  w.eval(fs.readFileSync(uiScript, 'utf8'));
+
+  const input = w.document.querySelector('.td-search input');
+  const until = Date.now() + 2000;
+  while (!input.__popover && Date.now() < until) {
+    // the stubbed fetch resolves on a microtask; then the index is built
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  input.value = 'token broker';
+  input.dispatchEvent(new w.Event('change', { bubbles: true }));
+  const text = input.__popover && input.__popover.html
+    ? input.__popover.html.textContent
+    : '';
+  if (!/Token broker/i.test(text)) {
+    console.error(
+      `validate-search: UI query rendered no result (got: ${JSON.stringify(text.slice(0, 80))})`
+    );
+    bad++;
+  } else {
+    const link = input.__popover.html.querySelector('a');
+    const href = link ? link.getAttribute('href') : '';
+    if (!href.includes(new URL(idxUrlMatch[2]).pathname.replace(/[^/]*$/, ''))) {
+      console.error(`validate-search: UI result link escapes the site: ${href}`);
+      bad++;
+    } else {
+      console.log('validate-search: UI query OK');
+    }
+  }
+}
+
+if (bad) process.exit(1);
+console.log(
+  `validate-search: ${docs.length} pages indexed, ${built.length} built, ` +
+    `${Math.ceil(sample.length / step)} title queries OK`
+);
+})().catch((err) => {
+  console.error('validate-search:', err);
+  process.exit(1);
+});
