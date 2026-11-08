@@ -86,6 +86,14 @@ The bundle is deliberately small:
 The long userscript is not embedded in this page; it lives in the
 example directory.
 
+`target: "head"` only says **where the `<script>` tag goes** in the
+document — it is not a DOM selector. The Wikipedia+ script replaces the
+theme, builds its floating panel and positions the arrow relative to
+that panel at runtime. Placing content at a specific element is the
+script's job; see
+link:/docs/features/injectable-ux/#placement[Placing content at a
+specific element].
+
 == Run it
 
 [source,bash]

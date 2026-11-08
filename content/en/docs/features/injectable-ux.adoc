@@ -37,8 +37,9 @@ on frontend routes; opt out with `authGuard.enabled: false`.
 | UI gating | `data-gtw-*` attributes in the markup, or `uiGate` CSS
 selector rules when the markup cannot change. Roles, scopes, claims,
 `before`/`after` activation and hiding.
-| Inject bundle | HTML/JS/CSS insertions by target (`head`, `body-end`),
-page prefix and order, plus client-side `data-*` patches. Referenced by
+| Inject bundle | HTML/JS/CSS insertions at a **document position** (`head` or
+`body-end`), page prefix and order — a script can then place content at a
+specific element — plus client-side `data-*` patches. Referenced by
 `route.inject`.
 | PWA | Manifest, icons, service worker and API cache policy per route.
 Identity endpoints must be excluded from the cache (`pwa.networkOnly`).
@@ -105,6 +106,51 @@ The bundle referenced by `inject`:
 Complete files:
 link:/examples/injectable-ux/routes.json[`routes.json`],
 link:/examples/injectable-ux/bundle.json[`bundle.json`].
+
+[[placement]]
+== Placing content at a specific element
+
+`injects[].target` is a **document position, not a selector**. It accepts
+only `head` (default) or `body-end`, plus `order` for the position within
+that target and `when` for a path prefix. There is no
+"insert next to `.article`" field.
+
+Two mechanisms cover placement, and they are different:
+
+[cols="1,3",options="header"]
+|===
+| Mechanism | What it can do
+
+| `patch` | Sets **attributes** on the elements a CSS `selector` matches
+(`data-gtw-*`), client-side, on every guard evaluation cycle. It never
+inserts, moves or removes a node.
+| `script` / `file` | The injected JavaScript runs in the page context, so
+it can query the DOM and place content wherever it belongs
+(`insertAdjacentHTML`, `insertBefore`, `append`, …).
+|===
+
+To anchor generated markup to an existing element, inject a small script
+at `body-end` and let it do the placement:
+
+[source,json]
+----
+{
+  "name": "article-note",
+  "target": "body-end",
+  "when": "/wiki/",
+  "script": "var a=document.querySelector('#mw-content-text'); if (a) a.insertAdjacentHTML('afterbegin', '<p class=article-note>Reviewed by the platform.</p>');"
+}
+----
+
+The same pattern with a larger script is the
+link:/docs/examples/siteproxy/[proxied-site example]: the bundle injects
+the Wikipedia+ userscript at `head`, and **the script** builds its panel
+and positions the arrow relative to that panel. `target` only decides
+where the `<script>` tag lands in the document.
+
+Scripts execute once when the injected markup is parsed. If the page
+rerenders its DOM, the script is not replayed; `patch` is the mechanism
+that the guard re-applies (see the limits below).
 
 == PWA and identity endpoints
 
