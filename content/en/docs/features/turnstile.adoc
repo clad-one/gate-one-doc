@@ -113,6 +113,11 @@ Gate One instance and deny everything else. A global block removes the
 "forgot the policy on one host" drift inside this instance; it cannot
 protect a path that never reaches it.
 
+When Gate One cannot be the only path (several ingresses, an application
+reachable internally), use a small verifying sidecar in front of the
+application instead: every ingress points at it, it verifies the token
+once and forwards the POST, and the backend is reachable only through it.
+
 == Limits
 
 * The token is **single-use** and expires after 300 seconds. Gate One
