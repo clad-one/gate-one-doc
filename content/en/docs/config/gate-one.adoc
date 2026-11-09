@@ -28,7 +28,7 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | [[field-license]] `license`
 | <<config-license,object>>
 | no
-| Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluation/personal mode: the gateway keeps serving; the user badge shows a notice. The private signing key NEVER ships (only publicKey is embedded).
+| Optional offline signed licence (Ed25519), one token per period. Absent, invalid or expired = evaluation/personal mode: the gateway keeps serving; the user badge shows a notice. The private signing key NEVER ships (only publicKey is embedded).
 
 | [[field-authProvider]] `authProvider`
 | <<config-authProvider,object>>
@@ -136,7 +136,7 @@ Platform-wide response hardening, emitted by the gateway on EVERY response it se
 [[config-license]]
 === license
 
-Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluation/personal mode: the gateway keeps serving; the user badge shows a notice. The private signing key NEVER ships (only publicKey is embedded).
+Optional offline signed licence (Ed25519), one token per period. Absent, invalid or expired = evaluation/personal mode: the gateway keeps serving; the user badge shows a notice. The private signing key NEVER ships (only publicKey is embedded).
 
 [cols="2,2,1,5",options="header"]
 |===
@@ -150,7 +150,7 @@ Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluati
 | [[field-license-tokenFile]] `tokenFile`
 | string
 | no
-| Path to a file holding the token (mounted secret, easy renewal: replace the file + SIGHUP). Overridden by GATE_ONE_LICENSE_TOKEN; falls back to `token` when unreadable.
+| Deprecated single-token file. Prefer tokenDir (one token per period). Overridden by GATE_ONE_LICENSE_TOKEN; falls back to `token` when unreadable.
 
 | [[field-license-publicKey]] `publicKey`
 | string
@@ -166,6 +166,16 @@ Optional offline signed licence (Ed25519). Absent, invalid or expired = evaluati
 | string
 | no
 | Registration/pricing URL shown by the badge.
+
+| [[field-license-tokenDir]] `tokenDir`
+| string
+| no
+| Directory holding one signed token per period: every regular file is read (convention licence-<start>-<end>.txt). The active periods are merged (nbf <= now < exp): domains and features are unioned, domainCount and maxReplicas take the maximum. Dropping a file + SIGHUP is enough.
+
+| [[field-license-enforce]] `enforce`
+| string (one of: `info`, `warn`, `strict`)
+| no
+| What to do when a configured host is not covered by the active licence: info (default, logged), warn (logged as a warning), strict (503 on that host). Eval (no active token) is never blocked.
 
 |===
 

@@ -1,0 +1,103 @@
+---
+title: Licence
+linkTitle: Licence
+weight: 22
+description: Offline signed licences, one token per period, and how the gateway checks the hosts it serves.
+---
+
+= Licence
+
+Gate One runs from an **offline signed licence**: an Ed25519 token that
+the gateway verifies locally. It never calls home and needs no network.
+Without a valid token the gateway keeps serving in **evaluation** mode —
+a licence changes the badge and the host coverage, never the
+availability of the service.
+
+== One token per period
+
+A customer holds one token per purchased period. Install all of them:
+
+[source,text]
+----
+/etc/gate-one/licences.d/
+  licence-2026-01-01-2027-01-01.txt   3 domains, 1 replica
+  licence-2027-01-01-2028-01-01.txt   2 domains, 2 replicas
+----
+
+The active periods are merged:
+
+* `domains` and `features` are **unioned**;
+* `domainCount` and `maxReplicas` take the **maximum**.
+
+A renewal that reduces the domain count therefore never removes what the
+current period already paid for: the reduction applies when the new
+period starts.
+
+== Configuration
+
+[source,json]
+----
+{
+  "license": {
+    "tokenDir": "/etc/gate-one/licences.d",
+    "publicKeys": { "2026-01": "<base64 Ed25519 public key>" },
+    "enforce": "info",
+    "url": "https://licence.example.com"
+  }
+}
+----
+
+* `tokenDir` — every regular file holds one token. Dropping a file and
+  sending `SIGHUP` is enough; no restart.
+* `publicKeys` — kid to public key. Rotating a signing key adds an entry
+  without invalidating the tokens already installed.
+* `enforce` — host coverage mode: `info` (default), `warn`, `strict`.
+* `url` — registration or renewal page linked from the badge.
+* `tokenFile` / `token` — single-token forms, kept for compatibility.
+
+`GATE_ONE_LICENSE_TOKEN` adds one more token (the other sources stay
+active).
+
+== Domains and host coverage
+
+`domains` holds **suffixes**, not hosts. A suffix covers itself and every
+subdomain, so `exemple.fr` also covers `app.exemple.fr` and
+`a.b.exemple.fr`. Internal names work the same way: `corp.local` covers
+`wiki.corp.local`.
+
+At load, the gateway collects every host it can serve — route `host` and
+`hosts[]`, provider `loginBaseUrl`, `cookieDomain`, `ssoGroups` domains —
+and compares them with the active suffixes. `localhost` and loopback
+addresses are always allowed.
+
+| `enforce` | Uncovered host |
+|---|---|
+| `info` (default) | logged, request served |
+| `warn` | logged as a warning, request served |
+| `strict` | `503` with `license_uncovered_host` |
+
+Evaluation mode (no active token) is **never** blocked, in any mode: a
+future-only token, a missing directory or an expired licence does not
+take the deployment down.
+
+== What the badge shows
+
+The injected badge receives the licence state only: registered or
+evaluation, the expiry and the registration link. Company name, contact
+email, domains and features stay on the server — the guard script is
+embedded in every protected page, so anything sent to it is public.
+
+== Plugins
+
+Each plugin call carries `X-Gate-One-License`: the base64url-encoded
+licence view (state, enforce mode, `domainCount`, `maxReplicas`,
+`domains`, `features`). Its SHA-256 is bound into the signed
+`X-Gate-One-Assertion`, so a plugin can trust those facts. See the
+reference plugin (`cmd/plugin-audit-echo`) for the verification.
+
+== Read next
+
+* link:/docs/config/gate-one/#field-license[`license` reference]
+* link:/docs/features/usage-events/[Usage events and plugins]
+* link:https://github.com/clad-one/gate-one/tree/main/deploy/vps[`deploy/vps`] —
+  the production stack that mounts the licence directory

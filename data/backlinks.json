@@ -76,8 +76,10 @@
     "/docs/features/multiple-idps",
     "/docs/features/protect-api-mcp",
     "/docs/features/sso-multi-apps",
+    "/docs/features/turnstile",
     "/docs/features/usage-events",
-    "/docs/install"
+    "/docs/install",
+    "/docs/licence"
   ],
   "/docs/config/plugin-manifest": [
     "/docs/architecture",
@@ -177,6 +179,10 @@
     "/docs/examples",
     "/docs/features/injectable-ux"
   ],
+  "/docs/examples/turnstile": [
+    "/docs/examples",
+    "/docs/features/turnstile"
+  ],
   "/docs/examples/usage-plugin": [
     "/docs/examples",
     "/docs/extending/publish-a-plugin"
@@ -256,11 +262,15 @@
     "/docs/architecture",
     "/docs/install"
   ],
+  "/docs/features/turnstile": [
+    "/docs/architecture"
+  ],
   "/docs/features/usage-events": [
     "/docs/architecture",
     "/docs/extending",
     "/docs/extending/plugins",
-    "/docs/extending/publish-a-plugin"
+    "/docs/extending/publish-a-plugin",
+    "/docs/licence"
   ],
   "/docs/guides": [
     "/docs/features/injectable-ux"
