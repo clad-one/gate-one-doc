@@ -47,6 +47,7 @@ same provider and share the same session cookie domain.
 The complete sequence and configuration are in the
 link:/docs/examples/multi-app-sso/[multi-app SSO example].
 
+[[logout]]
 == Logout and revocation
 
 The RP session lifetime is Gate One's own (`sessionTtlSeconds`, one hour
@@ -57,8 +58,45 @@ lifetime. Logout clears the cookie and records the revocation:
 * back-channel logout is validated and persisted;
 * a revoked `sid`/`sub` is refused on the next request.
 
+A revocation covers only sessions and tokens **issued before it**: a new
+sign-in after a logout is accepted — a user is never locked out by their
+own logout — while a copied cookie from before the logout still fails.
+
 The revocation TTL defaults to the issuer's advertised refresh-token
 lifetime, or 30 days. It is never shorter than the session TTL.
+
+=== Register the logout redirect at the IdP
+
+RP-initiated logout sends the originating application as
+`post_logout_redirect_uri`. Register **every application host** as a
+valid post-logout redirect URI:
+
+* Keycloak: client → *Valid post logout redirect URIs*, one
+  `https://app.example.com/*` per application host;
+* the embedded IAM: link:/docs/config/embedded-iam/#field-tenants-postLogoutRedirectUris[`tenants[].postLogoutRedirectUris`]
+  (empty falls back to `redirectUris`, the login host only).
+
+If the IdP rejects that URI it shows an error **and does not end its SSO
+session**. Gate One's own session is gone, but the next visit finds the
+IdP session and signs the user straight back in — so login looks
+"refused" even though no error is shown.
+
+[[logout-trouble]]
+=== Troubleshooting
+
+[cols="1,1",options="header"]
+|===
+| Symptom | Cause
+
+| `Invalid redirect uri` at logout
+| the application host is not a registered post-logout redirect URI
+
+| signed back in immediately after logout, or login "refused" without an error
+| the IdP SSO session was not ended because its post-logout redirect was rejected
+
+| "Login session expired" right after returning from the IdP
+| the sign-in took longer than the transaction window (15 minutes), or a second sign-in in the same browser replaced it
+|===
 
 == Operational notes
 

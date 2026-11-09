@@ -42,8 +42,11 @@ link:/examples/keycloak-google/routes.json[`examples/keycloak-google/routes.json
 == Keycloak setup
 
 1. Create the realm `company`.
-2. Create an OIDC client `gate-one` with the redirect URI
-   `https://login.example.com/auth/callback`.
+2. Create an OIDC client `gate-one`:
+   * **Valid redirect URIs**: `https://login.example.com/auth/callback`;
+   * **Valid post logout redirect URIs**: `https://app.example.com/*` —
+     one entry per application host (the host Gate One sends as
+     `post_logout_redirect_uri`).
 3. Add an Identity Provider of type **Google** and enter the Google
    client ID/secret. Complete the Google OAuth consent configuration.
 4. Add a mapper/claim so Keycloak roles or groups appear in the token
@@ -53,6 +56,16 @@ link:/examples/keycloak-google/routes.json[`examples/keycloak-google/routes.json
 
 Gate One does not need the Google client ID or secret. Those stay in
 Keycloak.
+
+[IMPORTANT]
+====
+Register a **post logout redirect URI** for every application host.
+Gate One's logout sends the originating application as
+`post_logout_redirect_uri`; an unregistered host makes Keycloak answer
+`Invalid redirect uri` and, crucially, **does not end the Keycloak SSO
+session** — the user is then signed back in silently on the next visit.
+See link:/docs/features/sso-multi-apps/#logout[Logout and revocation].
+====
 
 == Run it
 
@@ -64,8 +77,9 @@ gate-one -config routes.json
 ----
 
 Register `https://login.example.com/auth/callback` as the Keycloak
-client redirect URI. Point `app.example.com`, `login.example.com` and
-`auth.example.com` at the right hosts.
+client redirect URI, and `https://app.example.com/*` as a valid
+**post logout** redirect URI. Point `app.example.com`,
+`login.example.com` and `auth.example.com` at the right hosts.
 
 == What to observe
 

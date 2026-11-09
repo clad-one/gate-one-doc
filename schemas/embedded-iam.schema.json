@@ -82,7 +82,7 @@
             "type": "string",
             "format": "uri"
           },
-          "description": "Allowed post-logout targets. Empty = redirectUris."
+          "description": "Allowed post-logout targets. List every application origin as https://app.example.com/* (the host Gate One sends as post_logout_redirect_uri). Empty falls back to redirectUris, which covers only the login host, so a logout from an application host would be refused."
         },
         "audiences": {
           "type": "array",

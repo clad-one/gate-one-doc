@@ -48,7 +48,7 @@ The `api-routes.json` file consumed by the `gate-one` binary. Relative paths (ce
 | [[field-defaultAppUrl]] `defaultAppUrl`
 | string
 | no
-| Global fallback for a bare visit to a login host root (302), preserving the query string. A provider's own defaultAppUrl wins for its login host. Email verification/account links must carry a return target; use defaultAppUrl only as an operational fallback.
+| Global fallback for a bare visit to a login host root (302), preserving the query string. A provider's own defaultAppUrl wins for its login host. Email verification/account links must carry a return target; use defaultAppUrl only as an operational fallback. Point it at a neutral page (e.g. your landing), not at one application.
 
 | [[field-oidc]] `oidc`
 | <<config-oidc,object>>
@@ -231,7 +231,7 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 | [[field-authProvider-defaultAppUrl]] `defaultAppUrl`
 | string
 | no
-| Application to send a bare visit to THIS provider's login host root to. Overrides the global defaultAppUrl for this login host. Must be a route host bound to this provider or a host covered by its cookieDomain.
+| Application to send a bare visit to THIS provider's login host root to. Overrides the global defaultAppUrl for this login host. Must be a route host bound to this provider or a host covered by its cookieDomain. Prefer a neutral page rather than one application.
 
 | [[field-authProvider-verifyUrl]] `verifyUrl`
 | string
@@ -351,7 +351,7 @@ Authentication provider. `dev` is the embedded loopback-only IdP used for onboar
 | [[field-authProvider-revocationTtlSeconds]] `revocationTtlSeconds`
 | integer
 | no
-| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the embedded IAM), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
+| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the embedded IAM), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. A revocation covers only sessions/tokens issued before it, so a later sign-in is accepted (a user is never locked out by their own logout). Minimum: 1.
 
 | [[field-authProvider-dev]] `dev`
 | <<config-authProvider-dev,object>>
@@ -2322,7 +2322,7 @@ One cross-domain SSO group. Every provider in the group shares issuer, client, s
 | [[field-ssoGroups-revocationTtlSeconds]] `revocationTtlSeconds`
 | integer
 | no
-| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the embedded IAM), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. Minimum: 1.
+| Retention of revocation entries. Default: the issuer's advertised refresh-token TTL (cladone_refresh_token_ttl_seconds, e.g. the embedded IAM), else 30 days; never shorter than the session TTL. Must cover the refresh-token lifetime for a global logout. A revocation covers only sessions/tokens issued before it, so a later sign-in is accepted (a user is never locked out by their own logout). Minimum: 1.
 
 | [[field-ssoGroups-legacyTokenCookies]] `legacyTokenCookies`
 | boolean
@@ -2489,7 +2489,7 @@ One domain/provider inside an SSO group. Shared fields (issuer, clientId, sessio
 | [[field-ssoGroups-providers-defaultAppUrl]] `defaultAppUrl`
 | string
 | no
-| Application to send a bare visit to this provider's login host root to. Must be a route host of this provider (or a host covered by its cookieDomain). Overrides the group/global fallback for this domain.
+| Application to send a bare visit to this provider's login host root to. Must be a route host of this provider (or a host covered by its cookieDomain). Overrides the group/global fallback for this domain. Prefer a neutral page rather than one application.
 
 |===
 

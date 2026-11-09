@@ -90,6 +90,12 @@ immediate invalidation.
 * link:/docs/config/embedded-iam/[Embedded IAM configuration reference]
 * link:/docs/config/embedded-iam/#field-tenants-mappings[`tenants[].mappings`]
 
+Register **every application origin** in
+link:/docs/config/embedded-iam/#field-tenants-postLogoutRedirectUris[`tenants[].postLogoutRedirectUris`]
+so a logout can return to the app; leaving it empty falls back to
+`redirectUris` (the login host only) and the logout is refused — see
+link:/docs/features/sso-multi-apps/#logout[Logout and revocation].
+
 [[limits]]
 [IMPORTANT]
 ====

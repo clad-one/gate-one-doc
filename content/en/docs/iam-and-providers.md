@@ -103,6 +103,11 @@ Use it for a direct OIDC IdP or for a `cladone-auth` tenant. This is the
 only provider type that combines a browser session with local revocation
 state (bbolt or Redis).
 
+The OIDC client must register **every application origin** as a valid
+post-logout redirect URI, or the IdP rejects the logout and its SSO
+session survives — see
+link:/docs/features/sso-multi-apps/#logout[Logout and revocation].
+
 ### `jwt`
 
 Gate One validates a bearer token against a JWKS. It never hosts a login

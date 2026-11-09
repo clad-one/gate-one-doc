@@ -36,6 +36,7 @@ Gate One enforces.
     "clientId": "gate-one",
     "clientSecretEnv": "MYCOMPANY_IAM_CLIENT_SECRET",
     "redirectUris": ["https://login.example.com/auth/callback"],
+    "postLogoutRedirectUris": ["https://app.example.com/"],
     "upstreams": {
       "google": {
         "issuer": "https://accounts.google.com",
@@ -120,6 +121,12 @@ legacy `groupRoles` block is still accepted for the `groups` claim).
 The Redis store is here because this example is also the multi-instance
 form; a single IAM instance can use its memory store, and a single
 Gate One instance can use the default bbolt store.
+
+The tenant's `postLogoutRedirectUris` lists where a logout may return.
+List **every application origin** (here `app.example.com`); an empty list
+falls back to `redirectUris`, which covers only the login host, so a
+logout from an application host would be refused. See
+link:/docs/features/sso-multi-apps/#logout[Logout and revocation].
 
 [[dynamic-rights]]
 == Dynamic rights (rules)

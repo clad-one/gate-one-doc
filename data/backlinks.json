@@ -54,6 +54,7 @@
     "/docs/config",
     "/docs/features/embedded-iam",
     "/docs/features/multiple-idps",
+    "/docs/features/sso-multi-apps",
     "/docs/iam-and-providers"
   ],
   "/docs/config/gate-one": [
@@ -260,6 +261,10 @@
   ],
   "/docs/features/sso-multi-apps": [
     "/docs/architecture",
+    "/docs/examples/embedded-iam",
+    "/docs/examples/keycloak-google",
+    "/docs/features/embedded-iam",
+    "/docs/iam-and-providers",
     "/docs/install"
   ],
   "/docs/features/turnstile": [
