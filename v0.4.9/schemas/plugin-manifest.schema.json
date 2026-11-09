@@ -1,0 +1,275 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gate-one.example.com/schemas/plugin-manifest.schema.json",
+  "title": "Gate One plugin manifest",
+  "description": "Signed manifest for an out-of-process Gate One plugin. The Ed25519 signature covers the canonical JSON with signature zeroed, plus the artefact digest. The manifest is provisioned by the operator; the trust store is never fetched from the plugin.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "name",
+    "version",
+    "apiVersion",
+    "hostAPI",
+    "keyId",
+    "artifact",
+    "signature"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version. Always 1."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "extension",
+        "auth"
+      ],
+      "description": "Plugin kind. auth requires the trust store to allow auth modules; extensions cover routes, injection, events and transforms."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reverse-DNS plugin name. Must match a trust store allowedNames entry (exact or glob)."
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Plugin version (semantic version recommended)."
+    },
+    "apiVersion": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Plugin API version implemented by the artefact (currently v1)."
+    },
+    "hostAPI": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Host API constraint, for example >=1.0 <2.0 or *. Compared with the trust store coreVersion."
+    },
+    "publisher": {
+      "type": "string",
+      "description": "Optional publisher identity."
+    },
+    "keyId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Signing key id; must exist in the trust store keys map."
+    },
+    "artifact": {
+      "$ref": "#/definitions/artifact"
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other artefacts this plugin depends on. Each digest must be allow-listed in the trust store.",
+      "items": {
+        "$ref": "#/definitions/dependency"
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "events",
+          "inject",
+          "auth"
+        ]
+      },
+      "description": "Declared capabilities. An extension cannot declare auth; events requires the events capability."
+    },
+    "licenseFeature": {
+      "type": "string",
+      "description": "Optional commercial licence feature required to load this plugin. The host refuses the plugin when the feature is absent."
+    },
+    "events": {
+      "$ref": "#/definitions/events"
+    },
+    "signature": {
+      "$ref": "#/definitions/signature"
+    }
+  },
+  "definitions": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "digest"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Artefact type: binary, container or OCI reference."
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$",
+          "description": "sha256 digest of the artefact. Verified before the plugin is trusted."
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional artefact size in bytes. Verified when non-zero."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Optional platform selector, for example linux/amd64."
+        }
+      },
+      "description": "The signed artefact (binary, container or OCI reference). Its digest is verified before the plugin is trusted."
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "digest"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Dependency name."
+        },
+        "version": {
+          "type": "string",
+          "description": "Dependency version."
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$",
+          "description": "Dependency artefact digest; must match the trust store allowedDependencies entry."
+        },
+        "signer": {
+          "type": "string",
+          "description": "Optional signer identity."
+        }
+      }
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "types"
+      ],
+      "description": "Usage-event subscription. Only these types are produced for this plugin.",
+      "properties": {
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "request",
+              "auth",
+              "error",
+              "billing",
+              "audit"
+            ]
+          },
+          "description": "Subscribed event types; each must also be configured in usage.types."
+        },
+        "filters": {
+          "$ref": "#/definitions/filters"
+        },
+        "maxLagBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum lag before backpressure applies. Default: the type share."
+        },
+        "onMaxLag": {
+          "type": "string",
+          "enum": [
+            "block",
+            "drop"
+          ],
+          "description": "Backpressure policy. block answers affected routes with 503 until the plugin catches up; drop advances the cursor to the lag limit and marks the plugin degraded."
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Narrow the subscription. Empty fields mean all.",
+      "properties": {
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Request hosts or glob patterns (e.g. app.example.com, *.example.com)."
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Route patterns, for example /api/*."
+        },
+        "tenants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tenant or provider ids."
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HTTP methods."
+        },
+        "statusClasses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "1xx",
+              "2xx",
+              "3xx",
+              "4xx",
+              "5xx"
+            ]
+          },
+          "description": "HTTP status classes."
+        },
+        "sampleRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Sampling rate for matching events. Default 1.0."
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alg",
+        "keyId",
+        "value"
+      ],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "const": "ed25519",
+          "description": "Signature algorithm. Always ed25519."
+        },
+        "keyId": {
+          "type": "string",
+          "description": "Must equal the manifest keyId."
+        },
+        "value": {
+          "type": "string",
+          "description": "base64url (unpadded) Ed25519 signature over the canonical manifest plus the artefact digest."
+        }
+      },
+      "description": "Ed25519 signature over the canonical manifest with signature zeroed, plus the artefact digest."
+    }
+  }
+}
