@@ -124,6 +124,8 @@ def run_gate_one(path: Path) -> None:
         "GATE_ONE_PLUGIN_SECRET": "0123456789abcdef0123456789abcdef",
         "OIDC_SESSION_KEY": "check-only-session-key",
         "MYCOMPANY_SESSION_KEY": "check-only-session-key",
+        # Cloudflare's always-passing Turnstile secret (test key).
+        "TURNSTILE_SECRET": "1x0000000000000000000000000000000AA",
     })
     proc = subprocess.run(
         [binary, "-check", "-config", str(path)],

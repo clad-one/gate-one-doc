@@ -161,3 +161,20 @@
     - label: usage.trustStore
       url: /docs/config/gate-one/#field-usage-trustStore
   plugin: true
+- slug: turnstile
+  title: Cloudflare Turnstile on any form
+  linkTitle: Turnstile
+  weight: 65
+  usefulIf: you want to stop bots on a public form, including a page Gate One already proxies.
+  summary: One platform-wide block injects the widget and verifies every matching POST with Siteverify before the backend.
+  example: /docs/examples/turnstile/
+  configRefs:
+    - label: turnstile
+      url: /docs/config/gate-one/#field-turnstile
+    - label: siteKey
+      url: /docs/config/gate-one/#field-turnstile-siteKey
+    - label: paths
+      url: /docs/config/gate-one/#field-turnstile-paths
+    - label: forms
+      url: /docs/config/gate-one/#field-turnstile-forms
+  plugin: false

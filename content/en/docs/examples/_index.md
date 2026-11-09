@@ -24,7 +24,8 @@ Two kinds of example:
 | [High Availability](high-availability/) | Several Gate One replicas behind a load balancer with shared Redis state. | Yes, Docker |
 | [Own account panel](account-panel/) | The application's own burger panel reads the session instead of the built-in badge. | Yes, no Docker |
 | [Injectable UX](injectable-ux/) | User badge, UI gating, injection bundle and a nonce CSP. | Yes, no Docker |
-| [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. | Yes, needs Go |
+| [Usage plugin](usage-plugin/) | A signed audit plugin, a trust store, the WAL and per-type durability. |
+| [Turnstile](turnstile/) | A public form protected by Cloudflare Turnstile, with the test keys. | Needs internet |
 | [Keycloak with Google](keycloak-google/) | A classical external IAM: Keycloak federates Google, Gate One trusts one Keycloak issuer. | Pattern |
 | [APIs and MCP](api-mcp/) | A browser provider, a JWT provider, an identity-conditioned API route and an MCP service. | Pattern |
 | [MCP tools](mcp-tools/) | A REST-derived MCP service, a proxied MCP server and an aggregating set. | Pattern |
@@ -58,6 +59,7 @@ The raw files are also served under `/examples/`:
 * [`examples/injectable-ux/routes.json`](/examples/injectable-ux/routes.json)
   and [`bundle.json`](/examples/injectable-ux/bundle.json)
 * [`examples/usage-events/routes.json`](/examples/usage-events/routes.json), [`audit.manifest.json`](/examples/usage-events/audit.manifest.json) and [`trust-store.json`](/examples/usage-events/trust-store.json)
+* [`examples/turnstile/routes.json`](/examples/turnstile/routes.json)
 
 The proxied-site example is kept in the source repository:
 [`examples/siteproxy/`](https://github.com/clad-one/gate-one/tree/main/examples/siteproxy).

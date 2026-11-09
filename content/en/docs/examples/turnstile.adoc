@@ -1,0 +1,80 @@
+---
+title: Turnstile form protection
+linkTitle: Turnstile
+weight: 65
+description: A public form protected with Cloudflare Turnstile and Gate One.
+---
+
+= Turnstile form protection
+
+A public contact form, no authentication, protected by Cloudflare
+Turnstile. The example uses Cloudflare's **test keys** so it passes
+without a real widget; replace them before deploying.
+
+== File
+
+[`examples/turnstile/routes.json`](/examples/turnstile/routes.json)
+
+[source,json]
+----
+{
+  "turnstile": {
+    "siteKey": "1x00000000000000000000AA",
+    "secretEnv": "TURNSTILE_SECRET",
+    "paths": ["/contact/*"],
+    "action": "contact",
+    "forms": ["form#contact"]
+  },
+  "authProvider": {
+    "type": "dev",
+    "loginBaseUrl": "http://login.demo.localhost:3000",
+    "cookieDomain": "demo.localhost"
+  },
+  "routes": [{
+    "host": "app.demo.localhost", "path": "/*", "frontend": true,
+    "backend": "http://127.0.0.1:8080"
+  }]
+}
+----
+
+== Run it
+
+[source,bash]
+----
+export TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+The always-passing secret accepts any token the always-passing widget
+produces. Open `http://app.demo.localhost:3000/contact/`; the widget is
+injected into `form#contact`, and a POST without a token gets the
+readable 403 page.
+
+== What to check
+
+* the widget script is inserted before `</body>` only on `/contact/*`;
+* the hidden `cf-turnstile-response` field is inside the form;
+* a POST without the token is refused by Gate One (the backend is not
+  reached);
+* a POST with the token is proxied;
+* with a `csp` block, the Cloudflare origins are appended automatically;
+* `GET /contact/` is served normally (never challenged).
+
+== Production checklist
+
+* create the widget in the Cloudflare dashboard and declare every public
+  hostname;
+* put the **secret** in the environment of every replica
+  (`TURNSTILE_SECRET`), never in the file;
+* keep a `rateLimit` on the POST path;
+* restrict the application's network access to Gate One: this check only
+  covers traffic that goes through it;
+* document that the client IP is sent to Cloudflare.
+
+== Limits
+
+* the token is single-use: only Gate One verifies it;
+* a second ingress that reaches the application directly bypasses the
+  check (network isolation is a separate control);
+* GET/HEAD are never challenged.

@@ -1,0 +1,142 @@
+---
+title: Cloudflare Turnstile
+linkTitle: Turnstile
+weight: 65
+description: A platform-wide anti-robot check for form pages, including pages Gate One proxies.
+---
+
+= Cloudflare Turnstile
+
+== Useful if you want to…
+
+* stop bots from submitting a **public form** (contact, registration,
+  newsletter) without changing the application;
+* add the same check to **several pages and hosts** from one place;
+* keep the widget working on a page **Gate One already proxies**;
+* refuse a POST before the backend processes it, not merely hide a
+  button in the browser.
+
+The block is **platform-wide**: one configuration entry, every matching
+page gets the widget, every matching POST is verified with Cloudflare
+Siteverify before the backend.
+
+== What it does
+
+. Gate One injects a small script before `</body>` on matching HTML
+   pages (frontend routes only).
+. The script renders the Turnstile widget in the matching forms and
+   keeps the hidden `cf-turnstile-response` field in sync.
+. A matching POST is verified with the Siteverify API **before the
+   backend**; a missing, expired or invalid token is refused.
+
+Native forms work with no application change. SPA forms work too: the
+injected script attaches the token to same-origin mutating `fetch`
+calls, and the server accepts the token from the
+`X-Turnstile-Response` header.
+
+== Configuration
+
+[source,json]
+----
+{
+  "turnstile": {
+    "enabled": true,
+    "siteKey": "0x4AAAAAAA...",
+    "secretEnv": "TURNSTILE_SECRET",
+    "hosts": ["app.example.com"],
+    "paths": ["/contact/*", "/register"],
+    "methods": ["POST"],
+    "forms": ["form#contact", "form[data-turnstile]"],
+    "action": "contact",
+    "hostname": "app.example.com"
+  },
+  "routes": [
+    {
+      "host": "app.example.com", "path": "/*", "frontend": true,
+      "backend": "http://app:8080"
+    }
+  ]
+}
+----
+
+The route has **no `auth` block**: a public form page stays anonymous.
+The secret is read from the environment on every replica:
+
+[source,bash]
+----
+export TURNSTILE_SECRET=...
+gate-one -check -config routes.json
+gate-one -config routes.json
+----
+
+A missing secret refuses startup; it is never read from the file and
+never sent to the browser.
+
+== What happens on a submission
+
+[cols="1,1,2",options="header"]
+|===
+| Situation | Status | Body
+
+| Missing token | `403` | readable page for a navigation, JSON otherwise
+| Invalid or expired token | `403` | same, with an "expired" message for `timeout-or-duplicate`
+| Hostname mismatch (if configured) | `403` | same
+| Action mismatch (if configured) | `403` | same
+| Siteverify unreachable or non-200 | `503` | readable page / `turnstile_unavailable`, `Retry-After: 5`
+|===
+
+A Siteverify outage is **not** a 403: it is fail-closed (the backend is
+never reached) with a distinct error, so a human is not told they failed
+the robot check because Cloudflare is down.
+
+== CSP
+
+Turnstile needs `https://challenges.cloudflare.com` in `script-src`
+(and `script-src-elem` when declared) and in `frame-src`. When a route
+declares a `csp` block, Gate One appends those sources automatically in
+`nonce`, `hash` and `merge` modes. Without a `csp` block, the page's own
+policy (if any) must allow them.
+
+== The limitation
+
+The check covers **only traffic that passes through this Gate One
+instance**:
+
+* a second ingress (nginx, Traefik, Kubernetes Ingress, another Gate One
+  deployment with its own config) that reaches the application directly
+  bypasses it;
+* internal callers and a published port bypass it.
+
+The invariant is: **the application is reachable only through the
+verification point**. Restrict the application's network access to the
+Gate One instance and deny everything else. A global block removes the
+"forgot the policy on one host" drift inside this instance; it cannot
+protect a path that never reaches it.
+
+== Limits
+
+* The token is **single-use** and expires after 300 seconds. Gate One
+  consumes it: the backend must not call Siteverify again for the same
+  submission.
+* GET/HEAD are never challenged: the page must load before the widget
+  can run.
+* The widget is a UX affordance; the server decision is Siteverify.
+  Disabling JavaScript does not bypass the check, it only makes the
+  failure less friendly.
+* The client IP is sent to Cloudflare for validation; mention it in the
+  privacy notice.
+* Cloudflare's site key is bound to a domain list: every public hostname
+  serving the form must be declared there.
+
+== Try it
+
+link:/docs/examples/turnstile/[The Turnstile example] shows a public
+form route with the always-passing Cloudflare test keys.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-turnstile[`turnstile`]
+* link:/docs/config/gate-one/#field-turnstile-siteKey[`siteKey`]
+* link:/docs/config/gate-one/#field-turnstile-secretEnv[`secretEnv`]
+* link:/docs/config/gate-one/#field-turnstile-paths[`paths`]
+* link:/docs/config/gate-one/#field-turnstile-forms[`forms`]

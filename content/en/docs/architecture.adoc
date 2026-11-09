@@ -23,8 +23,9 @@ flowchart TB
     direction TB
     M["1. match route<br/>host + path"] --> D["2. reserve durable<br/>event space"]
     D --> A["3. authenticate<br/>+ identity policy"]
-    A --> F["4. proxy, or<br/>401 / 403 / 502 / 503"]
-    F --> E["5. emit subscribed<br/>event after the response"]
+    A --> T["4. verify anti-robot<br/>token (Turnstile)"]
+    T --> F["5. proxy, or<br/>401 / 403 / 502 / 503"]
+    F --> E["6. emit subscribed<br/>event after the response"]
   end
   G -->|"OIDC / JWT"| I["Identity provider<br/>or IAM"]
   G -->|"proxied request"| AP["Existing application"]
@@ -32,17 +33,29 @@ flowchart TB
 </pre>
 ++++
 
-The gateway does five things in order:
+The gateway does six things in order:
 
 . match the route by host and path;
 . reserve durable event space (when a durable type is subscribed);
 . authenticate and check the identity policy;
+. verify the anti-robot token on a protected form POST (Turnstile);
 . forward the request, or answer 401/403/502/503 itself;
 . emit the subscribed event after the response.
 
 A failure at step 2 is a **503 before authentication**, so an event the
 operator declared durable is not lost. A failure at step 3 never reaches
-the backend.
+the backend. A failed anti-robot check (step 4) is a 403 after the rate
+limit and before the backend; a Siteverify outage is a 503 — never a
+"you are a bot" answer.
+
+== Bot protection
+
+Cloudflare Turnstile is configured once, at the top level, and applies to
+every matching host/path. Gate One injects the widget into matching HTML
+pages and verifies the POST with Siteverify before the backend. It only
+covers traffic that passes through this instance: a second ingress or a
+published port bypasses it, so restrict the application's network access
+to Gate One. See link:/docs/features/turnstile/[Turnstile].
 
 == Why run behind a reverse proxy
 
