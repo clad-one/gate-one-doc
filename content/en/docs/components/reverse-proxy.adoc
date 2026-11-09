@@ -37,6 +37,161 @@ ingress must set:
 Because those headers are trusted from the immediate hop, **Gate One must
 not be reachable directly by clients**. Publish only the ingress.
 
+[[minimal]]
+== Minimal configurations
+
+Three complete examples, smallest first. Each terminates TLS, passes the
+public host, sets `X-Forwarded-*` and streams responses. The files live in
+link:https://github.com/clad-one/gate-one/tree/main/examples/reverse-proxy[`examples/reverse-proxy/`]
+(Caddy, Traefik and nginx), next to a `validate.sh` that parses them with
+the real implementations.
+
+[cols="1,2,2",options="header"]
+|===
+| Ingress | What you must configure | Handled for you
+
+| Caddy | the hostnames | TLS, forwarded headers, streaming, Host
+| Traefik | entrypoints, ACME, one router and one service | forwarded headers, streaming, WebSocket upgrades, Host, active health check
+| nginx | everything below | nothing — each line is explicit
+|===
+
+=== Caddy
+
+[source,caddy]
+----
+app.example.com, login.example.com {
+	reverse_proxy 127.0.0.1:3000 {
+		health_uri /readyz
+		health_interval 10s
+	}
+}
+----
+
+TLS is automatic. Both hosts are served by the same Gate One, which
+dispatches on `Host`.
+
+=== Traefik
+
+Static configuration (`traefik.yml`):
+
+[source,yaml]
+----
+entryPoints:
+  web:       { address: ":80" }
+  websecure: { address: ":443" }
+
+certificatesResolvers:
+  le:
+    acme:
+      email: admin@example.com
+      storage: /data/acme.json
+      httpChallenge: { entryPoint: web }
+
+providers:
+  file: { filename: /etc/traefik/traefik-dynamic.yml }
+----
+
+Dynamic configuration (`traefik-dynamic.yml`):
+
+[source,yaml]
+----
+http:
+  routers:
+    redirect:
+      rule: "Host(`app.example.com`) || Host(`login.example.com`)"
+      entryPoints: [web]
+      middlewares: [to-https]
+      service: gate-one
+    gate-one:
+      rule: "Host(`app.example.com`) || Host(`login.example.com`)"
+      entryPoints: [websecure]
+      service: gate-one
+      tls: { certResolver: le }
+
+  middlewares:
+    to-https:
+      redirectScheme: { scheme: https, permanent: true }
+
+  services:
+    gate-one:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3000"
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+----
+
+`127.0.0.1` assumes Traefik shares the host network; in Docker use the
+service name (`http://gate-one:3000`). The label-based Docker form — the
+whole runnable stack — is
+link:https://github.com/clad-one/gate-one/tree/main/deploy/vps[`deploy/vps/`].
+
+=== nginx
+
+[source,nginx]
+----
+# http block
+map $http_upgrade $connection_upgrade { default upgrade; '' ''; }
+
+upstream gate_one {
+    server 127.0.0.1:3000 max_fails=2 fail_timeout=5s;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    server_name app.example.com login.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;   # nginx >= 1.25: "listen 443 ssl;" + "http2 on;"
+    server_name app.example.com login.example.com;
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+    client_max_body_size 100m;          # Gate One proxies uploads
+
+    location / {
+        proxy_pass http://gate_one;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;    # routes are keyed on (host, path)
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_buffering off;            # SSE and long streams
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+        gzip off;
+        proxy_redirect off;
+    }
+}
+----
+
+[[ingress-pitfalls]]
+=== Pitfalls
+
+[cols="2,2,2",options="header"]
+|===
+| Mistake | Symptom | Fix
+
+| `Host` not forwarded | every route 404: Gate One matches on the public host | `proxy_set_header Host $host`
+| `X-Forwarded-Proto` missing | login redirects to `http://`, loop | send `$scheme`
+| Response buffering on | SSE stalls until the buffer fills (small events seem lost) | `proxy_buffering off`
+| Default body limit (nginx 1m) | uploads answer `413` | `client_max_body_size`
+| Public URL is `http://` while `loginBaseUrl` is `https://` | cookies are `Secure`; the browser never sends them back | make both `https://`
+| Gate One reachable directly | a client forges `X-Forwarded-*` | loopback or internal network only
+| Only passive health checks (nginx OSS) | a degraded replica keeps receiving traffic | probe `/readyz` externally, or use Traefik/Caddy active checks
+|===
+
 == Health probes
 
 The ingress checks `/healthz` (liveness) and `/readyz` (readiness,
