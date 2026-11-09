@@ -5,7 +5,7 @@ Optionally run the real binaries with -check:
 
     GATE_ONE_BIN=../gate-one-src/bin/gate-one ./scripts/validate-examples --run-check
 
-External OIDC/JWT/broker examples are schema-validated only: their
+External OIDC/JWT/IAM examples are schema-validated only: their
 issuers are deliberately unreachable from a build machine.
 """
 from __future__ import annotations
