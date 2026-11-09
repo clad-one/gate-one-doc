@@ -6,16 +6,19 @@
 #
 #   https://clad-one.github.io/gate-one-doc/v0.3.1-docs.1/
 #
-# The root index redirects to the newest published release.
+# A stable `/latest/` alias is published alongside: a real second build
+# (not a copy — canonifyURLs would keep the versioned links). The root
+# index redirects to `/latest/` and lists the published releases.
 #
 # Usage:
 #   ./scripts/publish-pages                # current exact tag
 #   ./scripts/publish-pages v0.3.1-docs.1  # explicit release label
 #
 # Environment:
-#   PAGES_REMOTE   git remote to push to (default: origin)
-#   PAGES_BRANCH   branch used by GitHub Pages (default: gh-pages)
-#   SITE_BASE_URL  override the generated base URL
+#   PAGES_REMOTE     git remote to push to (default: origin)
+#   PAGES_BRANCH     branch used by GitHub Pages (default: gh-pages)
+#   SITE_BASE_URL    override the generated base URL
+#   SITE_LATEST_URL  override the stable alias base URL
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
@@ -48,6 +51,10 @@ fi
 REMOTE="${PAGES_REMOTE:-origin}"
 BRANCH="${PAGES_BRANCH:-gh-pages}"
 BASE_URL="${SITE_BASE_URL:-https://clad-one.github.io/gate-one-doc/$TAG/}"
+# Stable entry point. A plain copy of the versioned build would keep the
+# versioned links (canonifyURLs), so /latest/ is built a second time
+# with its own base URL.
+LATEST_URL="${SITE_LATEST_URL:-https://clad-one.github.io/gate-one-doc/latest/}"
 # Non-versioned directory for shared assets (large Mermaid bundle).
 SHARED_URL="${PAGES_SHARED_URL:-${BASE_URL%$TAG/}_shared}"
 
@@ -93,8 +100,23 @@ done
 shopt -u nullglob
 rmdir "$WORKTREE/$TAG/js/mermaid" 2>/dev/null || true
 
+# Stable alias: a REAL second build with `/latest/` as the base URL.
+# Copying the versioned build would leave every link and asset pointing
+# at /<tag>/ (canonifyURLs). The copy is clean, so a page removed from
+# the documentation disappears from /latest/ too.
+echo "publish-pages: building $TAG for $LATEST_URL (stable alias)"
+rm -rf public
+HUGO_PARAMS_SHAREDASSETSURL="$SHARED_URL" \
+	./scripts/build-site --baseURL "$LATEST_URL"
+rm -rf "$WORKTREE/latest"
+mkdir -p "$WORKTREE/latest"
+cp -R public/. "$WORKTREE/latest/"
+# Mermaid is served from _shared/js/ (same fingerprinted files).
+rm -rf "$WORKTREE/latest/js/mermaid"
+
 # Retention: newest of every minor, last 5 of the current minor, <=10
-# minors. Must run before the root index lists the releases.
+# minors. Must run before the root index lists the releases. It only
+# touches v*/ folders: /latest/ is preserved.
 ./scripts/prune-pages "$WORKTREE" "$TAG"
 
 versions=()
@@ -112,14 +134,17 @@ latest="$(printf '%s\n' "${versions[@]}" | sort -V | tail -n 1)"
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gate One documentation</title>
-<meta http-equiv="refresh" content="0; url=./$latest/">
-<link rel="canonical" href="./$latest/">
+<meta http-equiv="refresh" content="0; url=./latest/">
+<link rel="canonical" href="./latest/">
 </head>
 <body>
 <h1>Gate One documentation</h1>
-<p>Redirecting to the latest release: <a href="./$latest/">$latest</a>.</p>
+<p>Redirecting to the latest documentation:
+<a href="./latest/">latest</a> (currently
+<a href="./$latest/">$latest</a>).</p>
 <h2>Published releases</h2>
 <ul>
+<li><a href="./latest/">latest (stable)</a></li>
 HTML
 	for version in $(printf '%s\n' "${versions[@]}" | sort -Vr); do
 		printf '<li><a href="./%s/">%s</a></li>\n' "$version" "$version"

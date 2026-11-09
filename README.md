@@ -147,17 +147,27 @@ this repository. `baseURL` in `hugo.toml` is set to the project root
 ### GitHub Pages: one folder per release
 
 Each documentation release is published under a folder named after its
-tag:
+tag, plus a stable alias:
 
 ```text
-https://clad-one.github.io/gate-one-doc/v0.3.1-docs.1/
+https://clad-one.github.io/gate-one-doc/v0.3.1-docs.1/   # immutable
+https://clad-one.github.io/gate-one-doc/latest/         # stable alias
 ```
 
-The site root redirects to the newest published release and lists the
-others. Retention keeps the newest release of every minor version, the
-last five releases of the current minor, and at most ten minor versions
+`/latest/` is a **real second build** with its own base URL, not a copy:
+`canonifyURLs` makes every link and asset absolute, so copying the
+versioned build would keep pointing at `/vX.Y.Z/`. The alias is
+replaced cleanly on every publish (a removed page disappears from
+`/latest/` too). GitHub Pages caches HTML for 10 minutes: a tab already
+open during a publish may request a fingerprinted asset that just
+changed — a reload fixes it.
+
+The site root redirects to `/latest/` and lists the published releases.
+Retention keeps the newest release of every minor version, the last five
+releases of the current minor, and at most ten minor versions
 (`scripts/prune-pages`); the large Mermaid bundle is stored once in
-`_shared/js/` instead of once per release.
+`_shared/js/` instead of once per release, and `latest/` is never
+pruned.
 
 The publishing branch is `gh-pages`; GitHub Pages must be configured to
 deploy from that branch at `/` (Settings → Pages → Deploy from a branch).
@@ -188,12 +198,14 @@ The script:
    shared path);
 2. copies `public/` to `<tag>/` in a temporary `gh-pages` worktree, and
    moves the fingerprinted `mermaid*.js` to `_shared/js/`;
-3. prunes old release folders (`scripts/prune-pages`);
-4. regenerates the root redirect and version list;
-5. commits and pushes `gh-pages`.
+3. builds a second time with `--baseURL …/latest/`, replaces
+   `latest/`, and drops its local `js/mermaid` (served from `_shared/`);
+4. prunes old release folders (`scripts/prune-pages`);
+5. regenerates the root redirect (to `/latest/`) and version list;
+6. commits and pushes `gh-pages`.
 
-`PAGES_REMOTE`, `PAGES_BRANCH` and `SITE_BASE_URL` override the
-defaults. The same release label is used by `../gate-one-src/release.sh`
+`PAGES_REMOTE`, `PAGES_BRANCH`, `SITE_BASE_URL` and `SITE_LATEST_URL`
+override the defaults. The same release label is used by `../gate-one-src/release.sh`
 for the documentation archive, so the archive and the live site share
 the same absolute links.
 
