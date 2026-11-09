@@ -1,0 +1,124 @@
+{
+  "publicUrl": "https://auth.example.com",
+  "listen": ":8081",
+  "redis": {
+    "url": "redis://redis:6379/0",
+    "passwordEnv": "REDIS_PASSWORD",
+    "prefix": "cladone:iam:v1:",
+    "authPrefix": "cladone:auth:v1:"
+  },
+  "tenants": [
+    {
+      "id": "company",
+      "clientId": "gate-one",
+      "clientSecretEnv": "MYCOMPANY_IAM_CLIENT_SECRET",
+      "redirectUris": [
+        "https://login.example.com/auth/callback"
+      ],
+      "postLogoutRedirectUris": [
+        "https://app.example.com/"
+      ],
+      "audiences": [
+        "https://mcp.example.com"
+      ],
+      "upstreams": {
+        "google": {
+          "issuer": "https://accounts.google.com",
+          "clientIdEnv": "GOOGLE_CLIENT_ID",
+          "clientSecretEnv": "GOOGLE_CLIENT_SECRET",
+          "hostedDomain": "example.com",
+          "scopes": [
+            "openid",
+            "profile",
+            "email"
+          ]
+        },
+        "microsoft": {
+          "issuer": "https://login.microsoftonline.com/common/v2.0",
+          "clientIdEnv": "MICROSOFT_CLIENT_ID",
+          "clientSecretEnv": "MICROSOFT_CLIENT_SECRET",
+          "optional": true,
+          "scopes": [
+            "openid",
+            "profile",
+            "email"
+          ]
+        }
+      },
+      "defaultRoles": [
+        "user"
+      ],
+      "allowedDomains": [
+        "example.com"
+      ],
+      "adminEmails": [
+        "admin@example.com"
+      ],
+      "accessTokenTtlSeconds": 600,
+      "idTokenTtlSeconds": 600,
+      "refreshTokenTtlSeconds": 2592000,
+      "sessionTtlSeconds": 43200,
+      "mappings": [
+        {
+          "claim": "groups",
+          "values": [
+            "admins"
+          ],
+          "roles": [
+            "admin"
+          ]
+        }
+      ],
+      "rules": [
+        {
+          "when": [
+            {
+              "claim": "email",
+              "match": "domain",
+              "values": [
+                "example.com"
+              ]
+            }
+          ],
+          "then": {
+            "roles": [
+              "employee"
+            ],
+            "copyClaims": [
+              {
+                "from": "email",
+                "to": "email_domain",
+                "transforms": [
+                  "keep:@:-1",
+                  "lower"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "when": [
+            {
+              "claim": "groups",
+              "match": "glob",
+              "values": [
+                "team-*"
+              ]
+            }
+          ],
+          "then": {
+            "rolesFrom": [
+              {
+                "claim": "groups",
+                "transforms": [
+                  "keep:-:-1",
+                  "lower"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
