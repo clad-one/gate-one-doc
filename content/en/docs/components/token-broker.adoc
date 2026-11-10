@@ -82,11 +82,15 @@ docker run -d --name token-broker \
   internal network only. Gate One reaches it at `tokenBroker.url`
   (default `http://token-broker:4000`).
 * **Browser routes** (`/connections`, `/connect/`, `/oauth/`) are
-  published through the **login host**. Gate One can serve them itself —
-  set `tokenBroker.browserHost`; it authenticates the user with the
-  configured provider and injects the identity — or an auth layer can
-  proxy them (auth-bridge does). Either provider type works, so the token
-  broker is not tied to auth-bridge. Do not expose the broker itself.
+  published through the **login host** and served by **Gate One**:
+  set `tokenBroker.browserHost`; Gate One authenticates the user with the
+  configured provider and injects the identity. Do not expose the broker
+  itself.
+* **Only Gate One holds `TOKEN_BROKER_SHARED_SECRET`** (with the broker
+  itself). auth-bridge no longer receives it: its legacy broker routes
+  are inert (503). An ingress may route the login host to Gate One, but
+  it must never proxy the browser routes directly to the broker: the
+  broker would answer 401 without the secret.
 * **State**: the encrypted SQLite store lives on the `/data` volume; the
   key is in the environment, so a backup needs both the volume and the
   key.
@@ -233,6 +237,13 @@ admin action is audited in the broker log.
 
 The operator API is disabled when the secret is absent. The broker must
 stay on the internal network: the admin secret is the only credential.
+
+The shared secret is a **bearer** secret: it proves that the caller
+knows it, not who the caller is. That is why only Gate One (and the
+broker) may hold it; the infrastructure check refuses a configuration
+where another service (auth-bridge included) receives
+`TOKEN_BROKER_SHARED_SECRET`. The browser routes are always served by
+Gate One, never by a second proxy pointing at the broker.
 
 == Security posture
 
