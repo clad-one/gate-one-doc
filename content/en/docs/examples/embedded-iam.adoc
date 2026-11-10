@@ -180,6 +180,126 @@ drops the last field (`a@b@c` -> `a@b`), and `keep:-:-1` turns
 `team-support` into `support`. Reserved claims (`iss`, `sub`, `aud`,
 `roles`, `scope`, `email`, …) can never be written.
 
+[[pre-provisioning]]
+=== Before the first login (pre-provisioning)
+
+A federated user has **no IAM record until the first login** (JIT). To
+give rights to someone who has never signed in, put the condition in a
+`rule`: it is evaluated at each login, so the rights are already there
+the first time — without creating a user in advance.
+
+==== By email
+
+`when.claim: "email"` accepts one value or a list. With `match: "exact"`
+(the default), the list is effectively a group of emails:
+
+[source,json]
+----
+"rules": [{
+  "when": [{
+    "claim": "email",
+    "match": "exact",
+    "values": ["alice@example.com", "bob@example.com"]
+  }],
+  "then": { "roles": ["support"], "scopes": ["read:things"] }
+}]
+----
+
+When Alice or Bob signs in for the first time, the IAM creates the user
+and issues the `support` role and the `read:things` scope.
+
+For a whole domain or team, use `domain`, `suffix` or `glob`:
+
+[source,json]
+----
+"rules": [
+  { "when": [{ "claim": "email", "match": "domain",
+               "values": ["example.com"] }],
+    "then": { "roles": ["employee"] } },
+  { "when": [{ "claim": "email", "match": "glob",
+               "values": ["*@team.example.com"] }],
+    "then": { "roles": ["contractor"] } }
+]
+----
+
+`exact` is **case-sensitive**; `domain`, `prefix`, `suffix` and `glob` are
+case-insensitive. Lowercase the addresses in the configuration (or use
+`glob`) if the IdP does not guarantee the case.
+
+==== By upstream group (recommended)
+
+The cleanest "group → role" is the group managed by the IdP (Google
+Workspace, Entra, Keycloak…): the `groups` claim is mapped at login.
+
+[source,json]
+----
+"mappings": [
+  { "claim": "groups", "values": ["support"], "roles": ["support"] },
+  { "claim": "groups", "values": ["finance"], "roles": ["finance"] }
+]
+----
+
+or with the richer rule engine:
+
+[source,json]
+----
+"rules": [{
+  "when": [{ "claim": "groups", "values": ["support"] }],
+  "then": { "roles": ["support"], "claims": { "department": "support" } }
+}]
+----
+
+Membership is maintained in the IdP: removing the user from the group
+removes the role at the next login.
+
+==== What is evaluated at login
+
+[source,text]
+----
+first login
+  -> JIT user (issuer, subject, email)
+  -> defaultRoles
+  -> mappings / legacy groupRoles (upstream claims)
+  -> rules (email, domain, groups, sub, custom claims)
+  -> persisted grants (user set; the user must already exist)
+----
+
+[cols="2,1,2",options="header"]
+|===
+| Approach | Named group? | Lifecycle
+
+| `rules` + email list | the list is the group | static; edit the config, reload
+| `rules` + domain/glob | no | static
+| IdP group (`groups` claim) | yes, managed in the IdP | automatic at the next login
+| `AdminEmails` | no (admin only) | static, case-insensitive email list
+| `user set -issuer/-sub` | no (persisted exception) | requires the user to exist
+|===
+
+`AdminEmails` is the built-in email list that grants `admin` to those
+addresses; it is the only email-to-role shortcut outside the rules.
+
+A rule result is **never persisted** on the user: it is recomputed at
+each login. Removing an address from the list (or the user from the IdP
+group) removes the role at the next login, but the JIT account remains
+with any persisted grants. To remove the account itself, use
+`cladone-auth user delete` once the user has signed in at least once.
+
+`user set` needs an existing user (issuer/sub), so it cannot
+pre-provision a federated identity. For a **local** account, create it
+explicitly with its rights — it is a local identity, not the federated
+one:
+
+[source,bash]
+----
+cladone-auth user create -config embedded-iam.json -tenant company \
+  -kind local -email alice@example.com -password '...' \
+  -roles support
+----
+
+The `email` claim must be present in the upstream token: the default
+scopes include `email`. If the IdP does not expose it, use `groups`
+or `sub` as the rule condition instead.
+
 == Users and grants
 
 The rules above cover the common case. For a one-off exception, assign
