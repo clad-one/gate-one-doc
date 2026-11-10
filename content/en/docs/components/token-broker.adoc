@@ -202,13 +202,26 @@ Gate One declares the broker once and a provider per route:
 "tokenBroker": {
   "url": "http://token-broker:4000",
   "secretEnv": "TOKEN_BROKER_SHARED_SECRET",
-  "links": { "services": { "label": "Services", "url": "https://login.example.com/connections" } }
+  "browserHost": "login.example.com",
+  "links": {
+    "services": {
+      "label": "Services",
+      "url": "https://login.example.com/connections"
+    }
+  }
 },
 "routes": [{
   "host": "api.example.com", "path": "/github/*", "backend": "https://api.github.com",
   "auth": {}, "upstream": { "tokenBroker": { "provider": "github" } }
 }]
 ----
+
+`browserHost` is the public host on which Gate One serves the browser
+routes. It may be omitted when `links.services.url` is an absolute URL:
+Gate One derives the host from it (here `login.example.com`). Set it
+explicitly when the link is absent, relative, or served by another host.
+If both are absent, Gate One does not serve the page; an ingress must
+never proxy those paths directly to the broker.
 
 See link:/docs/features/delegated-credentials/[Delegated credentials] for
 the route details and link:/docs/config/gate-one/#field-tokenBroker[the
