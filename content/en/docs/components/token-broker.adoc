@@ -19,6 +19,34 @@ It is deliberately **not** an identity provider and **not** a reverse
 proxy: Gate One keeps its own identity; the broker only obtains and
 stores the user's token for an upstream service.
 
+== Pause, resume and erase
+
+Disconnect is a **pause**, not a deletion. The credential stays stored
+and **Connect** resumes the same delegation; the provider is never
+contacted by pause or erase.
+
+[cols="1,2,1",options="header"]
+|===
+| Action | Effect | Provider called?
+
+| **Connect** | starts the OAuth flow when nothing is stored, or resumes a
+paused delegation with the stored token (refresh if needed; OAuth if the
+token can no longer work) | on a new authorization only
+| **Disconnect** | pauses the delegation: Gate One receives
+`403 delegation_disabled`; the credential is kept | no
+| **Erase** | deletes the stored credential and metadata **locally** | no
+| **Erase all my data** | deletes every stored credential of the user | no
+|===
+
+Erase is local only on purpose: the same credential may be used by the
+user elsewhere. To remove the application authorization itself, the user
+revokes it at the provider. Consequently the broker never calls a
+provider revocation endpoint; `revocation_endpoint` is accepted in the
+registry but is not used.
+
+Rows are listed even when their provider is disabled or removed from
+`providers.json`: the user can still **Erase** them.
+
 == Where the code lives
 
 The reference implementation is
@@ -81,6 +109,8 @@ Environment variables (all optional unless marked):
 | `TOKEN_BROKER_STATE_TTL_SECONDS` | no | authorization state lifetime (default 600)
 | `TOKEN_BROKER_REFRESH_SKEW_SECONDS` | no | refresh this long before expiry (default 60)
 | `TOKEN_BROKER_HTTP_TIMEOUT_SECONDS` | no | provider HTTP timeout (default 15)
+| `TOKEN_BROKER_ADMIN_SECRET` | no | operator API secret (`X-Broker-Admin-Secret`). Absent = admin API disabled (404). Gate One does not hold it |
+| `TOKEN_BROKER_RETENTION_DAYS` | no | erase **paused** connections after N days. `0` (default) = keep forever; active delegations are never purged |
 |===
 ====
 
@@ -121,7 +151,7 @@ A provider is a **registry entry, not code**. Edit `providers.json`:
 | `pkce` | send S256 PKCE (default `true`)
 | `refresh` | allow the refresh-token grant (default `true`)
 | `token_auth_method` | `client_secret_post` (default), `client_secret_basic` or `none`
-| `revocation_endpoint` | optional RFC 7009 endpoint
+| `revocation_endpoint` | accepted but unused (erase is local only)
 | `authorization_params` | extra string parameters; protocol params cannot be overridden
 |===
 
@@ -140,18 +170,24 @@ Gate One references the provider **name**
 
 | `GET` | `/health` | liveness/readiness (no auth)
 | `GET` | `/providers` | enabled provider names and connection status
-| `GET` | `/connections` | browser page (HTML/JSON): connect/disconnect
-| `POST` | `/connections/{provider}/disconnect` | delete the local token (and revoke)
+| `GET` | `/connections` | browser page (HTML/JSON): states and actions
+| `POST` | `/connections/{provider}/disconnect` | pause the delegation (no delete, no provider call)
+| `POST` | `/connections/{provider}/connect` | resume a paused delegation (OAuth fallback)
+| `POST` | `/connections/{provider}/erase` | delete the local credential (no provider call)
+| `POST` | `/connections/erase-all` | delete every credential of the user
 | `GET` | `/connect/{provider}` | start the authorization-code flow
 | `GET` | `/oauth/{provider}/callback` | exchange the code, store the tokens
-| `GET` | `/token/{provider}` | fresh access token for Gate One, or an explicit error
-| `DELETE` | `/token/{provider}` | disconnect / delete
+| `GET` | `/token/{provider}` | fresh access token, or an explicit error
+| `DELETE` | `/token/{provider}` | internal local deletion (works for a disabled provider)
+| `GET` | `/security` | redacted posture (shared secret)
+| `GET/POST/DELETE` | `/admin/...` | operator API (separate admin secret)
 |===
 
 `/token/{provider}` answers `200` with the access token, `404`
-`not_connected`, `409` `reauthorization_required` (refresh rejected; the
-row is deleted) or `502` `upstream_unavailable` — each non-200 with a
-`connect_url`.
+`not_connected`, `403` `delegation_disabled` (the user paused the
+delegation; the credential is kept), `409` `reauthorization_required`
+(refresh rejected; the row is deleted) or `502` `upstream_unavailable` —
+each non-200 with a `connect_url`.
 
 == Link it to Gate One
 
@@ -173,6 +209,44 @@ Gate One declares the broker once and a provider per route:
 See link:/docs/features/delegated-credentials/[Delegated credentials] for
 the route details and link:/docs/config/gate-one/#field-tokenBroker[the
 `tokenBroker` reference].
+
+== Operator API
+
+Set `TOKEN_BROKER_ADMIN_SECRET` and call the admin endpoints with
+`X-Broker-Admin-Secret` from the internal network:
+
+[source,bash]
+----
+curl -H "X-Broker-Admin-Secret: $ADMIN" http://token-broker:4000/admin/users
+curl -H "X-Broker-Admin-Secret: $ADMIN" \
+  http://token-broker:4000/admin/users/<sub>
+curl -X POST -H "X-Broker-Admin-Secret: $ADMIN" \
+  http://token-broker:4000/admin/users/<sub>/github/pause
+curl -X DELETE -H "X-Broker-Admin-Secret: $ADMIN" \
+  http://token-broker:4000/admin/users/<sub>
+----
+
+The operator can list users and connections, pause/resume a delegation,
+and delete credentials, but **cannot add or replace** a credential: no
+write endpoint exists. Responses never contain a token value. Every
+admin action is audited in the broker log.
+
+The operator API is disabled when the secret is absent. The broker must
+stay on the internal network: the admin secret is the only credential.
+
+== Security posture
+
+`GET /security` (shared secret) returns a redacted view for
+`gate-one doctor` and the infrastructure checks: public base URL,
+`returnTo` hosts, encryption enabled, admin API enabled, retention,
+database permissions, enabled providers (HTTPS, PKCE, refresh, auth
+method), token/user/paused/orphan counts. No secret and no token value is
+returned.
+
+The broker never validates the **quality** of the shared secret or of the
+provider secrets: that belongs to the deployment/provider. It does
+enforce the functional gates: secret present, AES key = 32 bytes, HTTPS
+endpoints, strict provider fields, local file permissions.
 
 == Licence
 
