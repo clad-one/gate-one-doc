@@ -87,6 +87,15 @@ def type_label(root: dict[str, Any], schema: dict[str, Any]) -> str:
         return "value"
     if "$ref" in original and original["$ref"].startswith("#/properties/"):
         return "object"
+    # Union (e.g. a claim value: one string or a list of strings).
+    for key in ("oneOf", "anyOf"):
+        if key in schema:
+            parts: list[str] = []
+            for sub in schema[key]:
+                label = type_label(root, sub)
+                if label not in parts:
+                    parts.append(label)
+            return " or ".join(parts)
     kind = schema.get("type", "value")
     if kind == "array":
         items = schema.get("items", {})
@@ -96,6 +105,14 @@ def type_label(root: dict[str, Any], schema: dict[str, Any]) -> str:
             return "array of object"
         return f"array of {type_label(root, items)}"
     if kind == "object":
+        if not schema.get("properties"):
+            # Free-form map: document the key/value shape instead of a
+            # bare "object" with no link (there is no section to link to).
+            addl = schema.get("additionalProperties")
+            if addl is True or addl == {}:
+                return "map of string to any"
+            if isinstance(addl, dict):
+                return f"map of string to {type_label(root, addl)}"
         return "object"
     label = TYPE_NAMES.get(kind, str(kind))
     if "const" in schema:
@@ -117,6 +134,11 @@ def describe(schema: dict[str, Any]) -> str:
     if desc:
         bits.append(desc)
     facts: list[str] = []
+    addl = schema.get("additionalProperties")
+    if isinstance(addl, dict):
+        value_desc = (addl.get("description") or "").strip()
+        if value_desc:
+            facts.append(value_desc)
     if "default" in schema:
         facts.append(f"Default: `{json.dumps(schema['default'])}`.")
     if "minimum" in schema:

@@ -132,7 +132,7 @@ The optional `cladone-auth` embedded IAM configuration. Secrets are read from th
 | Email addresses granted the admin role.
 
 | [[field-tenants-groupRoles]] `groupRoles`
-| object
+| map of string to array of string
 | no
 | Map an upstream group/claim value to IAM roles.
 
@@ -335,7 +335,7 @@ One claim-to-rights mapping rule.
 | IAM scopes added when the rule matches.
 
 | [[field-tenants-mappings-claims]] `claims`
-| object
+| map of string to any
 | no
 | Claims copied into issued tokens when the rule matches. Reserved claims (iss, sub, aud, exp, iat, jti, nonce, tenant, roles, scope, sid, email, preferred_username) are refused.
 
@@ -408,7 +408,7 @@ Rights granted when every condition matches.
 | Constant IAM scopes.
 
 | [[field-tenants-rules-then-claims]] `claims`
-| object
+| map of string to any
 | no
 | Constant claims copied into issued tokens. Reserved claims are refused.
 

@@ -168,7 +168,7 @@ The signed document referenced by `publisherFeed.file`: compatible Gate One vers
 | Release status. revoked refuses the plugin in enforce mode (when a digest is present).
 
 | [[field-plugins-requires]] `requires`
-| object
+| map of string to string
 | no
 | Version constraints on other components, for example {"gate-one": ">=1.4 <2.0"}.
 

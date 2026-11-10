@@ -158,7 +158,7 @@ Optional offline signed licence (Ed25519), one token per period. Absent, invalid
 | Ed25519 public key, base64 (raw 32 bytes). Public by design, safe to commit. Legacy single-key form (tokens without kid).
 
 | [[field-license-publicKeys]] `publicKeys`
-| object
+| map of string to string
 | no
 | kid → Ed25519 public key (base64). Several keys can be valid at once during a rotation; tokens carry their signed kid. An unknown kid is rejected.
 
@@ -593,7 +593,7 @@ Embedded development IdP. Loopback-only; never production.
 | OAuth scopes granted to this development user.
 
 | [[field-authProvider-dev-users-claims]] `claims`
-| object
+| map of string to any
 | no
 | Additional claims returned for this development user (string values).
 
@@ -780,9 +780,9 @@ Identity policy conditions, evaluated AFTER authentication on the verified token
 | Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
 
 | [[field-mcpSets-identity-claims]] `claims`
-| object
+| map of string to string or array of string
 | no
-| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+| Token claims: key = claim name, value = one accepted string or a list of accepted strings (OR / anyOf on the same claim). "*" = the claim is present. All keys combine with AND. A token claim that is itself a list (groups, roles…) matches when one of its elements matches. Example: {"email": ["alice@example.com", "a.rolland@example.com"], "email_verified": "true"}.
 
 | [[field-mcpSets-identity-user]] `user`
 | string
@@ -837,7 +837,7 @@ Optional signed publisher feed: compatible Gate One versions, external component
 | Feed path, relative to the config file. Minimum length: 1.
 
 | [[field-publisherFeed-keys]] `keys`
-| object
+| map of string to string
 | yes
 | Feed signing keys: key id -> base64 Ed25519 public key. The feed's signature key id must be present. Provisioned out-of-band.
 
@@ -1233,7 +1233,7 @@ Narrow the subscription by host, route, tenant, method, status class or sample r
 | Literal application hosts sharing this route body. Expanded at load into one concrete route per host; auth.provider is inferred from the ssoGroups provider whose cookieDomain covers each host. Mutually exclusive with host and wildcard.
 
 | [[field-routes-wildcard]] `wildcard`
-| object
+| map of string to array of string
 | no
 | Named host/backend expansion — one route, N sites. Keys = capture names ({name} in host and backend), values = the ALLOW-LISTS of DNS labels they may take (a-z0-9, hyphens, no dots). The route expands at load into one concrete route per label; a label outside the lists has no route (fail-closed: the backend is never attacker-derived). With rewriteBody enabled, the expansion also compiles the cross-route map: an origin of another variant (e.g. es.wikipedia.org in the English edition) is rewritten to that sibling's public host; ambiguous alias mappings are left alone, and route-local except prefixes do not apply to siblings.
 
@@ -1349,7 +1349,7 @@ Join to a backend outside the internal network (proxified external site — e.g.
 | Explicit value of the Host header sent to the backend, when it must differ from both the public host and the backend's origin (rare). Precedence over host.
 
 | [[field-routes-upstream-headers]] `headers`
-| object
+| map of string to string
 | no
 | Static request headers set toward the backend (Set: overwrite any value the client may have sent). Uses: get through an origin basic auth ("Authorization": "Basic ${MYSITE_BASIC_AUTH}") or the Cloudflare Access service tokens (CF-Access-Client-Id / CF-Access-Client-Secret). Values with ${VAR} interpolation from the container environment — missing variable = fatal error at load (never a silent empty credential); empty value = header removed from the request. Values are never logged.
 
@@ -1405,7 +1405,7 @@ Adjustment of the backend's RESPONSE headers before sending to the browser — t
 | Field | Type | Required | Description
 
 | [[field-routes-upstream-responseHeaders-set]] `set`
-| object
+| map of string to string
 | no
 | Headers added/overwritten on the response; values with ${VAR} interpolation (container environment); empty value = header removed (never transmitted empty).
 
@@ -1431,12 +1431,12 @@ Rewriting of the HTML body (200 text/html only, STREAMING — O(1) memory): the 
 | true = engine active (the block is present to stay declarative; absent = disabled).
 
 | [[field-routes-upstream-rewriteBody-except]] `except`
-| array of value
+| array of string or object
 | no
 | Exceptions by path prefix: string entry ("/reading/…") = these URLs stay at the ORIGIN (out-of-proxy reading link); object entry {path, to} = rewritten to an ALTERNATIVE public base. Longest prefix wins. '/…' prefix mandatory, '?'/'#' forbidden, 256 bytes max; 'to' = absolute http(s) URL, trailing slashes trimmed.
 
 | [[field-routes-upstream-rewriteBody-targets]] `targets`
-| object
+| map of string to string
 | no
 | Explicit cross-route mappings: backend origin host -> public route host. Bare hosts only (no scheme, port, path or wildcard); the key must be an origin of a declared route and the value the public host of a declared route. The request's scheme and port are inherited. Automatic wildcard siblings are added before these entries; a conflicting mapping is refused at load.
 
@@ -1520,7 +1520,7 @@ Authentication policy. Empty ({}) = authentication ALWAYS required. auth.when ho
 | ID of the authProviders entry used to verify this route. Empty = defaultAuthProvider. The binding is static and compiled at load; a request cannot choose another provider.
 
 | [[field-routes-auth-when]] `when`
-| value
+| object or array of object
 | no
 | Technical conditions deciding WHEN authentication is required. Empty = always. One object = AND; an array = OR of ANDs.
 
@@ -1551,9 +1551,9 @@ Identity policy conditions, evaluated AFTER authentication on the verified token
 | Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
 
 | [[field-routes-auth-identity-claims]] `claims`
-| object
+| map of string to string or array of string
 | no
-| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+| Token claims: key = claim name, value = one accepted string or a list of accepted strings (OR / anyOf on the same claim). "*" = the claim is present. All keys combine with AND. A token claim that is itself a list (groups, roles…) matches when one of its elements matches. Example: {"email": ["alice@example.com", "a.rolland@example.com"], "email_verified": "true"}.
 
 | [[field-routes-auth-identity-user]] `user`
 | string
@@ -1603,17 +1603,17 @@ Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two famil
 | Exact HTTP method (e.g. "POST").
 
 | [[field-routes-rateLimit-when-query]] `query`
-| object
+| map of string to string
 | no
 | Exact equality of URL parameters.
 
 | [[field-routes-rateLimit-when-header]] `header`
-| object
+| map of string to string
 | no
 | Exact equality of headers. Caution: a header is forgeable by the client — never put an authorization there (use roles instead).
 
 | [[field-routes-rateLimit-when-body]] `body`
-| object
+| map of string to any
 | no
 | Exact equality of fields of the parsed JSON body (flattened one level).
 
@@ -1628,9 +1628,9 @@ Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two famil
 | Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
 
 | [[field-routes-rateLimit-when-claims]] `claims`
-| object
+| map of string to string or array of string
 | no
-| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+| Token claims: key = claim name, value = one accepted string or a list of accepted strings (OR / anyOf on the same claim). "*" = the claim is present. All keys combine with AND. A token claim that is itself a list (groups, roles…) matches when one of its elements matches. Example: {"email": ["alice@example.com", "a.rolland@example.com"], "email_verified": "true"}.
 
 | [[field-routes-rateLimit-when-user]] `user`
 | string
@@ -1680,17 +1680,17 @@ Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two famil
 | Exact HTTP method (e.g. "POST").
 
 | [[field-routes-quota-when-query]] `query`
-| object
+| map of string to string
 | no
 | Exact equality of URL parameters.
 
 | [[field-routes-quota-when-header]] `header`
-| object
+| map of string to string
 | no
 | Exact equality of headers. Caution: a header is forgeable by the client — never put an authorization there (use roles instead).
 
 | [[field-routes-quota-when-body]] `body`
-| object
+| map of string to any
 | no
 | Exact equality of fields of the parsed JSON body (flattened one level).
 
@@ -1705,9 +1705,9 @@ Rate-limit / quota triggering conditions (rateLimit.when, quota.when). Two famil
 | Required granted scopes (token `scope` claim, see auth-bridge's X-Scopes). AND between them. Example of a fixed name: profile (default client scope, always present).
 
 | [[field-routes-quota-when-claims]] `claims`
-| object
+| map of string to string or array of string
 | no
-| Token claims: value "*" = mere presence, otherwise comparison of the stringified value (JSON boolean → "true"/"false", numbers → Go format). AND between them. NB: client_credentials tokens (service accounts) have neither email nor profile claims.
+| Token claims: key = claim name, value = one accepted string or a list of accepted strings (OR / anyOf on the same claim). "*" = the claim is present. All keys combine with AND. A token claim that is itself a list (groups, roles…) matches when one of its elements matches. Example: {"email": ["alice@example.com", "a.rolland@example.com"], "email_verified": "true"}.
 
 | [[field-routes-quota-when-user]] `user`
 | string
@@ -2120,7 +2120,7 @@ Content-Security-Policy emitted (or amended) by the gateway — the only compone
 | "inline" (default) = only <script> tags WITHOUT src receive the nonce (external scripts stay governed by the host allow-list); "all" = every <script> tag. Nonce mode only. A tag that already carries a nonce is never rewritten.
 
 | [[field-routes-csp-directives]] `directives`
-| object
+| map of string to string or array of string
 | no
 | Directive name → sources, as one string ("'self' https://x") or an array. The gateway appends the nonce (nonce mode) and the injected scripts' / guard stylesheet's hashes to the effective script-src / style-src, and report-uri when reportTo is set. To let the guard's nonce/hash pass, declare style-src (e.g. "'self'").
 
@@ -2141,17 +2141,17 @@ User badge injected by the guard script once authenticated: collapsed on the top
 | Top edge (default right).
 
 | [[field-routes-userBadge-claims]] `claims`
-| value
+| boolean or array of string
 | no
 | What the expanded badge displays as claims: true = every claim of the session, false = none, a list = only these (missing ones omitted).
 
 | [[field-routes-userBadge-roles]] `roles`
-| value
+| boolean or array of string
 | no
 | Session roles displayed as chips in the expanded badge: true = every role, false = none, a list = only these (same data as the auth.identity.roles conditions, served by the /__gate-one/auth probe).
 
 | [[field-routes-userBadge-scopes]] `scopes`
-| value
+| boolean or array of string
 | no
 | Granted scopes displayed as chips in the expanded badge: true = every scope, false = none, a list = only these.
 
@@ -2223,9 +2223,9 @@ UI gating rule by config — for fronts whose markup cannot be modified (if you 
 | Visible if AT LEAST ONE of these scopes is granted.
 
 | [[field-routes-uiGate-claims]] `claims`
-| object
+| map of string to string or array of string
 | no
-| All must match ("*" = presence).
+| All keys must match; each value is one accepted string or a list (OR / anyOf); "*" = presence. A token claim that is itself a list matches when one element matches. Example: {"email": ["alice@example.com", "a.rolland@example.com"]}.
 
 | [[field-routes-uiGate-auth]] `auth`
 | string (one of: `after`, `before`)

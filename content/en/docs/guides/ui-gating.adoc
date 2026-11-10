@@ -60,6 +60,13 @@ Markup wins over the equivalent `uiGate` rule: an element carrying a
 `data-gtw-auth` (or `data-gtw-auth-hidden`) attribute is not affected
 by a config rule for the same dimension.
 
+`data-gtw-claims` (and `uiGate[].claims`) takes a JSON object: each key
+must match, each value is one accepted string or a list of accepted
+strings (OR / anyOf on the same claim), and `"*"` means "claim present".
+A token claim that is itself a list (`groups`, token roles…) matches
+when one element matches. Example:
+`data-gtw-claims='{"email": ["alice@example.com", "a.rolland@example.com"]}'`.
+
 == Control families
 
 The guard distinguishes three kinds of interaction:

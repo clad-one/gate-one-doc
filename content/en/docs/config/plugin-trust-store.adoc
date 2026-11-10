@@ -21,7 +21,7 @@ The local allow-list referenced by `usage.trustStore`. It is provisioned out-of-
 | Field | Type | Required | Description
 
 | [[field-keys]] `keys`
-| object
+| map of string to string
 | yes
 | Signing keys: key id -> raw Ed25519 public key, base64 (standard or raw URL encoding).
 
@@ -31,7 +31,7 @@ The local allow-list referenced by `usage.trustStore`. It is provisioned out-of-
 | Allowed plugin names. Exact names or glob patterns interpreted with path.Match (for example com.cladone.*).
 
 | [[field-allowedDependencies]] `allowedDependencies`
-| object
+| map of string to string
 | no
 | Allowed dependency digests: name -> sha256 digest.
 

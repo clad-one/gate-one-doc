@@ -53,6 +53,21 @@ is allowed** after a successful authentication:
 
 An empty `auth` (`{}`) means authentication is **always** required.
 
+A claim condition accepts one value or a list: the listed values are
+OR-ed (anyOf) on the same claim, while distinct keys still combine with
+AND. Array-valued token claims (`groups`, token roles…) match when one
+element matches.
+
+[source,json]
+----
+"identity": {
+  "claims": {
+    "email": ["alice@example.com", "a.rolland@example.com"],
+    "email_verified": "true"
+  }
+}
+----
+
 == JWT provider
 
 [source,json]
