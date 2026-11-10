@@ -65,9 +65,10 @@ POST to verify, and the page itself must be protected.
 
 . `GET /` without a clearance is answered by a challenge page **at the
   same URL** (no redirect). The backend is not called.
-. The widget solves the challenge (invisible unless Cloudflare requires
-  an interaction) and posts the token to
-  `/__gate-one/turnstile/verify`.
+. The widget solves the challenge and posts the token to
+  `/__gate-one/turnstile/verify`. With a Non-Interactive widget,
+  `interaction-only` keeps it hidden (silent verification); set
+  `challenge.appearance: "always"` to show its loading spinner.
 . Gate One verifies it, sets `gate_one_turnstile` (HttpOnly, 30 min) and
   redirects to `/`.
 . The page is served; the backend was called once.
