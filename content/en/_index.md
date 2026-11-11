@@ -10,12 +10,12 @@ weight: 10
 Once and for all:
 - Cross-domain SSO authentication, internal AIM.
 - Front-end and back-end access rights.
-- Cloudflare Turnstile protection.
+- Cloudflare Turnstile protection on FORMs or endpoints
 - PWA and REST to MCP.
 - Service aggregation and filtering, front-end proxy.
 - Customizable and injectable user interface. 
 - All combinations are possible.
-- Versionable configuration via files.
+- Versionable configuration files.
 
 Dynamic instrumentation—applications run without modification.
 
