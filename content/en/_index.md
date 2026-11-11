@@ -5,16 +5,19 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="Brings all your features together, once and for all." height="med" color="dark" %}}
+{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="A Gateway to centralize you common features." height="med" color="dark" %}}
 
-Once and for all: 
-SSO with front-end/back-end interception,
-PWA and REST to MCP, dynamic.  
-Service aggregation and filtering, front-end proxy, usage events.  
-Customizable and injectable user interface. 
-All combinations are possible. 
+Once and for all: +
+- Cross-domain SSO authentication, internal AIM +
+- Front-end and back-end access configuration + 
+- PWA and REST to MCP. +
+- Service aggregation and filtering, front-end proxy +
+- Customizable and injectable user interface. +
+- All combinations are possible. +
+- Versionable configuration via files. +
 
-No SDK, no fork, no frontend rewrite.
+Dynamic instrumentation—applications run without modification.
+
 
 <a class="btn btn-lg btn-primary me-3 mb-3" href="/docs/features/">See the features</a>
 <a class="btn btn-lg btn-outline-light mb-3" href="/docs/examples/getting-started/">Start in two commands</a>
