@@ -113,8 +113,8 @@ Environment variables (all optional unless marked):
 | `TOKEN_BROKER_STATE_TTL_SECONDS` | no | authorization state lifetime (default 600)
 | `TOKEN_BROKER_REFRESH_SKEW_SECONDS` | no | refresh this long before expiry (default 60)
 | `TOKEN_BROKER_HTTP_TIMEOUT_SECONDS` | no | provider HTTP timeout (default 15)
-| `TOKEN_BROKER_ADMIN_SECRET` | no | operator API secret (`X-Broker-Admin-Secret`). Absent = admin API disabled (404). Gate One does not hold it |
-| `TOKEN_BROKER_RETENTION_DAYS` | no | erase **paused** connections after N days. `0` (default) = keep forever; active delegations are never purged |
+| `TOKEN_BROKER_ADMIN_SECRET` | no | operator API secret (`X-Broker-Admin-Secret`). Absent = admin API disabled (404). Gate One does not hold it
+| `TOKEN_BROKER_RETENTION_DAYS` | no | erase **paused** connections after N days. `0` (default) = keep forever; active delegations are never purged
 |===
 ====
 
