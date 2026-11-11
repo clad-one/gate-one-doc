@@ -1029,6 +1029,16 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | no
 | Versioned rate tables, keyed by version. Each entry names its metric and effective date.
 
+| [[field-usage-outbox]] `outbox`
+| <<config-usage-outbox,object>>
+| no
+| Bounded local delivery buffer for billing records. It survives a transport outage for a few hours, then refuses new billable requests; it is not a financial archive.
+
+| [[field-usage-sink]] `sink`
+| <<config-usage-sink,object>>
+| no
+| Delivery of billing records: signed push to the managed endpoint, or a signed export bundle when the endpoint is unreachable (airgap).
+
 | [[field-usage-allowanceFile]] `allowanceFile`
 | string
 | no
@@ -1332,6 +1342,93 @@ Optional JSON-body extraction.
 | integer
 | no
 | Minimum: 0.
+
+|===
+
+[[config-usage-outbox]]
+==== usage.outbox
+
+Bounded local delivery buffer for billing records. It survives a transport outage for a few hours, then refuses new billable requests; it is not a financial archive.
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-outbox-dir]] `dir`
+| string
+| no
+| Outbox directory. Default ./usage-outbox, resolved from the configuration file.
+
+| [[field-usage-outbox-maxAge]] `maxAge`
+| string
+| no
+| Maximum age of the oldest pending record (duration, e.g. 6h). Default 6h.
+
+| [[field-usage-outbox-maxBytes]] `maxBytes`
+| integer
+| no
+| Maximum pending bytes. Default 512 MiB. Minimum: 0.
+
+| [[field-usage-outbox-maxRecords]] `maxRecords`
+| integer
+| no
+| Maximum pending records. Default 50000. Minimum: 0.
+
+| [[field-usage-outbox-onFull]] `onFull`
+| string (one of: `block`, `drop`)
+| no
+| block (default): new billable requests answer 503 when the buffer is full. drop: discard (counted, logged) — never silent but loses revenue.
+
+|===
+
+[[config-usage-sink]]
+==== usage.sink
+
+Delivery of billing records: signed push to the managed endpoint, or a signed export bundle when the endpoint is unreachable (airgap).
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-sink-url]] `url`
+| string
+| no
+| Managed ingest endpoint (http/https). Empty = export only.
+
+| [[field-usage-sink-secretEnv]] `secretEnv`
+| string
+| no
+| Environment variable holding the Bearer secret sent with every push.
+
+| [[field-usage-sink-signingKeyEnv]] `signingKeyEnv`
+| string
+| no
+| Environment variable holding the base64url 32-byte Ed25519 seed that signs each batch and each export bundle. Required when metrics are configured.
+
+| [[field-usage-sink-batchRecords]] `batchRecords`
+| integer
+| no
+| Maximum records per batch. Default 500. Minimum: 1.
+
+| [[field-usage-sink-batchBytes]] `batchBytes`
+| integer
+| no
+| Maximum batch size in bytes. Default 1 MiB. Minimum: 1.
+
+| [[field-usage-sink-batchWaitMs]] `batchWaitMs`
+| integer
+| no
+| Maximum wait before flushing a partial batch. Default 1000 ms. Minimum: 1.
+
+| [[field-usage-sink-exportDir]] `exportDir`
+| string
+| no
+| Directory receiving signed export bundles (bundle .jsonl, .sig and manifest). Required for the airgap profile.
+
+| [[field-usage-sink-exportAfterSeconds]] `exportAfterSeconds`
+| integer
+| no
+| How long the push may fail before an export bundle is written. Default 300 s. Minimum: 0.
 
 |===
 
