@@ -133,10 +133,18 @@ It is added after authentication, never accepted from a client, and is
 not an authentication token.
 
 [[billing]]
-== Billing and capture
+== Billing capture (events)
 
-A `billing` event carries a metered amount: `units` + `unitType`
+A `billing` **event** carries a metered amount: `units` + `unitType`
 (`request`, `token`, `byte`, `mcp_call`), plus optional bounded `attrs`.
+
+[NOTE]
+====
+This event is operational: it goes to subscribed plugins and has no
+tariff, no budget and no invoice. To **price** a request, hold a budget
+before the backend call and deliver a settlement, see
+link:/docs/features/metering/[Metering and billing].
+====
 
 The cheapest and most accurate source is the **backend**, which knows
 what it actually consumed. It returns internal response headers:

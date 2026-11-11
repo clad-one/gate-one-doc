@@ -1,0 +1,403 @@
+---
+title: Metering and billing
+linkTitle: Metering
+weight: 55
+description: Price a request before forwarding it, hold a local budget, and deliver signed measures to an invoice backend.
+mermaid: true
+---
+
+= Metering and billing
+
+Gate One can **price a request before forwarding it**, refuse it when the
+customer's budget is exhausted, and deliver the priced measure to an
+invoice backend. The measure is computed by the core; the invoice
+backend never re-rates.
+
+[NOTE]
+====
+This is separate from the event bus. link:/docs/features/usage-events/[Usage events]
+is an operational, subscribed stream of `request`/`auth`/`error` events;
+metering is a **billable** path with a tariff, a hold and a settlement.
+A deployment can use either, both, or neither.
+====
+
+== Useful if you want to…
+
+* charge per API call, LLM token, sold item, byte, GB·h, seat, second of
+  session time or MCP call;
+* stop a request **before** the backend when the budget is gone, instead
+  of discovering the overrun on the invoice;
+* keep a signed, replay-safe copy of every billable unit, locally, and
+  deliver it without blocking the request path;
+* run the same pricing online, behind a firewall, or fully air-gapped.
+
+== The chain
+
+++++
+<pre class="mermaid">
+flowchart LR
+  R["Request<br/>host + path"] --> A["Admit<br/>metric → tariff<br/>→ amount"]
+  A -->|"402 if the<br/>budget is short"| X["Refused"]
+  A --> H["Hold<br/>(signed allowance)"]
+  H --> B["Backend call"]
+  B -->|"2xx/3xx/4xx"| S["Settle<br/>capture the hold"]
+  B -->|"5xx"| L["Release<br/>nothing is billed"]
+  S --> O[("Outbox<br/>bounded, local")]
+  L --> O
+  O -->|"signed batch"| I["Ingest<br/>verify + dedup"]
+  I --> V["Invoice backend"]
+  I -->|"signed receipt"| O
+  O -.->|"air-gap"| E["Signed export<br/>+ receipt"]
+</pre>
+++++
+
+The request path only does steps it can do locally: rate, reserve,
+forward, settle. Delivery happens in the background; a slow or
+unreachable invoice backend never delays a request, and a full buffer is
+a **503**, never an unbilled request.
+
+== Metrics
+
+A metric is a billable quantity. It is declared once, under
+`usage.metrics`, and referenced by a route with `"metric": "code"`.
+
+[source,json]
+----
+"metrics": {
+  "api.request": {
+    "unit": "request",
+    "scale": 0,
+    "maxDimensions": 2,
+    "dimensions": {
+      "route": { "type": "string", "maxLength": 64 },
+      "tier":  { "type": "enum", "values": ["free", "pro"] }
+    }
+  },
+  "llm.tokens": {
+    "unit": "token",
+    "scale": 0,
+    "dimensions": { "model": { "type": "string", "maxLength": 32 } }
+  }
+}
+----
+
+[cols="1,3",options="header"]
+|===
+| Field | Meaning
+
+| `unit` | What is counted: `request`, `token`, `byte`, `gb_hour`, `seat`,
+`second`, `mcp_call`, or any label your tariff uses.
+| `scale` | Decimal places of the quantity: `0`, `3` or `6`. A quantity is
+an integer at that scale (`1.250` GB·h is `1250` at scale 3), so no
+floating point ever enters the amount.
+| `maxDimensions` | Upper bound on the dimensions attached to a measure.
+| `dimensions` | Declared keys with a type and, for `enum`, allowed values.
+Only dimensions the gateway can know before the backend call are used
+(`route` is available; `tenant` comes from the identity).
+| `measurement` | `event` (default) or `periodic`.
+| `heartbeatSeconds` | For `periodic` metrics, the emission period
+(`10`–`3600`, default `60`).
+|===
+
+[[periodic]]
+[NOTE]
+====
+`measurement: "periodic"` declares a continuous quantity (session time,
+storage, a seat) and is validated and priced like any other metric. The
+gateway does **not** yet emit heartbeats itself: a periodic metric needs
+a producer that records deltas. Do not declare one expecting automatic
+session-time billing.
+====
+
+=== One measure per request
+
+A route with `"metric": "api.request"` produces **one unit per
+request**, with the dimensions the metric declares. The idempotency key
+is derived from the request ID (`req:<requestId>`), so a retried record
+is deduplicated by the receiver and by the invoice backend.
+
+== Tariffs
+
+A tariff is a versioned rate table for one metric. The map key must equal
+`version`; the tariff in effect at the measure's instant is the one with
+the greatest `effectiveFrom` that is not in the future.
+
+[source,json]
+----
+"tariffs": {
+  "api.request.v1": {
+    "metric": "api.request",
+    "version": "api.request.v1",
+    "currency": "EUR",
+    "effectiveFrom": "2026-01-01T00:00:00Z",
+    "charges": [
+      { "model": "unit", "amountMicro": 10000 }
+    ]
+  }
+}
+----
+
+Five charge models are available. Amounts are in **micro-units** of the
+currency (`10000` = one cent in EUR), computed with `big.Int` and
+rounded **once**:
+
+[cols="1,2,3",options="header"]
+|===
+| Model | Formula | Use for
+
+| `unit` | `quantity × amountMicro` | a flat price per request or token.
+| `tiered` | each tier applies to the portion inside it | graduated
+volume discounts (the first 1 000 units at one price, the next at
+another).
+| `volume` | the tier containing the total applies to the whole | a
+volume price that switches at a threshold.
+| `package` | whole packages, with optional `freeUnits` | 1 000 API calls
+per block, the first 500 free.
+| `percentage_of` | `quantity × rateBasisPoints / 10 000 +
+fixedAmountMicro` | commission on a sale: `quantity` is the base amount in
+currency minor units, `rateBasisPoints` is `1` = `0.01 %`.
+|===
+
+A charge can be restricted with `filter` on dimension values; `"*"`
+matches any value. The first matching charge wins.
+
+[source,json]
+----
+"charges": [
+  { "model": "unit", "amountMicro": 0,
+    "filter": { "tier": ["free"] } },
+  { "model": "unit", "amountMicro": 20000,
+    "filter": { "tier": ["pro"] } }
+]
+----
+
+== Signed pricing plugins
+
+Some prices cannot be expressed by a table: a per-request quote, a
+negotiated rate, cost plus a live exchange rate. Such a metric sets
+`"pricing": "plugin"` and names a plugin; the plugin answers with a
+**signed** decision.
+
+[source,json]
+----
+"pricingPlugins": {
+  "llm-pricer": {
+    "url": "http://pricer:9300",
+    "publicKey": "<base64 Ed25519 public key>",
+    "timeoutMs": 50,
+    "failures": 3,
+    "cooldownSeconds": 30
+  }
+},
+"metrics": {
+  "llm.tokens": {
+    "unit": "token", "scale": 0,
+    "pricing": "plugin", "pricingPlugin": "llm-pricer",
+    "fallback": "llm.tokens.ceiling"
+  }
+}
+----
+
+The decision is signed over a line payload (`amountMicro`, currency,
+price version, engine version, inputs hash), so the gateway verifies what
+it did not compute. Any failure — timeout, bad signature, negative
+amount, open circuit — falls back to the declarative tariff named by
+`fallback`, and logs:
+
+[source,text]
+----
+PRICING FALLBACK metric=llm.tokens plugin=llm-pricer: context deadline exceeded (declarative llm.tokens.ceiling)
+----
+
+The fallback is mandatory and named explicitly, and it is priced by
+**version**, not by the clock: a plugin outage cannot silently change the
+price over time. `cmd/plugin-pricer` is a reference plugin.
+
+== Admission and the local budget
+
+Before the backend call, Gate One prices the request and reserves the
+amount from a **signed allowance**. If the reservation fails, the request
+is refused before reaching the application:
+
+[cols="1,1,2",options="header"]
+|===
+| Status | `error` | Meaning
+
+| `402` | `insufficient_allowance` | the allowance cannot cover this amount.
+| `402` | `allowance_expired` | the signed allowance's period is over.
+| `402` | `no_allowance` | no allowance covers this tenant/metric.
+| `503` | `billing_buffer_full` | the outbox is full (`onFull: block`).
+| `503` | `billing_unavailable` | any other admission failure.
+|===
+
+A document navigation receives a short HTML `402` page; an API call
+receives JSON. A backend **5xx releases** the hold (the customer does not
+pay for a failure); anything else settles it.
+
+The allowance is minted by the managed side and verified locally with
+`usage.allowancePublicKey`:
+
+[source,bash]
+----
+gate-one allowance -key issuer.key -tenant company -metric '*' \
+    -amount-micro 5000000 -expires 2027-01-01T00:00:00Z \
+    -out allowance.json
+----
+
+[source,json]
+----
+"usage": {
+  "allowanceFile": "./allowance.json",
+  "allowancePublicKey": "<base64 Ed25519 public key>"
+}
+----
+
+The gateway **refuses to start** with metrics configured and no signed
+allowance: it would otherwise serve unbilled traffic.
+
+== Records and idempotency
+
+A settled measure is appended to the outbox as a JSON record:
+
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "tenant": "company",
+  "metric": "api.request",
+  "quantity": 1,
+  "scale": 0,
+  "dimensions": { "route": "/api/orders" },
+  "idempotencyKey": "req:9c1f...",
+  "at": "2026-11-11T20:31:02Z",
+  "amountMicro": 10000,
+  "currency": "EUR",
+  "priceVersion": "api.request.v1",
+  "engineVersion": "declarative@v1",
+  "inputsHash": "sha256:...",
+  "settlement": "settled",
+  "status": 200
+}
+----
+
+The natural unique key is `(tenant, metric, idempotencyKey)`. There is no
+separate deduplication table on the producer: a replay is refused by the
+receiver, and a purge leaves a tombstone so a late replay cannot
+resurrect a deleted record. `settlement` is `settled` or `released`.
+
+== Delivery
+
+The outbox is **local to the node** and bounded, so a partition cannot
+grow the disk without limit:
+
+[source,json]
+----
+"outbox": {
+  "dir": "./usage-outbox",
+  "maxAge": "6h",
+  "maxBytes": 536870912,
+  "maxRecords": 50000,
+  "onFull": "block"
+}
+----
+
+`onFull: "block"` answers `503 billing_buffer_full` once a bound is
+reached; `drop` discards new records with a counter (only for metrics you
+accept losing). Defaults are `maxAge: 6h`, 512 MiB and 50 000 records.
+Size `maxAge` to at least two transfer intervals so one outage does not
+fill the buffer; watch the pending counters (`gate-one billing pending`)
+and alert well before the bound.
+
+Delivery is a **signed batch** to a receiver, or a **signed export**
+when there is none:
+
+[source,json]
+----
+"sink": {
+  "url": "https://billing.cladone.example",
+  "secretEnv": "SINK_SECRET",
+  "signingKeyEnv": "SINK_SIGNING_KEY",
+  "batchWaitMs": 200,
+  "exportDir": "./usage-export",
+  "receiptPublicKey": "<base64 Ed25519 public key>"
+}
+----
+
+* the batch carries each record's payload as **base64url** and its
+  `sha256`, so a hash is exact in any language with no JSON
+  canonicalisation; the batch signature excludes the timestamp;
+* the receiver verifies the signature and every hash, deduplicates, and
+  answers with a **signed receipt** carrying the next committed offset;
+* `gate-one billing ack -receipt receipt.json` commits that offset; the
+  outbox deletes only acknowledged segments. An export is never
+  committed without a receipt.
+
+=== Aggregation to the invoice
+
+Invoice backends bill in **cents**. A metric priced below one cent cannot
+be sent one record at a time, so the managed path aggregates pending
+measures per `(tenant, metric, currency, price version)` and rounds
+**once** before creating the invoice line. The gateway's amount is
+authoritative: the invoice backend never re-rates.
+
+== Reconciliation and audit
+
+The managed service reconciles every settled amount against the measures
+it received and the invoice it produced. You do not need its internals to
+audit your side: the gateway can replay and export what it priced, with
+no receiver, database or network.
+
+[source,bash]
+----
+gate-one meter verify -config api-routes.json   # replay the tariffs
+gate-one meter export -config api-routes.json -out audit.json
+gate-one meter check -file audit.json -publicKey <b64>
+----
+
+`meter verify` recomputes every retained record against the tariff
+version it names (independent of the clock). A record priced by a plugin
+cannot be recomputed and is reported as *opaque* (use `-strict` to fail).
+`meter export` writes a signed JSON snapshot; `meter check` verifies the
+signature, every record hash and the body digest. Hand the snapshot to an
+auditor with the public key: they need nothing else.
+
+If you run your own receiver (`billing-byo`), the same contract applies
+on your side: deduplicate by `(tenant, metric, idempotencyKey)`, answer
+with a signed receipt, and commit only what a receipt acknowledges.
+
+== Migration from the event-bus billing type
+
+Two mechanisms coexist, and they are not interchangeable:
+
+* the `billing` **event** (section link:/docs/features/usage-events/#billing[Usage events])
+  carries `units`/`unitType` to subscribed plugins. It is operational:
+  no tariff, no hold, no invoice;
+* **metering** (this page) prices the request, holds a budget and
+  delivers a settlement record.
+
+Moving a route from the first to the second is a configuration change,
+not a code change:
+
+. declare the metric under `usage.metrics` (its `unit` replaces the old
+  `unitType`), the tariff under `usage.tariffs`, and a signed allowance;
+. add `"metric": "code"` to the route;
+. keep `usage.dir` for the event bus; metering has its own bounded
+  `usage.outbox` (six hours, not thirty days) and its own `usage.sink`.
+
+The event bus stays useful for auditing and plugins; do not size the
+metering buffer from the WAL retention.
+
+== Try it locally
+
+`deploy/local/metering-audit` runs the user-side half on one machine: a
+gateway, a signed allowance and no receiver, then `meter
+verify`/`export`/`check` including a tamper attempt. It needs only the
+`gate-one` binary and Python 3.
+
+== Configuration reference
+
+* link:/docs/config/gate-one/#field-usage-metrics[`usage.metrics`]
+* link:/docs/config/gate-one/#field-usage-tariffs[`usage.tariffs`]
+* link:/docs/config/gate-one/#field-usage-pricingPlugins[`usage.pricingPlugins`]
+* link:/docs/config/gate-one/#field-usage-outbox[`usage.outbox`]
+* link:/docs/config/gate-one/#field-usage-sink[`usage.sink`]
