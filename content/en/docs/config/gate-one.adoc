@@ -1430,6 +1430,11 @@ Delivery of billing records: signed push to the managed endpoint, or a signed ex
 | no
 | How long the push may fail before an export bundle is written. Default 300 s. Minimum: 0.
 
+| [[field-usage-sink-receiptPublicKey]] `receiptPublicKey`
+| string
+| no
+| Base64 Ed25519 public key of the ingest service, verifies the signed receipts that acknowledge an air-gap bundle (gate-one billing ack). Required for the airgap profile.
+
 |===
 
 [[config-usage-plugins]]
