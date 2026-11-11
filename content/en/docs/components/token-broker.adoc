@@ -40,9 +40,9 @@ token can no longer work) | on a new authorization only
 
 Erase is local only on purpose: the same credential may be used by the
 user elsewhere. To remove the application authorization itself, the user
-revokes it at the provider. Consequently the broker never calls a
-provider revocation endpoint; `revocation_endpoint` is accepted in the
-registry but is not used.
+revokes it at the provider, in the provider's own settings. The broker
+never calls the provider on erase (there is no revocation endpoint in the
+registry).
 
 Rows are listed even when their provider is disabled or removed from
 `providers.json`: the user can still **Erase** them.
@@ -155,7 +155,6 @@ A provider is a **registry entry, not code**. Edit `providers.json`:
 | `pkce` | send S256 PKCE (default `true`)
 | `refresh` | allow the refresh-token grant (default `true`)
 | `token_auth_method` | `client_secret_post` (default), `client_secret_basic` or `none`
-| `revocation_endpoint` | accepted but unused (erase is local only)
 | `authorization_params` | extra string parameters; protocol params cannot be overridden
 |===
 
