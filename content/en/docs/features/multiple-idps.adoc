@@ -17,6 +17,7 @@ description: Use a classical OIDC IAM such as Keycloak or Zitadel to federate se
 
 == The classical pattern: an external IAM
 
+Usefull if you already use one +
 An **OIDC IAM** such as **Keycloak** or **Zitadel** can federate several
 IdPs itself. In that pattern:
 
