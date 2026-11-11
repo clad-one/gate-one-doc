@@ -5,13 +5,13 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="Centralize common features." height="med" color="dark" %}}
+{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="Centralized common features." height="med" color="dark" %}}
 
 Once and for all:
 - Cross-domain SSO authentication, internal AIM.
-- Front-end and back-end access rights.
-- Cloudflare Turnstile protection on FORMs or endpoints
-- PWA and REST to MCP.
+- Back-end and Front-end access rights at DOM scale. 
+- Cloudflare Turnstile protection on pages, forms or endpoints.
+- Web to mobile (PWA) and REST to MCP. Service authent. delegation.
 - Service aggregation and filtering, front-end proxy.
 - Customizable and injectable user interface. 
 - All combinations are possible.
