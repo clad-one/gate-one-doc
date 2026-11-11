@@ -1029,6 +1029,11 @@ Out-of-process usage-event bus (WAL + extension plugins). Presence enables it. E
 | no
 | Versioned rate tables, keyed by version. Each entry names its metric and effective date.
 
+| [[field-usage-pricingPlugins]] `pricingPlugins`
+| map of <<config-usage-pricingPlugins,object>>
+| no
+| Signed out-of-process pricing services, keyed by name. A metric with pricing=plugin names one here; its answer is verified with the public key and any failure falls back to the metric's declarative tariff.
+
 | [[field-usage-outbox]] `outbox`
 | <<config-usage-outbox,object>>
 | no
@@ -1202,6 +1207,11 @@ Optional JSON-body extraction.
 | no
 | declarative (core rate table) or plugin (signed pricing plugin). Default declarative.
 
+| [[field-usage-metrics-pricingPlugin]] `pricingPlugin`
+| string
+| no
+| Name of the signed pricing plugin used when pricing=plugin (a key of usage.pricingPlugins).
+
 | [[field-usage-metrics-fallback]] `fallback`
 | string
 | no
@@ -1342,6 +1352,40 @@ Optional JSON-body extraction.
 | integer
 | no
 | Minimum: 0.
+
+|===
+
+[[config-usage-pricingPlugins]]
+==== usage.pricingPlugins
+
+[cols="2,2,1,5",options="header"]
+|===
+| Field | Type | Required | Description
+
+| [[field-usage-pricingPlugins-url]] `url`
+| string
+| yes
+| Base URL; POST <url>/price is called.
+
+| [[field-usage-pricingPlugins-publicKey]] `publicKey`
+| string
+| yes
+| Base64 Ed25519 public key verifying the signed decision.
+
+| [[field-usage-pricingPlugins-timeoutMs]] `timeoutMs`
+| integer
+| no
+| Call timeout. Default 50 ms. Minimum: 1.
+
+| [[field-usage-pricingPlugins-failures]] `failures`
+| integer
+| no
+| Consecutive failures before the circuit opens. Default 3. Minimum: 1.
+
+| [[field-usage-pricingPlugins-cooldownSeconds]] `cooldownSeconds`
+| integer
+| no
+| How long the circuit stays open. Default 30 s. Minimum: 1.
 
 |===
 
