@@ -30,6 +30,18 @@
   background: url("../images/cladone-logo.png") center / contain no-repeat;
 }
 
+// Liste du cover : bloc centré, contenu aligné à gauche.
+.td-cover-block ul {
+  display: inline-block;      // la liste se réduit à son contenu…
+  text-align: left;           // …et le texte des items reste à gauche
+  margin: 0 auto 1rem;        // centrage horizontal + pas d'écart avec la ligne au-dessus
+  padding-left: 1.1rem;       // resserre l'écart puce ↔ texte (défaut ~2rem)
+}
+
+.td-cover-block ul li {
+  text-align: left;
+}
+
 // Rust panels (cover, final section, footer) keep white headings and links.
 .td-box--dark,
 .td-footer {
