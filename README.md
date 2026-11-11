@@ -144,6 +144,30 @@ The output is fully static. The primary host is **GitHub Pages** for
 this repository. `baseURL` in `hugo.toml` is set to the project root
 (`https://clad-one.github.io/gate-one-doc/`).
 
+### Publishing (three commands)
+
+```bash
+npm run gen       # 1. regenerate the config reference and backlinks
+npm run serve     # 2. preview at http://127.0.0.1:1313/ (also regenerates)
+npm run publish   # 3. test/build, commit, choose the tag, push
+```
+
+`npm run publish` reads the source version from `../gate-one-src/VERSION`
+(override with `GATE_ONE_SRC`) and picks the tag:
+
+* `vX.Y.Z` for the first documentation release of that source version;
+* the next `vX.Y.Z-docs.N` after that.
+
+`npm run publish -- --dry-run` prints the tag without changing anything;
+`npm run publish -- -m "docs: …"` sets the commit message. The script runs
+`npm test` (regenerate, validate, build, search index), commits the
+changes, runs the CI guard (`npm run check`), tags and pushes. The tag
+push runs `.github/workflows/pages.yml`, which publishes the immutable
+`vX.Y.Z…/` folder and rebuilds `/latest/`.
+
+The low-level `./scripts/publish-pages` below remains available for a
+manual or CI publish from an exact tag.
+
 ### GitHub Pages: one folder per release
 
 Each documentation release is published under a folder named after its

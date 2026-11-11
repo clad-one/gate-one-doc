@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Publish the documentation with one command:
+#   regenerate + backlinks, test/build, commit, choose the release tag
+#   and push it. GitHub Actions (pages.yml) publishes gh-pages and the
+#   /latest/ alias.
+#
+#   npm run publish
+#   npm run publish -- --dry-run
+#   npm run publish -- -m "docs: explain the new page"
+#
+# Tag rule: the source repository VERSION is vX.Y.Z. If this repository
+# has no vX.Y.Z tag yet, publish vX.Y.Z (first docs release of that
+# source version); otherwise publish the next vX.Y.Z-docs.N.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+DRY_RUN=0
+MESSAGE=""
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--dry-run) DRY_RUN=1 ;;
+		-m|--message)
+			shift
+			[ $# -gt 0 ] || { echo "publish-docs: -m needs a message" >&2; exit 2; }
+			MESSAGE="$1"
+			;;
+		-h|--help)
+			sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+			exit 0
+			;;
+		*)
+			echo "publish-docs: unknown argument $1" >&2
+			exit 2
+			;;
+	esac
+	shift
+done
+
+SRC="${GATE_ONE_SRC:-../gate-one-src}"
+VERSION=""
+if [ -f "$SRC/VERSION" ]; then
+	VERSION="$(tr -d '[:space:]' < "$SRC/VERSION")"
+elif [ -d "$SRC/.git" ]; then
+	VERSION="$(git -C "$SRC" describe --tags --abbrev=0 2>/dev/null || true)"
+fi
+VERSION="${VERSION#v}"
+[ -n "$VERSION" ] || {
+	echo "publish-docs: cannot read the source version (GATE_ONE_SRC=$SRC)" >&2
+	exit 1
+}
+
+base="v$VERSION"
+if git rev-parse -q --verify "refs/tags/$base" >/dev/null; then
+	n=1
+	while git rev-parse -q --verify "refs/tags/$base-docs.$n" >/dev/null; do
+		n=$((n + 1))
+	done
+	tag="$base-docs.$n"
+else
+	tag="$base"
+fi
+if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+	echo "publish-docs: tag $tag already exists" >&2
+	exit 1
+fi
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+echo "source version : $VERSION"
+echo "release tag    : $tag (branch $branch)"
+if [ -n "$SRC" ] && [ -d "$SRC/.git" ] &&
+	! git -C "$SRC" rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+	echo "warning: source tag v$VERSION not found in $SRC" >&2
+fi
+
+if [ "$DRY_RUN" = "1" ]; then
+	echo "dry run: would run npm test, commit the changes, create $tag"
+	echo "         and push $branch + $tag (GitHub Actions publishes)"
+	exit 0
+fi
+
+# Regenerate, validate, build and check the search index. This also
+# rewrites the generated pages, which are committed below.
+npm test
+
+git add -A
+if ! git diff --cached --quiet; then
+	git commit -m "${MESSAGE:-docs: publish $tag}"
+	echo "committed the documentation changes"
+else
+	echo "no content change: publishing the current commit"
+fi
+
+# Now that HEAD contains the generated pages, the CI guard is meaningful.
+npm run check
+
+git tag "$tag"
+git push origin "$branch" "$tag"
+
+echo
+echo "pushed $tag; GitHub Actions publishes the site:"
+echo "  https://clad-one.github.io/gate-one-doc/$tag/"
+echo "  https://clad-one.github.io/gate-one-doc/latest/"
+if command -v gh >/dev/null 2>&1; then
+	echo "watch: gh run list --workflow pages.yml --limit 3"
+fi
