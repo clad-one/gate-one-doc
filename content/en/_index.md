@@ -5,16 +5,17 @@ menu: main
 weight: 10
 ---
 
-{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="A Gateway to centralize you common features." height="med" color="dark" %}}
+{{% blocks/cover title="Cladone G.O. Gate-One" subtitle="Centralize common features." height="med" color="dark" %}}
 
-Once and for all: +
-- Cross-domain SSO authentication, internal AIM +
-- Front-end and back-end access configuration + 
-- PWA and REST to MCP. +
-- Service aggregation and filtering, front-end proxy +
-- Customizable and injectable user interface. +
-- All combinations are possible. +
-- Versionable configuration via files. +
+Once and for all:
+- Cross-domain SSO authentication, internal AIM.
+- Front-end and back-end access rights.
+- Cloudflare Turnstile protection.
+- PWA and REST to MCP.
+- Service aggregation and filtering, front-end proxy.
+- Customizable and injectable user interface. 
+- All combinations are possible.
+- Versionable configuration via files.
 
 Dynamic instrumentation—applications run without modification.
 
